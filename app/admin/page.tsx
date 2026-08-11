@@ -1,68 +1,38 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { createClient } from "../../lib/supabase/client";
 
-const orders = [
-  ["#G-1048", "Camila Rojas", "Kit Flores Silvestres", "$18.970", "Preparando", "pink"],
-  ["#G-1047", "Francisca Díaz", "Molde personalizado", "$12.990", "Por revisar", "amber"],
-  ["#G-1046", "Paula Silva", "Set Cumpleaños", "$24.490", "Enviado", "green"],
-  ["#G-1045", "Daniela Soto", "Dino Rex · 2 unidades", "$7.980", "Entregado", "gray"],
-];
-
-const navigation = [["▦", "Resumen"], ["□", "Pedidos"], ["◇", "Productos"], ["♧", "Clientes"], ["◫", "Promociones"], ["⚙", "Configuración"]];
+type Category = { id:string; name:string; slug:string; description:string; active:boolean };
+type Product = { id:string; category_id:string|null; name:string; slug:string; sku:string; description:string; price:number; stock:number; size:string; active:boolean; featured:boolean };
+const emptyProduct = { id:"", category_id:"", name:"", sku:"", description:"", price:0, stock:0, size:"", active:true, featured:false };
+const nav = [["▦","Resumen"],["□","Pedidos"],["◇","Productos"],["♧","Categorías"],["◫","Clientes"],["⚙","Configuración"]];
 
 export default function AdminPage() {
-  const [signedIn, setSignedIn] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [ready,setReady]=useState(false), [signedIn,setSignedIn]=useState(false), [loading,setLoading]=useState(false);
+  const [view,setView]=useState("Resumen"), [error,setError]=useState(""), [notice,setNotice]=useState("");
+  const [categories,setCategories]=useState<Category[]>([]), [products,setProducts]=useState<Product[]>([]);
+  const [editing,setEditing]=useState<typeof emptyProduct|null>(null), [categoryName,setCategoryName]=useState("");
+  const supabase=useMemo(()=>createClient(),[]);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setLoading(true);
-    window.setTimeout(() => { setLoading(false); setSignedIn(true); }, 600);
-  }
+  useEffect(()=>{ supabase.auth.getUser().then(({data})=>{setSignedIn(Boolean(data.user));setReady(true);if(data.user) loadCatalog();}); },[]);
+  async function loadCatalog(){const [{data:c,error:ce},{data:p,error:pe}]=await Promise.all([supabase.from("categories").select("*").order("name"),supabase.from("products").select("*").order("name")]);if(ce||pe)setError(ce?.message||pe?.message||"");else{setCategories(c||[]);setProducts(p||[]);}}
+  async function login(e:FormEvent<HTMLFormElement>){e.preventDefault();setLoading(true);setError("");const form=new FormData(e.currentTarget);const {data,error}=await supabase.auth.signInWithPassword({email:String(form.get("email")),password:String(form.get("password"))});setLoading(false);if(error)return setError("Correo o contraseña incorrectos");if(data.user?.app_metadata.role!=="admin"){await supabase.auth.signOut();return setError("Esta cuenta no tiene permisos de administración");}setSignedIn(true);loadCatalog();}
+  async function logout(){await supabase.auth.signOut();setSignedIn(false);}
+  async function saveProduct(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!editing)return;setLoading(true);setError("");const payload={name:editing.name.trim(),slug:slugify(editing.name),sku:editing.sku.trim(),description:editing.description,price:Number(editing.price),stock:Number(editing.stock),size:editing.size,category_id:editing.category_id||null,active:editing.active,featured:editing.featured};const query=editing.id?supabase.from("products").update(payload).eq("id",editing.id):supabase.from("products").insert(payload);const {error}=await query;setLoading(false);if(error)return setError(error.message);setEditing(null);setNotice("Producto guardado correctamente");loadCatalog();}
+  async function deleteProduct(id:string){if(!confirm("¿Eliminar este producto?"))return;const {error}=await supabase.from("products").delete().eq("id",id);if(error)setError(error.message);else{setNotice("Producto eliminado");loadCatalog();}}
+  async function addCategory(e:FormEvent){e.preventDefault();const name=categoryName.trim();if(!name)return;const {error}=await supabase.from("categories").insert({name,slug:slugify(name)});if(error)setError(error.message);else{setCategoryName("");setNotice("Categoría creada");loadCatalog();}}
+  async function deleteCategory(id:string){if(products.some(p=>p.category_id===id))return setError("Mueve o elimina sus productos antes de borrar la categoría");if(!confirm("¿Eliminar esta categoría?"))return;const {error}=await supabase.from("categories").delete().eq("id",id);if(error)setError(error.message);else loadCatalog();}
 
-  if (!signedIn) return (
-    <main className="admin-login">
-      <section className="login-card" aria-labelledby="login-title">
-        <Image className="login-logo" src="/galletisima-logo.png" alt="Galletísima" width={420} height={128} priority />
-        <div className="login-heading"><h1 id="login-title">Bienvenida de vuelta</h1><p>Ingresa a tu panel de administración</p></div>
-        <form className="login-form" onSubmit={submit}>
-          <label htmlFor="admin-email">Correo electrónico</label>
-          <input id="admin-email" type="email" placeholder="hola@galletisima.cl" autoComplete="email" required />
-          <div className="password-label"><label htmlFor="admin-password">Contraseña</label><a href="#recuperar">¿La olvidaste?</a></div>
-          <div className="password-field"><input id="admin-password" type={showPassword ? "text" : "password"} placeholder="••••••••" minLength={6} required /><button type="button" onClick={() => setShowPassword(!showPassword)} aria-label="Mostrar u ocultar contraseña">◎</button></div>
-          <button className="login-submit" type="submit" disabled={loading}>{loading ? "Ingresando…" : "Ingresar al panel"}<span>→</span></button>
-        </form>
-        <p className="login-help">¿Necesitas ayuda? <a href="mailto:soporte@galletisima.cl">Contáctanos</a></p>
-      </section>
-      <p className="login-footer">© 2026 Galletísima · Hecho con cariño en Chile</p>
-    </main>
-  );
+  if(!ready)return <main className="admin-login"><p>Cargando…</p></main>;
+  if(!signedIn)return <main className="admin-login"><section className="login-card"><Image className="login-logo" src="/galletisima-logo.png" alt="Galletísima" width={420} height={128} priority/><div className="login-heading"><h1>Bienvenida de vuelta</h1><p>Ingresa a tu panel de administración</p></div><form className="login-form" onSubmit={login}><label>Correo electrónico</label><input name="email" type="email" placeholder="hola@galletisima.cl" required/><div className="password-label"><label>Contraseña</label><a href="#recuperar">¿La olvidaste?</a></div><div className="password-field"><input name="password" type="password" placeholder="••••••••" required/></div>{error&&<p className="form-error">{error}</p>}<button className="login-submit" disabled={loading}>{loading?"Ingresando…":"Ingresar al panel"}<span>→</span></button></form></section></main>;
 
-  return (
-    <main className="admin-shell">
-      <aside className="admin-sidebar">
-        <Image src="/galletisima-logo.png" alt="Galletísima" width={190} height={58} priority />
-        <nav aria-label="Navegación del panel">{navigation.map(([icon, label], index) => <button className={index === 0 ? "active" : ""} key={label}><span>{icon}</span>{label}</button>)}</nav>
-        <div className="sidebar-user"><span>JM</span><div><strong>Josefina M.</strong><small>Administradora</small></div><button aria-label="Cerrar sesión" onClick={() => setSignedIn(false)}>↪</button></div>
-      </aside>
-      <section className="admin-content">
-        <header className="admin-topbar"><div><p>Martes, 11 de agosto</p><h1>¡Hola, Josefina! <span>♡</span></h1></div><div className="top-actions"><button aria-label="Buscar">⌕</button><button aria-label="Notificaciones">♢</button><button className="new-product">＋ Nuevo producto</button></div></header>
-        <div className="metric-grid">
-          {[["↗","Ventas de hoy","$184.930","↑ 12,5% vs. ayer","pink"],["□","Pedidos nuevos","18","↑ 4 desde ayer","peach"],["♧","Clientes","1.284","↑ 8,2% este mes","lilac"],["◇","Productos activos","96","6 con stock bajo","mint"]].map(([icon,label,value,change,tone]) => <article key={label}><span className={`metric-icon ${tone}`}>{icon}</span><div><p>{label}</p><h2>{value}</h2><small>{change}</small></div></article>)}
-        </div>
-        <div className="dashboard-grid">
-          <section className="panel sales-panel"><PanelTitle title="Ventas de la semana" copy="Ingresos de los últimos 7 días" action="Esta semana⌄" /><div className="chart">{[42,56,48,72,62,88,76].map((height,index)=><div className="bar-wrap" key={index}><span className="bar" style={{height:`${height}%`}}/><small>{["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"][index]}</small></div>)}</div></section>
-          <section className="panel stock-panel"><PanelTitle title="Stock bajo" copy="Productos por reponer" action="Ver todos" />{[["Oso Tierno","3 unidades"],["Dino Rex","4 unidades"],["Flor Vintage","5 unidades"]].map(([name,stock], index)=><div className="stock-item" key={name}><span className={`stock-photo photo-${index}`}/><div><strong>{name}</strong><small>{stock}</small></div><button>Reponer</button></div>)}</section>
-        </div>
-        <section className="panel orders-panel"><PanelTitle title="Pedidos recientes" copy="Últimas compras de tu tienda" action="Ver todos los pedidos →" /><div className="orders-table"><div className="order-row order-head"><span>Pedido</span><span>Cliente</span><span>Producto</span><span>Total</span><span>Estado</span><span /></div>{orders.map(order=><div className="order-row" key={order[0]}><strong>{order[0]}</strong><span>{order[1]}</span><span>{order[2]}</span><strong>{order[3]}</strong><span><i className={`status ${order[5]}`}/>{order[4]}</span><button>•••</button></div>)}</div></section>
-      </section>
-    </main>
-  );
+  return <main className="admin-shell"><aside className="admin-sidebar"><Image src="/galletisima-logo.png" alt="Galletísima" width={190} height={58}/><nav>{nav.map(([icon,label])=><button key={label} className={view===label?"active":""} onClick={()=>setView(label)}><span>{icon}</span>{label}</button>)}</nav><div className="sidebar-user"><span>AD</span><div><strong>Administración</strong><small>Supabase Auth</small></div><button onClick={logout}>↪</button></div></aside><section className="admin-content"><header className="admin-topbar"><div><p>Panel de administración</p><h1>{view} <span>♡</span></h1></div><div className="top-actions"><button className="new-product" onClick={()=>{setEditing({...emptyProduct});setView("Productos")}}>＋ Nuevo producto</button></div></header>{error&&<div className="admin-alert error">{error}<button onClick={()=>setError("")}>×</button></div>}{notice&&<div className="admin-alert">{notice}<button onClick={()=>setNotice("")}>×</button></div>}{view==="Resumen"&&<Dashboard products={products} categories={categories}/>} {view==="Productos"&&<Products products={products} categories={categories} edit={p=>setEditing({...p,category_id:p.category_id||""})} remove={deleteProduct}/>} {view==="Categorías"&&<Categories categories={categories} products={products} name={categoryName} setName={setCategoryName} add={addCategory} remove={deleteCategory}/>} {!["Resumen","Productos","Categorías"].includes(view)&&<section className="panel empty-state"><h2>{view}</h2><p>La estructura de datos ya está preparada. Este módulo se conectará en la siguiente iteración.</p></section>}</section>{editing&&<ProductModal product={editing} setProduct={setEditing} categories={categories} save={saveProduct} close={()=>setEditing(null)} loading={loading}/>}</main>;
 }
 
-function PanelTitle({title,copy,action}:{title:string;copy:string;action:string}) {
-  return <div className="panel-title"><div><h2>{title}</h2><p>{copy}</p></div><button>{action}</button></div>;
-}
+function Dashboard({products,categories}:{products:Product[];categories:Category[]}){const low=products.filter(p=>p.stock<=5);return <><div className="metric-grid">{[["◇","Productos activos",products.filter(p=>p.active).length,"Catálogo publicado","pink"],["□","Stock total",products.reduce((a,p)=>a+p.stock,0),"unidades disponibles","peach"],["♧","Categorías",categories.length,"colecciones creadas","lilac"],["!","Stock bajo",low.length,"requieren reposición","mint"]].map(([i,l,v,c,t])=><article key={String(l)}><span className={`metric-icon ${t}`}>{i}</span><div><p>{l}</p><h2>{v}</h2><small>{c}</small></div></article>)}</div><section className="panel orders-panel"><div className="panel-title"><div><h2>Productos con stock bajo</h2><p>5 unidades o menos</p></div></div>{low.length?low.map(p=><div className="stock-item" key={p.id}><span className="stock-photo"/><div><strong>{p.name}</strong><small>{p.stock} unidades</small></div></div>):<p className="empty-copy">Todo el inventario está saludable.</p>}</section></>}
+function Products({products,categories,edit,remove}:{products:Product[];categories:Category[];edit:(p:Product)=>void;remove:(id:string)=>void}){return <section className="panel orders-panel"><div className="panel-title"><div><h2>Catálogo</h2><p>{products.length} productos registrados</p></div></div><div className="orders-table"><div className="order-row product-row order-head"><span>Producto</span><span>SKU</span><span>Categoría</span><span>Precio</span><span>Stock</span><span/></div>{products.map(p=><div className="order-row product-row" key={p.id}><strong>{p.name}</strong><span>{p.sku}</span><span>{categories.find(c=>c.id===p.category_id)?.name||"Sin categoría"}</span><strong>${p.price.toLocaleString("es-CL")}</strong><span>{p.stock}</span><span className="row-actions"><button onClick={()=>edit(p)}>Editar</button><button onClick={()=>remove(p.id)}>Eliminar</button></span></div>)}</div></section>}
+function Categories({categories,products,name,setName,add,remove}:{categories:Category[];products:Product[];name:string;setName:(v:string)=>void;add:(e:FormEvent)=>void;remove:(id:string)=>void}){return <section className="panel category-panel"><form className="inline-form" onSubmit={add}><input value={name} onChange={e=>setName(e.target.value)} placeholder="Nueva categoría" required/><button>＋ Crear categoría</button></form><div className="category-admin-grid">{categories.map(c=><article key={c.id}><div><strong>{c.name}</strong><small>{products.filter(p=>p.category_id===c.id).length} productos</small></div><button onClick={()=>remove(c.id)}>Eliminar</button></article>)}</div></section>}
+function ProductModal({product,setProduct,categories,save,close,loading}:{product:typeof emptyProduct;setProduct:(p:typeof emptyProduct)=>void;categories:Category[];save:(e:FormEvent<HTMLFormElement>)=>void;close:()=>void;loading:boolean}){const field=(key:keyof typeof product)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>)=>setProduct({...product,[key]:e.target.type==="number"?Number(e.target.value):e.target.value});return <div className="modal-backdrop"><form className="product-modal" onSubmit={save}><div className="modal-title"><div><h2>{product.id?"Editar producto":"Nuevo producto"}</h2><p>Completa la información del catálogo.</p></div><button type="button" onClick={close}>×</button></div><div className="modal-grid"><label>Nombre<input value={product.name} onChange={field("name")} required/></label><label>SKU<input value={product.sku} onChange={field("sku")} required/></label><label>Categoría<select value={product.category_id} onChange={field("category_id")}><option value="">Sin categoría</option>{categories.map(c=><option value={c.id} key={c.id}>{c.name}</option>)}</select></label><label>Tamaño<input value={product.size} onChange={field("size")}/></label><label>Precio<input type="number" min="0" value={product.price} onChange={field("price")} required/></label><label>Stock<input type="number" min="0" value={product.stock} onChange={field("stock")} required/></label><label className="wide">Descripción<textarea value={product.description} onChange={field("description")}/></label></div><div className="modal-actions"><button type="button" onClick={close}>Cancelar</button><button className="save" disabled={loading}>{loading?"Guardando…":"Guardar producto"}</button></div></form></div>}
+function slugify(v:string){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
