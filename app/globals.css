@@ -89,6 +89,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
   .menu-button { display:flex; }
   .benefit-bar span:nth-child(2) { display:none; }
   .header { height:90px; }
+  .header .brand { position:absolute; left:50%; transform:translateX(-50%); }
   .brand img { width:190px; }
   .hero { min-height:680px; align-items:flex-start; }
   .hero-image { inset:48% 0 0; background-position:65% center; }
