@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 const categories = [
@@ -42,7 +43,7 @@ export default function Home() {
           <i /><i /><i />
         </button>
         <a className="brand" href="#inicio" aria-label="Galletísima, inicio">
-          <span className="brand-flower">✿</span><span>Galletísima</span>
+          <Image src="/galletisima-logo.png" alt="Galletísima" width={360} height={140} priority />
         </a>
         <div className="header-actions">
           <button className="icon-button search" aria-label="Buscar">⌕</button>
@@ -107,7 +108,7 @@ export default function Home() {
 
       <footer id="contacto">
         <div className="shell footer-inner">
-          <div><span className="mini-brand">Galletísima</span><p>Convierte tus ideas en algo delicioso.</p></div>
+          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Convierte tus ideas en algo delicioso.</p></div>
           <form onSubmit={(event) => { event.preventDefault(); setNotice("¡Gracias! Pronto recibirás nuestras novedades"); }}>
             <label htmlFor="email">¡No te pierdas novedades<br/>y descuentos exclusivos!</label>
             <div><input id="email" type="email" placeholder="Tu email" required/><button>✉ Suscribirme</button></div>

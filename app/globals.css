@@ -14,8 +14,8 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .icon-button { border:0; background:none; cursor:pointer; color:#171417; padding:10px; }
 .menu-button { width:48px; display:flex; flex-direction:column; gap:6px; justify-self:start; }
 .menu-button i { width:28px; height:2px; background:#1e1a1d; display:block; }
-.brand { color:var(--pink); text-decoration:none; display:flex; align-items:center; font-family:Georgia,serif; font-size:45px; font-style:italic; font-weight:700; letter-spacing:-2px; }
-.brand-flower { color:#ffd44f; -webkit-text-stroke:2px #71b63c; font-size:50px; font-style:normal; margin-right:8px; }
+.brand { text-decoration:none; display:flex; align-items:center; }
+.brand img { width:230px; height:auto; display:block; }
 .header-actions { justify-self:end; display:flex; gap:12px; align-items:center; }
 .search { font-size:35px; line-height:1; transform:rotate(-15deg); }
 .cart { font-size:26px; position:relative; }
@@ -70,7 +70,7 @@ h1 strong { color:var(--pink); }
 .value-grid p { font-size:12px; line-height:1.55; }
 footer { background:#fadce1; padding:42px 0; }
 .footer-inner { display:flex; align-items:center; justify-content:space-between; gap:40px; }
-.mini-brand { color:var(--pink); font:italic 700 28px Georgia,serif; }
+.footer-brand img { width:175px; height:auto; display:block; }
 .footer-inner p { margin:7px 0; color:#695a61; font-size:13px; }
 form { display:flex; gap:30px; align-items:center; }
 form label { font-weight:800; font-size:14px; line-height:1.4; }
@@ -82,7 +82,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 @media (max-width:900px) {
   .benefit-bar span:nth-child(2) { display:none; }
   .header { height:90px; }
-  .brand { font-size:35px; }.brand-flower { font-size:40px; }
+  .brand img { width:190px; }
   .hero { min-height:680px; align-items:flex-start; }
   .hero-image { inset:48% 0 0; background-position:65% center; }
   .hero-image:after { background:linear-gradient(180deg,#fff2f4 0%,rgba(255,242,244,.25) 70%); }
@@ -97,7 +97,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 @media (max-width:560px) {
   .shell { width:min(100% - 28px,1180px); }
   .benefit-bar { min-height:38px; gap:28px; font-size:10px; }.benefit-bar span:nth-child(3) { display:none; }
-  .header { grid-template-columns:50px 1fr auto; }.brand { font-size:27px; letter-spacing:-1px; }.brand-flower { font-size:32px; margin-right:3px; }.search { display:none; }
+  .header { grid-template-columns:50px 1fr auto; }.brand img { width:min(175px,45vw); }.search { display:none; }
   .hero { min-height:690px; }.hero-content { padding-top:35px; }.eyebrow { font-size:12px; } h1 { font-size:45px; letter-spacing:-2px; }.hero-copy { font-size:14px; }.button { width:255px; padding:14px; }
   .hero-image { inset:56% -28% 0 -18%; background-position:63% center; }
   .section { padding:38px 0; }.section h2 { font-size:19px; }
