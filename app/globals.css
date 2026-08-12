@@ -82,7 +82,9 @@ form label { font-weight:800; font-size:14px; line-height:1.4; }
 form div { display:flex; }
 input { width:270px; border:0; padding:16px 18px; border-radius:8px 0 0 8px; outline-color:var(--pink); }
 form button { border:0; color:white; background:var(--pink); padding:0 22px; border-radius:0 8px 8px 0; cursor:pointer; }
-.whatsapp { position:fixed; right:22px; bottom:20px; z-index:30; width:62px; height:62px; border-radius:50%; background:#39c44a; color:white; display:grid; place-items:center; text-decoration:none; font-size:31px; border:5px solid white; box-shadow:0 6px 22px #21492745; }
+.whatsapp { position:fixed; right:22px; bottom:20px; z-index:30; width:62px; height:62px; border-radius:50%; background:#25d366; color:white; display:grid; place-items:center; text-decoration:none; border:4px solid white; box-shadow:0 6px 22px #21492745; transition:transform .2s,background .2s; }
+.whatsapp svg { width:34px; height:34px; display:block; }
+.whatsapp:hover { background:#1fbd5a; transform:translateY(-3px) scale(1.03); }
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:50; background:#2c2528; color:#fff; padding:14px 22px; border-radius:30px; box-shadow:0 10px 30px #0003; font-size:14px; }
 @media (max-width:900px) {
   .desktop-nav { display:none; }
