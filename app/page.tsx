@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "../lib/supabase/client";
 
 const categories = [
   ["🎂", "Cumpleaños"], ["🧸", "Infantil"], ["🐾", "Animales"],
@@ -23,6 +24,13 @@ export default function Home() {
   const [liked, setLiked] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.from("site_settings").select("value").eq("key", "whatsapp_number").single()
+      .then(({ data }) => { if (data?.value) setWhatsappNumber(data.value); });
+  }, []);
 
   const add = (name: string) => {
     setCart((value) => value + 1);
@@ -120,7 +128,7 @@ export default function Home() {
           </form>
         </div>
       </footer>
-      <a className="whatsapp" href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "56900000000"}`} target="_blank" rel="noreferrer" aria-label="Escríbenos por WhatsApp">
+      <a className="whatsapp" href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" aria-label="Escríbenos por WhatsApp">
         <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3A12.9 12.9 0 0 0 5 22.57L3.28 29l6.58-1.72A12.98 12.98 0 1 0 16.04 3Zm0 23.76a10.7 10.7 0 0 1-5.45-1.49l-.39-.23-3.9 1.02 1.04-3.8-.25-.4a10.72 10.72 0 1 1 8.95 4.9Zm5.88-8.03c-.32-.16-1.9-.94-2.2-1.05-.29-.11-.5-.16-.71.16-.22.32-.83 1.05-1.02 1.27-.18.21-.37.24-.69.08-1.89-.94-3.12-1.69-4.37-3.82-.33-.57.33-.53.94-1.76.11-.21.05-.4-.03-.56-.08-.16-.72-1.73-.98-2.37-.26-.62-.52-.54-.72-.55h-.61c-.22 0-.56.08-.85.4-.29.32-1.12 1.1-1.12 2.66s1.15 3.08 1.3 3.29c.16.21 2.25 3.43 5.45 4.81.76.33 1.36.53 1.82.67.77.24 1.46.21 2.01.13.62-.09 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.29-.22-.61-.38Z"/></svg>
       </a>
       {notice && <div className="toast" role="status">{notice}</div>}
