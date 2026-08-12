@@ -92,6 +92,10 @@ footer { background:#fadce1; padding:42px 0; }
 .footer-inner { display:flex; align-items:center; justify-content:space-between; gap:40px; }
 .footer-brand img { width:175px; height:auto; display:block; }
 .footer-inner p { margin:7px 0; color:#695a61; font-size:13px; }
+.instagram-link { width:max-content; display:flex; align-items:center; gap:8px; margin-top:14px; color:#c12d6b; font-size:13px; font-weight:800; text-decoration:none; transition:color .2s,transform .2s; }
+.instagram-link svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; }
+.instagram-link .instagram-dot { fill:currentColor; stroke:none; }
+.instagram-link:hover { color:var(--pink); transform:translateX(2px); }
 form { display:flex; gap:30px; align-items:center; }
 form label { font-weight:800; font-size:14px; line-height:1.4; }
 form div { display:flex; }

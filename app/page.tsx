@@ -126,7 +126,7 @@ export default function Home() {
 
       <footer id="contacto">
         <div className="shell footer-inner">
-          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Convierte tus ideas en algo delicioso.</p></div>
+          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Convierte tus ideas en algo delicioso.</p><a className="instagram-link" href="https://www.instagram.com/galletisimacl" target="_blank" rel="noreferrer" aria-label="Síguenos en Instagram como galletisimacl"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle className="instagram-dot" cx="17.4" cy="6.7" r="1"/></svg><span>@galletisimacl</span></a></div>
           <form onSubmit={(event) => { event.preventDefault(); setNotice("¡Gracias! Pronto recibirás nuestras novedades"); }}>
             <label htmlFor="email">¡No te pierdas novedades<br/>y descuentos exclusivos!</label>
             <div><input id="email" type="email" placeholder="Tu email" required/><button>✉ Suscribirme</button></div>
