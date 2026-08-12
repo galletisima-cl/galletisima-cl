@@ -14,14 +14,14 @@ button,a { -webkit-tap-highlight-color:transparent; }
 .icon-button { border:0; background:none; cursor:pointer; color:#171417; padding:10px; }
 .menu-button { width:48px; display:none; flex-direction:column; gap:6px; justify-self:start; }
 .menu-button i { width:28px; height:2px; background:#1e1a1d; display:block; }
-.desktop-nav { justify-self:start; display:flex; align-items:center; gap:clamp(18px,2vw,32px); }
+.desktop-nav { grid-column:2; grid-row:1; justify-self:center; display:flex; align-items:center; gap:clamp(24px,3vw,46px); }
 .desktop-nav a { color:#332c30; text-decoration:none; font-size:13px; font-weight:700; position:relative; padding:12px 0; }
 .desktop-nav a:after { content:""; position:absolute; left:0; right:100%; bottom:5px; height:2px; background:var(--pink); transition:right .2s; }
 .desktop-nav a:hover { color:var(--pink); }
 .desktop-nav a:hover:after { right:0; }
-.brand { text-decoration:none; display:flex; align-items:center; }
+.brand { grid-column:1; grid-row:1; justify-self:start; text-decoration:none; display:flex; align-items:center; }
 .brand img { width:230px; height:auto; display:block; }
-.header-actions { justify-self:end; display:flex; gap:12px; align-items:center; }
+.header-actions { grid-column:3; grid-row:1; justify-self:end; display:flex; gap:12px; align-items:center; }
 .search { font-size:35px; line-height:1; transform:rotate(-15deg); }
 .cart { font-size:26px; position:relative; }
 .cart em { position:absolute; top:0; right:0; width:22px; height:22px; color:white; background:var(--pink); border-radius:50%; font-size:12px; font-style:normal; font-weight:700; display:grid; place-items:center; }
@@ -86,7 +86,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:50; background:#2c2528; color:#fff; padding:14px 22px; border-radius:30px; box-shadow:0 10px 30px #0003; font-size:14px; }
 @media (max-width:900px) {
   .desktop-nav { display:none; }
-  .menu-button { display:flex; }
+  .menu-button { grid-column:1; grid-row:1; display:flex; }
   .benefit-bar span:nth-child(2) { display:none; }
   .header { height:90px; }
   .header .brand { position:absolute; left:50%; transform:translateX(-50%); }
