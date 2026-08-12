@@ -120,16 +120,26 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
   .footer-inner,form { flex-direction:column; align-items:flex-start; }
 }
 @media (max-width:560px) {
+  body { overflow-x:hidden; }
   .shell { width:min(100% - 28px,1180px); }
   .benefit-bar { min-height:38px; gap:28px; font-size:10px; }.benefit-bar span:nth-child(3) { display:none; }
-  .header { grid-template-columns:50px 1fr auto; }.brand img { width:min(175px,45vw); }.search { display:none; }
-  .hero { min-height:690px; }.hero-content { padding-top:35px; }.eyebrow { font-size:12px; } h1 { font-size:45px; letter-spacing:-2px; }.hero-copy { font-size:14px; }.button { width:255px; padding:14px; }
-  .hero-image { inset:56% -28% 0 -18%; background-position:63% center; }
+  .header { height:82px; grid-template-columns:48px 1fr 48px; }.brand img { width:min(170px,44vw); }.header-actions { width:48px; justify-content:center; }.search { display:none; }.cart { padding:8px; }
+  .menu { top:72px; left:0; right:0; width:100%; max-height:calc(100svh - 125px); overflow-y:auto; }
+  .hero { min-height:0; display:block; }
+  .hero-content { padding:34px 0 388px; }
+  .eyebrow { margin:0 0 12px; font-size:11px; }
+  h1 { margin:0 0 18px; font-size:clamp(38px,12vw,48px); line-height:.96; letter-spacing:-2px; }
+  .hero-copy { margin:0; font-size:14px; line-height:1.55; }
+  .hero-buttons { width:100%; margin-top:22px; gap:10px; }
+  .button { width:min(100%,360px); padding:15px 14px; font-size:12px; }
+  .hero-image { inset:auto 0 0; height:360px; background-position:61% center; }
+  .hero-image:after { background:linear-gradient(180deg,#fff2f4 0%,rgba(255,242,244,.1) 28%,rgba(255,242,244,0) 60%); }
   .section { padding:38px 0; }.section h2 { font-size:19px; }
   .categories { gap:18px 4px; }.categories span { width:58px; height:58px; font-size:25px; }.categories small { font-size:10px; }
   .product-grid { gap:10px; }.product-photo { height:150px; }.product-info { padding:12px; min-height:105px; }.product-info h3 { font-size:13px; }.add { width:40px; height:40px; }
   .value-grid { grid-template-columns:1fr; }.value-grid div { border:0; justify-content:flex-start; }
   footer { padding-bottom:90px; }.footer-inner { gap:25px; } form { gap:12px; width:100%; } form div { width:100%; } input { width:100%; } form button { padding:0 12px; font-size:12px; }
+  .whatsapp { right:14px; bottom:14px; width:58px; height:58px; border-width:4px; }.whatsapp svg { width:31px; height:31px; }
 }
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { transition:none!important; } }
 @media (min-width:1100px) {
