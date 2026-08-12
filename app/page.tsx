@@ -39,6 +39,11 @@ export default function Home() {
       </div>
 
       <header className="header shell">
+        <nav className="desktop-nav" aria-label="Navegación principal">
+          <a href="#moldes">Moldes</a>
+          <a href="#categorias">Categorías</a>
+          <a href="#contacto">Contacto</a>
+        </nav>
         <button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMenuOpen(!menuOpen)}>
           <i /><i /><i />
         </button>
@@ -51,7 +56,7 @@ export default function Home() {
             🛒<em>{cart}</em>
           </button>
         </div>
-        {menuOpen && <nav className="menu"><a href="#moldes">Moldes</a><a href="#categorias">Categorías</a><a href="#contacto">Contacto</a></nav>}
+        {menuOpen && <nav className="menu" aria-label="Navegación móvil"><a href="#moldes">Moldes</a><a href="#categorias">Categorías</a><a href="#contacto">Contacto</a></nav>}
       </header>
 
       <section id="inicio" className="hero">
