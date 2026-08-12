@@ -107,3 +107,25 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
   footer { padding-bottom:90px; }.footer-inner { gap:25px; } form { gap:12px; width:100%; } form div { width:100%; } input { width:100%; } form button { padding:0 12px; font-size:12px; }
 }
 @media (prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } * { transition:none!important; } }
+@media (min-width:1100px) {
+  .shell { width:min(1280px,calc(100% - 80px)); }
+  .benefit-bar { min-height:42px; }
+  .header { height:104px; }
+  .brand img { width:255px; }
+  .hero { min-height:650px; }
+  .hero-content { padding-block:82px; }
+  .hero-content h1 { max-width:640px; }
+  .hero-copy { max-width:570px; font-size:16px; }
+  .hero-buttons { flex-direction:row; gap:14px; }
+  .button { width:auto; min-width:245px; }
+  .hero-note { left:auto; right:clamp(55px,8vw,140px); }
+  .section { padding:62px 0; }
+  .categories { gap:22px; }
+  .categories span { width:86px; height:86px; }
+  .products-section { padding-top:34px; }
+  .product-grid { gap:28px; }
+  .product-photo { height:270px; }
+  .product-info { min-height:126px; padding:20px; }
+  .values { margin-top:48px; padding:38px 0; }
+  .footer-inner { padding-block:8px; }
+}
