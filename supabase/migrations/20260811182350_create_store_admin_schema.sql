@@ -8,7 +8,8 @@ create table public.categories (
 );
 
 create table public.products (
-  id uuid primary key default gen_random_uuid(), name text not null, slug text not null unique, sku text not null unique,
+  id uuid primary key default gen_random_uuid(), name text not null, slug text not null unique,
+  sku text not null unique check (sku ~ '^[A-Z0-9]+$'),
   source_group text not null default '', source_number text not null default '',
   description text not null default '', price integer not null check (price >= 0),
   stock integer not null default 0 check (stock >= 0), size text not null default '',
