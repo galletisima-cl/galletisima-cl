@@ -49,7 +49,12 @@ export default function Home() {
       <header className="header shell">
         <nav className="desktop-nav" aria-label="Navegación principal">
           <a href="#moldes">Moldes</a>
-          <a href="#categorias">Categorías</a>
+          <details className="category-menu">
+            <summary>Categorías <span>⌄</span></summary>
+            <div className="category-dropdown">
+              {categories.map(([, label]) => <a key={label} href="#categorias">{label}</a>)}
+            </div>
+          </details>
           <a href="#contacto">Contacto</a>
         </nav>
         <button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMenuOpen(!menuOpen)}>
@@ -64,7 +69,7 @@ export default function Home() {
             🛒<em>{cart}</em>
           </button>
         </div>
-        {menuOpen && <nav className="menu" aria-label="Navegación móvil"><a href="#moldes">Moldes</a><a href="#categorias">Categorías</a><a href="#contacto">Contacto</a></nav>}
+        {menuOpen && <nav className="menu" aria-label="Navegación móvil"><a href="#moldes">Moldes</a><details className="mobile-category-menu"><summary>Categorías <span>⌄</span></summary><div>{categories.map(([, label])=><a key={label} href="#categorias" onClick={()=>setMenuOpen(false)}>{label}</a>)}</div></details><a href="#contacto">Contacto</a></nav>}
       </header>
 
       <section id="inicio" className="hero">
