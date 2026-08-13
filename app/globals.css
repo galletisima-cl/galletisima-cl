@@ -323,4 +323,6 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 @media(max-width:560px){.public-header{height:78px;grid-template-columns:48px 1fr 48px}.public-header-logo img{width:min(165px,43vw)}.public-menu-button,.public-cart-button{width:43px;height:43px}.public-category-links{grid-template-columns:1fr 1fr}}
 
 /* Encabezado público siempre accesible durante el desplazamiento */
-.header,.public-header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(91,32,53,.08);backdrop-filter:blur(12px)}
+.header.shell,.public-header.shell{position:sticky;top:0;z-index:60;width:100%;max-width:none;margin-inline:0;padding-inline:max(22px,calc((100vw - 1180px)/2));background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(91,32,53,.08);backdrop-filter:blur(12px)}
+@media(min-width:1100px){.header.shell,.public-header.shell{padding-inline:max(40px,calc((100vw - 1280px)/2))}}
+@media(max-width:560px){.header.shell,.public-header.shell{padding-inline:14px}}
