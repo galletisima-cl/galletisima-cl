@@ -4,41 +4,886 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
 
-type Category = { id:string; name:string; slug:string; description:string; active:boolean };
-type Product = { id:string; category_ids:string[]; name:string; slug:string; sku:string; description:string; price:number; stock:number; size:string; image_url:string; active:boolean; featured:boolean };
-const emptyProduct = { id:"", category_ids:[] as string[], name:"", sku:"", description:"", price:0, stock:0, size:"", image_url:"", active:true, featured:false };
-const nav = ["Resumen","Pedidos","Productos","Categorías","Clientes","Configuración"].map(label=>[<AdminNavIcon key={label} name={label}/>,label] as const);
-function AdminNavIcon({name}:{name:string}){const p={fill:"none",stroke:"currentColor",strokeWidth:1.8,strokeLinecap:"round" as const,strokeLinejoin:"round" as const};if(name==="Resumen")return <svg viewBox="0 0 24 24" {...p}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>;if(name==="Pedidos")return <svg viewBox="0 0 24 24" {...p}><path d="M6 7h12l-1 14H7L6 7Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></svg>;if(name==="Productos")return <svg viewBox="0 0 24 24" {...p}><path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12v9"/></svg>;if(name==="Categorías")return <svg viewBox="0 0 24 24" {...p}><path d="M4 5.5h3M4 12h3M4 18.5h3M10 5.5h10M10 12h10M10 18.5h10"/></svg>;if(name==="Clientes")return <svg viewBox="0 0 24 24" {...p}><circle cx="9" cy="7" r="4"/><path d="M2.5 21v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 3.5 5.5V21"/></svg>;return <svg viewBox="0 0 24 24" {...p}><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.8-1L14.4 3h-4l-.4 3.1a8 8 0 0 0-1.8 1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.8 1l.4 3.1h4l.4-3.1a8 8 0 0 0 1.8-1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z"/></svg>}
-
-export default function AdminPage() {
-  const [ready,setReady]=useState(false), [signedIn,setSignedIn]=useState(false), [loading,setLoading]=useState(false);
-  const [view,setView]=useState("Resumen"), [error,setError]=useState(""), [notice,setNotice]=useState("");
-  const [categories,setCategories]=useState<Category[]>([]), [products,setProducts]=useState<Product[]>([]);
-  const [editing,setEditing]=useState<typeof emptyProduct|null>(null), [selectedImage,setSelectedImage]=useState<File|null>(null), [categoryName,setCategoryName]=useState("");
-  const [whatsappNumber,setWhatsappNumber]=useState("56975265959");
-  const supabase=useMemo(()=>createClient(),[]);
-
-  useEffect(()=>{ supabase.auth.getUser().then(({data})=>{setSignedIn(Boolean(data.user));setReady(true);if(data.user) loadCatalog();}); },[]);
-  async function loadCatalog(){const [{data:c,error:ce},{data:p,error:pe},{data:w}]=await Promise.all([supabase.from("categories").select("*").order("name"),supabase.from("products").select("*, product_categories(category_id)").order("name"),supabase.from("site_settings").select("value").eq("key","whatsapp_number").single()]);if(ce||pe)setError(ce?.message||pe?.message||"");else{setCategories(c||[]);setProducts((p||[]).map((row:any)=>({...row,category_ids:(row.product_categories||[]).map((link:any)=>link.category_id)})));if(w?.value)setWhatsappNumber(w.value);}}
-  async function login(e:FormEvent<HTMLFormElement>){e.preventDefault();setLoading(true);setError("");const form=new FormData(e.currentTarget);const {data,error}=await supabase.auth.signInWithPassword({email:String(form.get("email")),password:String(form.get("password"))});setLoading(false);if(error)return setError("Correo o contraseña incorrectos");if(data.user?.app_metadata.role!=="admin"){await supabase.auth.signOut();return setError("Esta cuenta no tiene permisos de administración");}setSignedIn(true);loadCatalog();}
-  async function logout(){await supabase.auth.signOut();setSignedIn(false);}
-  async function saveProduct(e:FormEvent<HTMLFormElement>){e.preventDefault();if(!editing)return;const sku=cleanSku(editing.sku);if(!sku)return setError("El SKU debe contener solamente letras mayúsculas y números");setLoading(true);setError("");try{let imageUrl=editing.image_url;if(selectedImage){const compressed=await compressProductImage(selectedImage);const path=`${sku}/${crypto.randomUUID()}.webp`;const {error:uploadError}=await supabase.storage.from("product-images").upload(path,compressed,{contentType:"image/webp",cacheControl:"31536000",upsert:false});if(uploadError)throw uploadError;imageUrl=supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;}const payload={name:editing.name.trim(),slug:slugify(editing.name),sku,description:editing.description,price:Number(editing.price),stock:Number(editing.stock),size:editing.size,image_url:imageUrl,active:editing.active,featured:editing.featured};const query=editing.id?supabase.from("products").update(payload).eq("id",editing.id):supabase.from("products").insert(payload);const {data,error}=await query.select("id").single();if(error)throw error;const productId=data.id;const {error:unlinkError}=await supabase.from("product_categories").delete().eq("product_id",productId);if(unlinkError)throw unlinkError;if(editing.category_ids.length){const {error:linkError}=await supabase.from("product_categories").insert(editing.category_ids.map(category_id=>({product_id:productId,category_id})));if(linkError)throw linkError;}setEditing(null);setSelectedImage(null);setNotice("Producto guardado correctamente");loadCatalog();}catch(error:any){setError(error?.code==="23505"?"Ese SKU ya está siendo utilizado":error?.message||"No fue posible guardar el producto");}finally{setLoading(false);}}
-  async function deleteProduct(id:string){if(!confirm("¿Eliminar este producto?"))return;const {error}=await supabase.from("products").delete().eq("id",id);if(error)setError(error.message);else{setNotice("Producto eliminado");loadCatalog();}}
-  async function addCategory(e:FormEvent){e.preventDefault();const name=categoryName.trim();if(!name)return;const {error}=await supabase.from("categories").insert({name,slug:slugify(name)});if(error)setError(error.message);else{setCategoryName("");setNotice("Categoría creada");loadCatalog();}}
-  async function deleteCategory(id:string){if(products.some(p=>p.category_ids.includes(id)))return setError("Mueve o elimina sus productos antes de borrar la categoría");if(!confirm("¿Eliminar esta categoría?"))return;const {error}=await supabase.from("categories").delete().eq("id",id);if(error)setError(error.message);else loadCatalog();}
-  async function saveSettings(e:FormEvent){e.preventDefault();const number=whatsappNumber.replace(/\D/g,"");if(!/^569\d{8}$/.test(number))return setError("Ingresa el número chileno con formato 569XXXXXXXX");setLoading(true);setError("");const {error}=await supabase.from("site_settings").upsert({key:"whatsapp_number",value:number,updated_at:new Date().toISOString()});setLoading(false);if(error)setError(error.message);else{setWhatsappNumber(number);setNotice("Número de WhatsApp actualizado");}}
-
-  if(!ready)return <main className="admin-login"><p>Cargando…</p></main>;
-  if(!signedIn)return <main className="admin-login"><section className="login-card"><Image className="login-logo" src="/galletisima-logo.png" alt="Galletísima" width={420} height={128} priority/><div className="login-heading"><h1>Bienvenida de vuelta</h1><p>Ingresa a tu panel de administración</p></div><form className="login-form" onSubmit={login}><label>Correo electrónico</label><input name="email" type="email" placeholder="hola@galletisima.cl" required/><div className="password-label"><label>Contraseña</label><a href="#recuperar">¿La olvidaste?</a></div><div className="password-field"><input name="password" type="password" placeholder="••••••••" required/></div>{error&&<p className="form-error">{error}</p>}<button className="login-submit" disabled={loading}>{loading?"Ingresando…":"Ingresar al panel"}<span>→</span></button></form></section></main>;
-
-  return <main className="admin-shell"><aside className="admin-sidebar"><Image src="/galletisima-logo.png" alt="Galletísima" width={190} height={58}/><nav>{nav.map(([icon,label])=><button key={label} className={view===label?"active":""} onClick={()=>setView(label)}><span>{icon}</span>{label}</button>)}</nav><div className="sidebar-user"><span>AD</span><div><strong>Administración</strong><small>Supabase Auth</small></div><button onClick={logout}>↪</button></div></aside><section className="admin-content"><header className="admin-topbar"><div><p>Panel de administración</p><h1>{view} <span>♡</span></h1></div><div className="top-actions"><button className="new-product" onClick={()=>{setSelectedImage(null);setEditing({...emptyProduct});setView("Productos")}}>＋ Nuevo producto</button></div></header>{error&&<div className="admin-alert error">{error}<button onClick={()=>setError("")}>×</button></div>}{notice&&<div className="admin-alert">{notice}<button onClick={()=>setNotice("")}>×</button></div>}{view==="Resumen"&&<Dashboard products={products} categories={categories}/>} {view==="Productos"&&<Products products={products} categories={categories} edit={p=>{setSelectedImage(null);setEditing({...p})}} remove={deleteProduct}/>} {view==="Categorías"&&<Categories categories={categories} products={products} name={categoryName} setName={setCategoryName} add={addCategory} remove={deleteCategory}/>} {view==="Configuración"&&<Settings whatsappNumber={whatsappNumber} setWhatsappNumber={setWhatsappNumber} save={saveSettings} loading={loading}/>} {!["Resumen","Productos","Categorías","Configuración"].includes(view)&&<section className="panel empty-state"><h2>{view}</h2><p>La estructura de datos ya está preparada. Este módulo se conectará en la siguiente iteración.</p></section>}</section>{editing&&<ProductModal product={editing} setProduct={setEditing} categories={categories} save={saveProduct} close={()=>{setSelectedImage(null);setEditing(null)}} loading={loading} selectedImage={selectedImage} setSelectedImage={setSelectedImage}/>}</main>;
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  active: boolean;
+};
+type Product = {
+  id: string;
+  category_ids: string[];
+  name: string;
+  slug: string;
+  sku: string;
+  description: string;
+  price: number;
+  stock: number;
+  size: string;
+  image_url: string;
+  active: boolean;
+  featured: boolean;
+};
+const emptyProduct = {
+  id: "",
+  category_ids: [] as string[],
+  name: "",
+  sku: "",
+  description: "",
+  price: 0,
+  stock: 0,
+  size: "",
+  image_url: "",
+  active: true,
+  featured: false,
+};
+const nav = [
+  "Resumen",
+  "Pedidos",
+  "Productos",
+  "Categorías",
+  "Clientes",
+  "Configuración",
+].map((label) => [<AdminNavIcon key={label} name={label} />, label] as const);
+function AdminNavIcon({ name }: { name: string }) {
+  const p = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  if (name === "Resumen")
+    return (
+      <svg viewBox="0 0 24 24" {...p}>
+        <rect x="3" y="3" width="7" height="7" rx="1.5" />
+        <rect x="14" y="3" width="7" height="7" rx="1.5" />
+        <rect x="3" y="14" width="7" height="7" rx="1.5" />
+        <rect x="14" y="14" width="7" height="7" rx="1.5" />
+      </svg>
+    );
+  if (name === "Pedidos")
+    return (
+      <svg viewBox="0 0 24 24" {...p}>
+        <path d="M6 7h12l-1 14H7L6 7Z" />
+        <path d="M9 9V6a3 3 0 0 1 6 0v3" />
+      </svg>
+    );
+  if (name === "Productos")
+    return (
+      <svg viewBox="0 0 24 24" {...p}>
+        <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+        <path d="m4.4 7.7 7.6 4.4 7.6-4.4M12 12v9" />
+      </svg>
+    );
+  if (name === "Categorías")
+    return (
+      <svg viewBox="0 0 24 24" {...p}>
+        <path d="M4 5.5h3M4 12h3M4 18.5h3M10 5.5h10M10 12h10M10 18.5h10" />
+      </svg>
+    );
+  if (name === "Clientes")
+    return (
+      <svg viewBox="0 0 24 24" {...p}>
+        <circle cx="9" cy="7" r="4" />
+        <path d="M2.5 21v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 3.5 5.5V21" />
+      </svg>
+    );
+  return (
+    <svg viewBox="0 0 24 24" {...p}>
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.8-1L14.4 3h-4l-.4 3.1a8 8 0 0 0-1.8 1l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 1.8 1l.4 3.1h4l.4-3.1a8 8 0 0 0 1.8-1l2.4 1 2-3.4-2-1.5a7 7 0 0 0 .1-1Z" />
+    </svg>
+  );
 }
 
-function Dashboard({products,categories}:{products:Product[];categories:Category[]}){const low=products.filter(p=>p.stock<=5);return <><div className="metric-grid">{[["◇","Productos activos",products.filter(p=>p.active).length,"Catálogo publicado","pink"],["□","Stock total",products.reduce((a,p)=>a+p.stock,0),"unidades disponibles","peach"],["♧","Categorías",categories.length,"colecciones creadas","lilac"],["!","Stock bajo",low.length,"requieren reposición","mint"]].map(([i,l,v,c,t])=><article key={String(l)}><span className={`metric-icon ${t}`}>{i}</span><div><p>{l}</p><h2>{v}</h2><small>{c}</small></div></article>)}</div><section className="panel orders-panel"><div className="panel-title"><div><h2>Productos con stock bajo</h2><p>5 unidades o menos</p></div></div>{low.length?low.map(p=><div className="stock-item" key={p.id}><span className="stock-photo"/><div><strong>{p.name}</strong><small>{p.stock} unidades</small></div></div>):<p className="empty-copy">Todo el inventario está saludable.</p>}</section></>}
-function Products({products,categories,edit,remove}:{products:Product[];categories:Category[];edit:(p:Product)=>void;remove:(id:string)=>void}){return <section className="panel orders-panel"><div className="panel-title"><div><h2>Catálogo</h2><p>{products.length} productos registrados</p></div></div><div className="orders-table"><div className="order-row product-row order-head"><span>Producto</span><span>SKU</span><span>Categorías</span><span>Precio</span><span>Stock</span><span/></div>{products.map(p=><div className="order-row product-row" key={p.id}><strong>{p.name}</strong><span>{p.sku}</span><span className="category-cell">{p.category_ids.map(id=>categories.find(c=>c.id===id)?.name).filter(Boolean).join(", ")||"Sin categoría"}</span><strong>{p.price?`$${p.price.toLocaleString("es-CL")}`:"Pendiente"}</strong><span>{p.stock}</span><span className="row-actions"><button onClick={()=>edit(p)}>Editar</button><button onClick={()=>remove(p.id)}>Eliminar</button></span></div>)}</div></section>}
-function Categories({categories,products,name,setName,add,remove}:{categories:Category[];products:Product[];name:string;setName:(v:string)=>void;add:(e:FormEvent)=>void;remove:(id:string)=>void}){return <section className="panel category-panel"><form className="inline-form" onSubmit={add}><input value={name} onChange={e=>setName(e.target.value)} placeholder="Nueva categoría" required/><button>＋ Crear categoría</button></form><div className="category-admin-grid">{categories.map(c=><article key={c.id}><div><strong>{c.name}</strong><small>{products.filter(p=>p.category_ids.includes(c.id)).length} productos</small></div><button onClick={()=>remove(c.id)}>Eliminar</button></article>)}</div></section>}
-function Settings({whatsappNumber,setWhatsappNumber,save,loading}:{whatsappNumber:string;setWhatsappNumber:(v:string)=>void;save:(e:FormEvent)=>void;loading:boolean}){return <section className="panel settings-panel"><div className="panel-title"><div><h2>Contacto por WhatsApp</h2><p>Este número se utiliza en el botón flotante del sitio público.</p></div></div><form className="settings-form" onSubmit={save}><label>Número de WhatsApp<span>Formato internacional, sin +, espacios ni guiones.</span><input inputMode="numeric" value={whatsappNumber} onChange={e=>setWhatsappNumber(e.target.value.replace(/\D/g,""))} placeholder="56975265959" maxLength={11} required/></label><a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer">Probar enlace</a><button disabled={loading}>{loading?"Guardando…":"Guardar cambios"}</button></form></section>}
-function ProductModal({product,setProduct,categories,save,close,loading,selectedImage,setSelectedImage}:{product:typeof emptyProduct;setProduct:(p:typeof emptyProduct)=>void;categories:Category[];save:(e:FormEvent<HTMLFormElement>)=>void;close:()=>void;loading:boolean;selectedImage:File|null;setSelectedImage:(file:File|null)=>void}){const field=(key:keyof typeof product)=>(e:React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement>)=>setProduct({...product,[key]:e.target.type==="number"?Number(e.target.value):e.target.value});const toggle=(id:string)=>setProduct({...product,category_ids:product.category_ids.includes(id)?product.category_ids.filter(x=>x!==id):[...product.category_ids,id]});const preview=selectedImage?URL.createObjectURL(selectedImage):product.image_url;useEffect(()=>()=>{if(selectedImage&&preview)URL.revokeObjectURL(preview)},[selectedImage,preview]);return <div className="modal-backdrop"><form className="product-modal" onSubmit={save}><div className="modal-title"><div><h2>{product.id?"Editar producto":"Nuevo producto"}</h2><p>Completa la información del catálogo.</p></div><button type="button" onClick={close}>×</button></div><div className="modal-grid"><label>Nombre<input value={product.name} onChange={field("name")} required/></label><label>SKU<input value={product.sku} onChange={e=>setProduct({...product,sku:cleanSku(e.target.value)})} pattern="[A-Z0-9]+" title="Solo letras mayúsculas y números" placeholder="GAL0001" required/></label><label>Tamaño<input value={product.size} onChange={field("size")}/></label><label>Precio<input type="number" min="0" value={product.price} onChange={field("price")} required/></label><label>Stock<input type="number" min="0" value={product.stock} onChange={field("stock")} required/></label><label className="wide">Descripción<textarea value={product.description} onChange={field("description")}/></label><label className="wide image-picker"><span>Foto del producto</span><input type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setSelectedImage(e.target.files?.[0]||null)}/><small>Se optimiza automáticamente a WebP, máximo 1600 px y alta calidad.</small>{preview&&<img src={preview} alt="Vista previa del producto"/>}</label><fieldset className="wide category-picker"><legend>Categorías</legend>{categories.map(c=><label key={c.id}><input type="checkbox" checked={product.category_ids.includes(c.id)} onChange={()=>toggle(c.id)}/>{c.name}</label>)}</fieldset></div><div className="modal-actions"><button type="button" onClick={close}>Cancelar</button><button className="save" disabled={loading}>{loading?"Comprimiendo y guardando…":"Guardar producto"}</button></div></form></div>}
-async function compressProductImage(file:File){if(!file.type.startsWith("image/"))throw new Error("Selecciona una imagen JPG, PNG o WebP");if(file.size>20*1024*1024)throw new Error("La foto original no puede superar 20 MB");const bitmap=await createImageBitmap(file);const maxSide=1600;const scale=Math.min(1,maxSide/Math.max(bitmap.width,bitmap.height));const width=Math.max(1,Math.round(bitmap.width*scale));const height=Math.max(1,Math.round(bitmap.height*scale));const canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const context=canvas.getContext("2d",{alpha:true});if(!context){bitmap.close();throw new Error("No fue posible procesar la imagen");}context.imageSmoothingEnabled=true;context.imageSmoothingQuality="high";context.drawImage(bitmap,0,0,width,height);bitmap.close();const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,"image/webp",.88));if(!blob)throw new Error("No fue posible comprimir la imagen");return blob;}
-function slugify(v:string){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,"");}
-function cleanSku(v:string){return v.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toUpperCase().replace(/[^A-Z0-9]/g,"");}
+export default function AdminPage() {
+  const [ready, setReady] = useState(false),
+    [signedIn, setSignedIn] = useState(false),
+    [loading, setLoading] = useState(false);
+  const [view, setView] = useState("Resumen"),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState("");
+  const [categories, setCategories] = useState<Category[]>([]),
+    [products, setProducts] = useState<Product[]>([]);
+  const [editing, setEditing] = useState<typeof emptyProduct | null>(null),
+    [selectedImage, setSelectedImage] = useState<File | null>(null),
+    [categoryName, setCategoryName] = useState("");
+  const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const supabase = useMemo(() => createClient(), []);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setSignedIn(Boolean(data.user));
+      setReady(true);
+      if (data.user) loadCatalog();
+    });
+  }, []);
+  async function loadCatalog() {
+    const [{ data: c, error: ce }, { data: p, error: pe }, { data: w }] =
+      await Promise.all([
+        supabase.from("categories").select("*").order("name"),
+        supabase
+          .from("products")
+          .select("*, product_categories(category_id)")
+          .order("name"),
+        supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "whatsapp_number")
+          .single(),
+      ]);
+    if (ce || pe) setError(ce?.message || pe?.message || "");
+    else {
+      setCategories(c || []);
+      setProducts(
+        (p || []).map((row: any) => ({
+          ...row,
+          category_ids: (row.product_categories || []).map(
+            (link: any) => link.category_id,
+          ),
+        })),
+      );
+      if (w?.value) setWhatsappNumber(w.value);
+    }
+  }
+  async function login(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    const form = new FormData(e.currentTarget);
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: String(form.get("email")),
+      password: String(form.get("password")),
+    });
+    setLoading(false);
+    if (error) return setError("Correo o contraseña incorrectos");
+    if (data.user?.app_metadata.role !== "admin") {
+      await supabase.auth.signOut();
+      return setError("Esta cuenta no tiene permisos de administración");
+    }
+    setSignedIn(true);
+    loadCatalog();
+  }
+  async function logout() {
+    await supabase.auth.signOut();
+    setSignedIn(false);
+  }
+  async function saveProduct(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editing) return;
+    const sku = cleanSku(editing.sku);
+    if (!sku)
+      return setError(
+        "El SKU debe contener solamente letras mayúsculas y números",
+      );
+    setLoading(true);
+    setError("");
+    try {
+      let imageUrl = editing.image_url;
+      if (selectedImage) {
+        const compressed = await compressProductImage(selectedImage);
+        const path = `${sku}/${crypto.randomUUID()}.webp`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(path, compressed, {
+            contentType: "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+        imageUrl = supabase.storage.from("product-images").getPublicUrl(path)
+          .data.publicUrl;
+      }
+      const payload = {
+        name: editing.name.trim(),
+        slug: slugify(editing.name),
+        sku,
+        description: editing.description,
+        price: Number(editing.price),
+        stock: Number(editing.stock),
+        size: editing.size,
+        image_url: imageUrl,
+        active: editing.active,
+        featured: editing.featured,
+      };
+      const query = editing.id
+        ? supabase.from("products").update(payload).eq("id", editing.id)
+        : supabase.from("products").insert(payload);
+      const { data, error } = await query.select("id").single();
+      if (error) throw error;
+      const productId = data.id;
+      const { error: unlinkError } = await supabase
+        .from("product_categories")
+        .delete()
+        .eq("product_id", productId);
+      if (unlinkError) throw unlinkError;
+      if (editing.category_ids.length) {
+        const { error: linkError } = await supabase
+          .from("product_categories")
+          .insert(
+            editing.category_ids.map((category_id) => ({
+              product_id: productId,
+              category_id,
+            })),
+          );
+        if (linkError) throw linkError;
+      }
+      setEditing(null);
+      setSelectedImage(null);
+      setNotice("Producto guardado correctamente");
+      loadCatalog();
+    } catch (error: any) {
+      setError(
+        error?.code === "23505"
+          ? "Ese SKU ya está siendo utilizado"
+          : error?.message || "No fue posible guardar el producto",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+  async function deleteProduct(id: string) {
+    if (!confirm("¿Eliminar este producto?")) return;
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (error) setError(error.message);
+    else {
+      setNotice("Producto eliminado");
+      loadCatalog();
+    }
+  }
+  async function addCategory(e: FormEvent) {
+    e.preventDefault();
+    const name = categoryName.trim();
+    if (!name) return;
+    const { error } = await supabase
+      .from("categories")
+      .insert({ name, slug: slugify(name) });
+    if (error) setError(error.message);
+    else {
+      setCategoryName("");
+      setNotice("Categoría creada");
+      loadCatalog();
+    }
+  }
+  async function deleteCategory(id: string) {
+    if (products.some((p) => p.category_ids.includes(id)))
+      return setError(
+        "Mueve o elimina sus productos antes de borrar la categoría",
+      );
+    if (!confirm("¿Eliminar esta categoría?")) return;
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (error) setError(error.message);
+    else loadCatalog();
+  }
+  async function saveSettings(e: FormEvent) {
+    e.preventDefault();
+    const number = whatsappNumber.replace(/\D/g, "");
+    if (!/^569\d{8}$/.test(number))
+      return setError("Ingresa el número chileno con formato 569XXXXXXXX");
+    setLoading(true);
+    setError("");
+    const { error } = await supabase
+      .from("site_settings")
+      .upsert({
+        key: "whatsapp_number",
+        value: number,
+        updated_at: new Date().toISOString(),
+      });
+    setLoading(false);
+    if (error) setError(error.message);
+    else {
+      setWhatsappNumber(number);
+      setNotice("Número de WhatsApp actualizado");
+    }
+  }
+
+  if (!ready)
+    return (
+      <main className="admin-login">
+        <p>Cargando…</p>
+      </main>
+    );
+  if (!signedIn)
+    return (
+      <main className="admin-login">
+        <section className="login-card">
+          <Image
+            className="login-logo"
+            src="/galletisima-logo.png"
+            alt="Galletísima"
+            width={420}
+            height={128}
+            priority
+          />
+          <div className="login-heading">
+            <h1>Bienvenida de vuelta</h1>
+            <p>Ingresa a tu panel de administración</p>
+          </div>
+          <form className="login-form" onSubmit={login}>
+            <label>Correo electrónico</label>
+            <input
+              name="email"
+              type="email"
+              placeholder="hola@galletisima.cl"
+              required
+            />
+            <div className="password-label">
+              <label>Contraseña</label>
+              <a href="#recuperar">¿La olvidaste?</a>
+            </div>
+            <div className="password-field">
+              <input
+                name="password"
+                type="password"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            {error && <p className="form-error">{error}</p>}
+            <button className="login-submit" disabled={loading}>
+              {loading ? "Ingresando…" : "Ingresar al panel"}
+              <span>→</span>
+            </button>
+          </form>
+        </section>
+      </main>
+    );
+
+  const quickActions = (
+    <div className="admin-quick-actions">
+      <a href="/" target="_blank" rel="noreferrer">
+        ⌂ <span>Ver tienda</span>
+      </a>
+      <button onClick={logout}>
+        ↪ <span>Cerrar sesión</span>
+      </button>
+    </div>
+  );
+
+  return (
+    <main className="admin-shell">
+      <aside className="admin-sidebar">
+        <Image
+          src="/galletisima-logo.png"
+          alt="Galletísima"
+          width={190}
+          height={58}
+        />
+        <nav>
+          {nav.map(([icon, label]) => (
+            <button
+              key={label}
+              className={view === label ? "active" : ""}
+              onClick={() => setView(label)}
+            >
+              <span>{icon}</span>
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-user">
+          <span>AD</span>
+          <div>
+            <strong>Administración</strong>
+            <small>Supabase Auth</small>
+          </div>
+          <button onClick={logout}>↪</button>
+        </div>
+      </aside>
+      <section className="admin-content">
+        <header className="admin-topbar">
+          <div>
+            <p>Panel de administración</p>
+            <h1>
+              {view} <span>♡</span>
+            </h1>
+          </div>
+          <div className="top-actions">
+            {quickActions}
+            <button
+              className="new-product"
+              onClick={() => {
+                setSelectedImage(null);
+                setEditing({ ...emptyProduct });
+                setView("Productos");
+              }}
+            >
+              ＋ Nuevo producto
+            </button>
+          </div>
+        </header>
+        {error && (
+          <div className="admin-alert error">
+            {error}
+            <button onClick={() => setError("")}>×</button>
+          </div>
+        )}
+        {notice && (
+          <div className="admin-alert">
+            {notice}
+            <button onClick={() => setNotice("")}>×</button>
+          </div>
+        )}
+        {view === "Resumen" && (
+          <Dashboard products={products} categories={categories} />
+        )}{" "}
+        {view === "Productos" && (
+          <Products
+            products={products}
+            categories={categories}
+            edit={(p) => {
+              setSelectedImage(null);
+              setEditing({ ...p });
+            }}
+            remove={deleteProduct}
+          />
+        )}{" "}
+        {view === "Categorías" && (
+          <Categories
+            categories={categories}
+            products={products}
+            name={categoryName}
+            setName={setCategoryName}
+            add={addCategory}
+            remove={deleteCategory}
+          />
+        )}{" "}
+        {view === "Configuración" && (
+          <Settings
+            whatsappNumber={whatsappNumber}
+            setWhatsappNumber={setWhatsappNumber}
+            save={saveSettings}
+            loading={loading}
+          />
+        )}{" "}
+        {!["Resumen", "Productos", "Categorías", "Configuración"].includes(
+          view,
+        ) && (
+          <section className="panel empty-state">
+            <h2>{view}</h2>
+            <p>
+              La estructura de datos ya está preparada. Este módulo se conectará
+              en la siguiente iteración.
+            </p>
+          </section>
+        )}
+      </section>
+      {editing && (
+        <ProductModal
+          product={editing}
+          setProduct={setEditing}
+          categories={categories}
+          save={saveProduct}
+          close={() => {
+            setSelectedImage(null);
+            setEditing(null);
+          }}
+          loading={loading}
+          selectedImage={selectedImage}
+          setSelectedImage={setSelectedImage}
+        />
+      )}
+    </main>
+  );
+}
+
+function Dashboard({
+  products,
+  categories,
+}: {
+  products: Product[];
+  categories: Category[];
+}) {
+  const low = products.filter((p) => p.stock <= 5);
+  return (
+    <>
+      <div className="metric-grid">
+        {[
+          [
+            "◇",
+            "Productos activos",
+            products.filter((p) => p.active).length,
+            "Catálogo publicado",
+            "pink",
+          ],
+          [
+            "□",
+            "Stock total",
+            products.reduce((a, p) => a + p.stock, 0),
+            "unidades disponibles",
+            "peach",
+          ],
+          [
+            "♧",
+            "Categorías",
+            categories.length,
+            "colecciones creadas",
+            "lilac",
+          ],
+          ["!", "Stock bajo", low.length, "requieren reposición", "mint"],
+        ].map(([i, l, v, c, t]) => (
+          <article key={String(l)}>
+            <span className={`metric-icon ${t}`}>{i}</span>
+            <div>
+              <p>{l}</p>
+              <h2>{v}</h2>
+              <small>{c}</small>
+            </div>
+          </article>
+        ))}
+      </div>
+      <section className="panel orders-panel">
+        <div className="panel-title">
+          <div>
+            <h2>Productos con stock bajo</h2>
+            <p>5 unidades o menos</p>
+          </div>
+        </div>
+        {low.length ? (
+          low.map((p) => (
+            <div className="stock-item" key={p.id}>
+              <span className="stock-photo" />
+              <div>
+                <strong>{p.name}</strong>
+                <small>{p.stock} unidades</small>
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="empty-copy">Todo el inventario está saludable.</p>
+        )}
+      </section>
+    </>
+  );
+}
+function Products({
+  products,
+  categories,
+  edit,
+  remove,
+}: {
+  products: Product[];
+  categories: Category[];
+  edit: (p: Product) => void;
+  remove: (id: string) => void;
+}) {
+  return (
+    <section className="panel orders-panel">
+      <div className="panel-title">
+        <div>
+          <h2>Catálogo</h2>
+          <p>{products.length} productos registrados</p>
+        </div>
+      </div>
+      <div className="orders-table">
+        <div className="order-row product-row order-head">
+          <span>Producto</span>
+          <span>SKU</span>
+          <span>Categorías</span>
+          <span>Precio</span>
+          <span>Stock</span>
+          <span />
+        </div>
+        {products.map((p) => (
+          <div className="order-row product-row" key={p.id}>
+            <strong>{p.name}</strong>
+            <span>{p.sku}</span>
+            <span className="category-cell">
+              {p.category_ids
+                .map((id) => categories.find((c) => c.id === id)?.name)
+                .filter(Boolean)
+                .join(", ") || "Sin categoría"}
+            </span>
+            <strong>
+              {p.price ? `$${p.price.toLocaleString("es-CL")}` : "Pendiente"}
+            </strong>
+            <span>{p.stock}</span>
+            <span className="row-actions">
+              <button onClick={() => edit(p)}>Editar</button>
+              <button onClick={() => remove(p.id)}>Eliminar</button>
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+function Categories({
+  categories,
+  products,
+  name,
+  setName,
+  add,
+  remove,
+}: {
+  categories: Category[];
+  products: Product[];
+  name: string;
+  setName: (v: string) => void;
+  add: (e: FormEvent) => void;
+  remove: (id: string) => void;
+}) {
+  return (
+    <section className="panel category-panel">
+      <form className="inline-form" onSubmit={add}>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Nueva categoría"
+          required
+        />
+        <button>＋ Crear categoría</button>
+      </form>
+      <div className="category-admin-grid">
+        {categories.map((c) => (
+          <article key={c.id}>
+            <div>
+              <strong>{c.name}</strong>
+              <small>
+                {products.filter((p) => p.category_ids.includes(c.id)).length}{" "}
+                productos
+              </small>
+            </div>
+            <button onClick={() => remove(c.id)}>Eliminar</button>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+function Settings({
+  whatsappNumber,
+  setWhatsappNumber,
+  save,
+  loading,
+}: {
+  whatsappNumber: string;
+  setWhatsappNumber: (v: string) => void;
+  save: (e: FormEvent) => void;
+  loading: boolean;
+}) {
+  return (
+    <section className="panel settings-panel">
+      <div className="panel-title">
+        <div>
+          <h2>Contacto por WhatsApp</h2>
+          <p>Este número se utiliza en el botón flotante del sitio público.</p>
+        </div>
+      </div>
+      <form className="settings-form" onSubmit={save}>
+        <label>
+          Número de WhatsApp
+          <span>Formato internacional, sin +, espacios ni guiones.</span>
+          <input
+            inputMode="numeric"
+            value={whatsappNumber}
+            onChange={(e) =>
+              setWhatsappNumber(e.target.value.replace(/\D/g, ""))
+            }
+            placeholder="56975265959"
+            maxLength={11}
+            required
+          />
+        </label>
+        <a
+          href={`https://wa.me/${whatsappNumber}`}
+          target="_blank"
+          rel="noreferrer"
+        >
+          Probar enlace
+        </a>
+        <button disabled={loading}>
+          {loading ? "Guardando…" : "Guardar cambios"}
+        </button>
+      </form>
+    </section>
+  );
+}
+function ProductModal({
+  product,
+  setProduct,
+  categories,
+  save,
+  close,
+  loading,
+  selectedImage,
+  setSelectedImage,
+}: {
+  product: typeof emptyProduct;
+  setProduct: (p: typeof emptyProduct) => void;
+  categories: Category[];
+  save: (e: FormEvent<HTMLFormElement>) => void;
+  close: () => void;
+  loading: boolean;
+  selectedImage: File | null;
+  setSelectedImage: (file: File | null) => void;
+}) {
+  const field =
+    (key: keyof typeof product) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setProduct({
+        ...product,
+        [key]:
+          e.target.type === "number" ? Number(e.target.value) : e.target.value,
+      });
+  const toggle = (id: string) =>
+    setProduct({
+      ...product,
+      category_ids: product.category_ids.includes(id)
+        ? product.category_ids.filter((x) => x !== id)
+        : [...product.category_ids, id],
+    });
+  const preview = selectedImage
+    ? URL.createObjectURL(selectedImage)
+    : product.image_url;
+  useEffect(
+    () => () => {
+      if (selectedImage && preview) URL.revokeObjectURL(preview);
+    },
+    [selectedImage, preview],
+  );
+  return (
+    <div className="modal-backdrop">
+      <form className="product-modal" onSubmit={save}>
+        <div className="modal-title">
+          <div>
+            <h2>{product.id ? "Editar producto" : "Nuevo producto"}</h2>
+            <p>Completa la información del catálogo.</p>
+          </div>
+          <button type="button" onClick={close}>
+            ×
+          </button>
+        </div>
+        <div className="modal-grid">
+          <label>
+            Nombre
+            <input value={product.name} onChange={field("name")} required />
+          </label>
+          <label>
+            SKU
+            <input
+              value={product.sku}
+              onChange={(e) =>
+                setProduct({ ...product, sku: cleanSku(e.target.value) })
+              }
+              pattern="[A-Z0-9]+"
+              title="Solo letras mayúsculas y números"
+              placeholder="GAL0001"
+              required
+            />
+          </label>
+          <label>
+            Tamaño
+            <input value={product.size} onChange={field("size")} />
+          </label>
+          <label>
+            Precio
+            <input
+              type="number"
+              min="0"
+              value={product.price}
+              onChange={field("price")}
+              required
+            />
+          </label>
+          <label>
+            Stock
+            <input
+              type="number"
+              min="0"
+              value={product.stock}
+              onChange={field("stock")}
+              required
+            />
+          </label>
+          <label className="wide">
+            Descripción
+            <textarea
+              value={product.description}
+              onChange={field("description")}
+            />
+          </label>
+          <label className="wide image-picker">
+            <span>Foto del producto</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={(e) => setSelectedImage(e.target.files?.[0] || null)}
+            />
+            <small>
+              Se optimiza automáticamente a WebP, máximo 1600 px y alta calidad.
+            </small>
+            {preview && <img src={preview} alt="Vista previa del producto" />}
+          </label>
+          <fieldset className="wide category-picker">
+            <legend>Categorías</legend>
+            {categories.map((c) => (
+              <label key={c.id}>
+                <input
+                  type="checkbox"
+                  checked={product.category_ids.includes(c.id)}
+                  onChange={() => toggle(c.id)}
+                />
+                {c.name}
+              </label>
+            ))}
+          </fieldset>
+        </div>
+        <div className="modal-actions">
+          <button type="button" onClick={close}>
+            Cancelar
+          </button>
+          <button className="save" disabled={loading}>
+            {loading ? "Comprimiendo y guardando…" : "Guardar producto"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+async function compressProductImage(file: File) {
+  if (!file.type.startsWith("image/"))
+    throw new Error("Selecciona una imagen JPG, PNG o WebP");
+  if (file.size > 20 * 1024 * 1024)
+    throw new Error("La foto original no puede superar 20 MB");
+  const bitmap = await createImageBitmap(file);
+  const maxSide = 1600;
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) {
+    bitmap.close();
+    throw new Error("No fue posible procesar la imagen");
+  }
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/webp", 0.88),
+  );
+  if (!blob) throw new Error("No fue posible comprimir la imagen");
+  return blob;
+}
+function slugify(v: string) {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+function cleanSku(v: string) {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
