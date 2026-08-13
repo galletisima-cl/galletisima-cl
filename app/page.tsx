@@ -1,14 +1,44 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 
-const categories = [
-  ["🎂", "Cumpleaños"], ["🧸", "Infantil"], ["🐾", "Animales"],
-  ["✿", "Flores"], ["♡", "Fechas especiales"], ["🎄", "Navidad"],
-  ["♟", "Profesiones"], ["•••", "Más"],
+type Category = { id: string; name: string; slug: string };
+
+const fallbackCategories: Category[] = [
+  { id: "navidad", name: "Todo Navidad", slug: "todo-navidad" },
+  { id: "baby-shower", name: "Todo Baby Shower", slug: "todo-baby-shower" },
+  { id: "halloween", name: "Todo Halloween", slug: "todo-halloween" },
+  { id: "stitch", name: "Todo Stitch", slug: "todo-stitch" },
+  { id: "pokemon", name: "Todo Pokemon", slug: "todo-pokemon" },
+  { id: "futbol", name: "Todo Futbol", slug: "todo-futbol" },
 ];
+
+const groupMatchers = {
+  celebrations: ["navidad", "baby-shower", "halloween", "ninos", "papa", "mama", "celebracion", "fiestas-patrias", "bebes"],
+  characters: ["toy", "snoopy", "stitch", "pokemon", "bluey", "gabby", "marvel", "pooh", "disney", "bob-esponja", "pawpatrol", "spiderman", "lilo", "netflix"],
+};
+
+function displayCategory(name: string) {
+  return name.replace(/^Todo\s+/i, "").replace(/Pokemon/i, "Pokémon").replace(/Futbol/i, "Fútbol").replace(/Superheroes/i, "Superhéroes").replace(/ToyStory/i, "Toy Story").replace(/Winie The Pooh/i, "Winnie the Pooh").replace(/FoodHall/i, "Food Hall").replace(/LiLo-Stitch/i, "Lilo & Stitch");
+}
+
+function categoryHref(slug: string) {
+  return `/?categoria=${encodeURIComponent(slug)}#moldes`;
+}
+
+function groupCategories(categories: Category[]) {
+  const celebrations: Category[] = [];
+  const characters: Category[] = [];
+  const themes: Category[] = [];
+  categories.forEach((category) => {
+    if (groupMatchers.celebrations.some((term) => category.slug.includes(term))) celebrations.push(category);
+    else if (groupMatchers.characters.some((term) => category.slug.includes(term))) characters.push(category);
+    else themes.push(category);
+  });
+  return { celebrations, characters, themes };
+}
 
 type PublicProduct = {
   id: string;
@@ -17,6 +47,7 @@ type PublicProduct = {
   price: number;
   image_url: string;
   featured: boolean;
+  product_categories?: { category_id: string }[];
   pos?: string;
 };
 
@@ -39,6 +70,16 @@ function getSizes(value: string) {
   return value.split(/[,;\n]+/).map((size) => size.trim()).filter(Boolean);
 }
 
+function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu, alignRight = false }: { label: string; menuKey: string; categories: Category[]; openMenu: string | null; setOpenMenu: (key: string | null) => void; alignRight?: boolean }) {
+  const open = openMenu === menuKey;
+  return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" aria-expanded={open} aria-controls={`mega-${menuKey}`} onClick={() => setOpenMenu(open ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{open && <div className="mega-panel" id={`mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></a>)}</div></div>}</div>;
+}
+
+function MobileCategoryGroup({ label, groupKey, categories, openGroup, setOpenGroup, close }: { label: string; groupKey: string; categories: Category[]; openGroup: string | null; setOpenGroup: (key: string | null) => void; close: () => void }) {
+  const open = openGroup === groupKey;
+  return <section className={`drawer-group ${open ? "open" : ""}`}><button aria-expanded={open} aria-controls={`drawer-${groupKey}`} onClick={() => setOpenGroup(open ? null : groupKey)}><span>{label}</span><i aria-hidden="true">⌄</i></button><div id={`drawer-${groupKey}`} hidden={!open}>{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={close}>{displayCategory(category.name)}</a>)}</div></section>;
+}
+
 export default function Home() {
   const [cart, setCart] = useState(2);
   const [liked, setLiked] = useState<string[]>([]);
@@ -46,23 +87,67 @@ export default function Home() {
   const [notice, setNotice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
   const [catalogProducts, setCatalogProducts] = useState<PublicProduct[]>(fallbackProducts);
+  const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
+  const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
+  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>("celebrations");
+  const navRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const supabase = createClient();
     Promise.all([
       supabase.from("site_settings").select("value").eq("key", "whatsapp_number").single(),
+      supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
       supabase
         .from("products")
-        .select("id,name,size,price,image_url,featured")
+        .select("id,name,size,price,image_url,featured,product_categories(category_id)")
         .eq("active", true)
         .order("featured", { ascending: false })
-        .order("name")
-        .limit(12),
-    ]).then(([settingsResult, productsResult]) => {
+        .order("name"),
+    ]).then(([settingsResult, categoriesResult, productsResult]) => {
       if (settingsResult.data?.value) setWhatsappNumber(settingsResult.data.value);
-      if (productsResult.data?.length) setCatalogProducts(productsResult.data);
+      if (categoriesResult.data?.length) setCatalogCategories(categoriesResult.data);
+      if (productsResult.data?.length) {
+        const selectedSlug = new URLSearchParams(window.location.search).get("categoria");
+        const selectedCategory = categoriesResult.data?.find((category) => category.slug === selectedSlug);
+        const visibleProducts = selectedCategory
+          ? productsResult.data.filter((product) => product.product_categories?.some((link) => link.category_id === selectedCategory.id))
+          : productsResult.data;
+        setCatalogProducts(visibleProducts.slice(0, selectedCategory ? 60 : 12));
+      }
     });
   }, []);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    const closeDesktopMenu = (event: MouseEvent) => {
+      if (!navRef.current?.contains(event.target as Node)) setOpenDesktopMenu(null);
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpenDesktopMenu(null);
+    };
+    document.addEventListener("pointerdown", closeDesktopMenu);
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeDesktopMenu);
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, []);
+
+  const categoryGroups = groupCategories(catalogCategories);
+  const closeMobileMenu = () => setMenuOpen(false);
 
   const add = (name: string) => {
     setCart((value) => value + 1);
@@ -79,18 +164,17 @@ export default function Home() {
       </div>
 
       <header className="header shell">
-        <nav className="desktop-nav" aria-label="Navegación principal">
-          <a href="#moldes">Moldes</a>
-          <details className="category-menu">
-            <summary>Categorías <span>⌄</span></summary>
-            <div className="category-dropdown">
-              {categories.map(([, label]) => <a key={label} href="#categorias">{label}</a>)}
-            </div>
-          </details>
-          <a href="/contacto">Contacto</a>
+        <nav className="desktop-nav" aria-label="Navegación principal" ref={navRef}>
+          <a className="nav-pill" href="#inicio">Inicio</a>
+          <DesktopCategoryMenu label="Celebraciones" menuKey="celebrations" categories={categoryGroups.celebrations} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} />
+          <DesktopCategoryMenu label="Personajes" menuKey="characters" categories={categoryGroups.characters} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} />
+          <DesktopCategoryMenu label="Temáticas" menuKey="themes" categories={categoryGroups.themes} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight />
+          <a className="nav-pill" href="#moldes">Altares</a>
+          <a className="nav-pill" href="#moldes">Herramientas</a>
+          <a className="nav-pill nav-all" href="#categorias">Ver todo</a>
         </nav>
-        <button className="icon-button menu-button" aria-label="Abrir menú" onClick={() => setMenuOpen(!menuOpen)}>
-          <i /><i /><i />
+        <button className="category-trigger" aria-label="Abrir categorías" aria-expanded={menuOpen} aria-controls="mobile-category-drawer" onClick={() => setMenuOpen(true)}>
+          <span aria-hidden="true">☰</span> Categorías
         </button>
         <a className="brand" href="#inicio" aria-label="Galletísima, inicio">
           <Image src="/galletisima-logo.png" alt="Galletísima" width={360} height={140} priority />
@@ -101,7 +185,7 @@ export default function Home() {
             🛒<em>{cart}</em>
           </button>
         </div>
-        {menuOpen && <nav className="menu" aria-label="Navegación móvil"><a href="#moldes">Moldes</a><details className="mobile-category-menu"><summary>Categorías <span>⌄</span></summary><div>{categories.map(([, label])=><a key={label} href="#categorias" onClick={()=>setMenuOpen(false)}>{label}</a>)}</div></details><a href="/contacto">Contacto</a></nav>}
+        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio</a><MobileCategoryGroup label="Celebraciones" groupKey="celebrations" categories={categoryGroups.celebrations} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Personajes" groupKey="characters" categories={categoryGroups.characters} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Temáticas" groupKey="themes" categories={categoryGroups.themes} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Altares <span>→</span></a><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Herramientas <span>→</span></a><a className="drawer-direct drawer-all" href="#categorias" onClick={closeMobileMenu}>Ver todo <span>→</span></a></nav></div>}
       </header>
 
       <section id="inicio" className="hero">
@@ -122,7 +206,7 @@ export default function Home() {
         <h2>Encuentra el molde perfecto</h2>
         <div className="title-line" />
         <div className="categories">
-          {categories.map(([icon, label]) => <button key={label}><span>{icon}</span><small>{label}</small></button>)}
+          {catalogCategories.map((category) => <a key={category.id} href={categoryHref(category.slug)}><span>♡</span><small>{displayCategory(category.name)}</small></a>)}
         </div>
       </section>
 
