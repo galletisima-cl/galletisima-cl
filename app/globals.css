@@ -123,6 +123,7 @@ footer { background:linear-gradient(145deg,#fbe3e7,#f8d4dc); padding:58px 0 24px
 .instagram-link svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.8; }
 .instagram-link .instagram-dot { fill:currentColor; stroke:none; }
 .instagram-link:hover { color:var(--pink); transform:translateX(2px); }
+.social-links{display:flex;flex-wrap:wrap;gap:8px 16px}.facebook-link{width:max-content;display:flex;align-items:center;gap:8px;margin-top:14px;color:#8b3155;font-size:13px;font-weight:800;text-decoration:none;transition:color .2s,transform .2s}.facebook-link svg{width:24px;height:24px;fill:currentColor}.facebook-link:hover{color:var(--pink);transform:translateX(2px)}
 .footer-links { display:flex; flex-direction:column; gap:11px; }
 .footer-links h2,.footer-newsletter span { margin:4px 0 8px; color:#3d3036; font-size:12px; font-weight:900; letter-spacing:.08em; text-transform:uppercase; }
 .footer-links a { width:max-content; color:#705f66; font-size:12px; text-decoration:none; }

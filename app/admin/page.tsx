@@ -111,6 +111,9 @@ export default function AdminPage() {
     [selectedImage, setSelectedImage] = useState<File | null>(null),
     [categoryName, setCategoryName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [facebookUrl, setFacebookUrl] = useState(
+    "https://www.facebook.com/share/1Emwhrwy9q/?mibextid=wwXIfr",
+  );
   const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
@@ -121,7 +124,7 @@ export default function AdminPage() {
     });
   }, []);
   async function loadCatalog() {
-    const [{ data: c, error: ce }, { data: p, error: pe }, { data: w }] =
+    const [{ data: c, error: ce }, { data: p, error: pe }, { data: settings }] =
       await Promise.all([
         supabase.from("categories").select("*").order("name"),
         supabase
@@ -130,9 +133,8 @@ export default function AdminPage() {
           .order("name"),
         supabase
           .from("site_settings")
-          .select("value")
-          .eq("key", "whatsapp_number")
-          .single(),
+          .select("key,value")
+          .in("key", ["whatsapp_number", "facebook_url"]),
       ]);
     if (ce || pe) setError(ce?.message || pe?.message || "");
     else {
@@ -145,7 +147,11 @@ export default function AdminPage() {
           ),
         })),
       );
-      if (w?.value) setWhatsappNumber(w.value);
+      const values = Object.fromEntries(
+        (settings || []).map((setting) => [setting.key, setting.value]),
+      );
+      if (values.whatsapp_number) setWhatsappNumber(values.whatsapp_number);
+      if (values.facebook_url) setFacebookUrl(values.facebook_url);
     }
   }
   async function login(e: FormEvent<HTMLFormElement>) {
@@ -282,20 +288,28 @@ export default function AdminPage() {
     const number = whatsappNumber.replace(/\D/g, "");
     if (!/^569\d{8}$/.test(number))
       return setError("Ingresa el número chileno con formato 569XXXXXXXX");
+    let validFacebookUrl: URL;
+    try {
+      validFacebookUrl = new URL(facebookUrl.trim());
+    } catch {
+      return setError("Ingresa una URL válida de Facebook");
+    }
+    if (!/(^|\.)facebook\.com$/i.test(validFacebookUrl.hostname))
+      return setError("La URL debe pertenecer a facebook.com");
     setLoading(true);
     setError("");
     const { error } = await supabase
       .from("site_settings")
-      .upsert({
-        key: "whatsapp_number",
-        value: number,
-        updated_at: new Date().toISOString(),
-      });
+      .upsert([
+        { key: "whatsapp_number", value: number, updated_at: new Date().toISOString() },
+        { key: "facebook_url", value: validFacebookUrl.toString(), updated_at: new Date().toISOString() },
+      ]);
     setLoading(false);
     if (error) setError(error.message);
     else {
       setWhatsappNumber(number);
-      setNotice("Número de WhatsApp actualizado");
+      setFacebookUrl(validFacebookUrl.toString());
+      setNotice("Configuración de contacto actualizada");
     }
   }
 
@@ -454,6 +468,8 @@ export default function AdminPage() {
           <Settings
             whatsappNumber={whatsappNumber}
             setWhatsappNumber={setWhatsappNumber}
+            facebookUrl={facebookUrl}
+            setFacebookUrl={setFacebookUrl}
             save={saveSettings}
             loading={loading}
           />
@@ -658,11 +674,15 @@ function Categories({
 function Settings({
   whatsappNumber,
   setWhatsappNumber,
+  facebookUrl,
+  setFacebookUrl,
   save,
   loading,
 }: {
   whatsappNumber: string;
   setWhatsappNumber: (v: string) => void;
+  facebookUrl: string;
+  setFacebookUrl: (v: string) => void;
   save: (e: FormEvent) => void;
   loading: boolean;
 }) {
@@ -686,6 +706,17 @@ function Settings({
             }
             placeholder="56975265959"
             maxLength={11}
+            required
+          />
+        </label>
+        <label>
+          Página de Facebook
+          <span>Enlace público que se mostrará en el footer de la tienda.</span>
+          <input
+            type="url"
+            value={facebookUrl}
+            onChange={(e) => setFacebookUrl(e.target.value)}
+            placeholder="https://www.facebook.com/galletisima"
             required
           />
         </label>
@@ -807,6 +838,19 @@ function ProductModal({
               onChange={field("stock")}
               required
             />
+          </label>
+          <label className="wide featured-toggle">
+            <input
+              type="checkbox"
+              checked={product.featured}
+              onChange={(e) =>
+                setProduct({ ...product, featured: e.target.checked })
+              }
+            />
+            <span>
+              Mostrar en “Los más vendidos”
+              <small>El producto aparecerá en la sección destacada de la tienda.</small>
+            </span>
           </label>
           <label className="wide">
             Descripción

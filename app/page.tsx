@@ -87,6 +87,7 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [facebookUrl, setFacebookUrl] = useState("https://www.facebook.com/share/1Emwhrwy9q/?mibextid=wwXIfr");
   const [catalogProducts, setCatalogProducts] = useState<PublicProduct[]>(fallbackProducts);
   const [allProducts, setAllProducts] = useState<PublicProduct[]>([]);
   const [visibleProductCount, setVisibleProductCount] = useState(12);
@@ -117,7 +118,7 @@ export default function Home() {
   useEffect(() => {
     const supabase = createClient();
     Promise.all([
-      supabase.from("site_settings").select("value").eq("key", "whatsapp_number").single(),
+      supabase.from("site_settings").select("key,value").in("key", ["whatsapp_number", "facebook_url"]),
       supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
       supabase
         .from("products")
@@ -131,7 +132,9 @@ export default function Home() {
         .eq("active", true)
         .order("name"),
     ]).then(([settingsResult, categoriesResult, productsResult, allProductsResult]) => {
-      if (settingsResult.data?.value) setWhatsappNumber(settingsResult.data.value);
+      const settings = Object.fromEntries((settingsResult.data || []).map((setting) => [setting.key, setting.value]));
+      if (settings.whatsapp_number) setWhatsappNumber(settings.whatsapp_number);
+      if (settings.facebook_url) setFacebookUrl(settings.facebook_url);
       if (categoriesResult.data?.length) setCatalogCategories(categoriesResult.data);
       if (productsResult.data?.length) {
         const selectedSlug = new URLSearchParams(window.location.search).get("categoria");
@@ -316,7 +319,7 @@ export default function Home() {
 
       <footer id="contacto">
         <div className="shell footer-inner">
-          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Moldes únicos para convertir tus ideas<br/>en galletas inolvidables.</p><a className="instagram-link" href="https://www.instagram.com/galletisimacl" target="_blank" rel="noreferrer" aria-label="Síguenos en Instagram como galletisimacl"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle className="instagram-dot" cx="17.4" cy="6.7" r="1"/></svg><span>@galletisimacl</span></a></div>
+          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Moldes únicos para convertir tus ideas<br/>en galletas inolvidables.</p><div className="social-links"><a className="instagram-link" href="https://www.instagram.com/galletisimacl" target="_blank" rel="noreferrer" aria-label="Síguenos en Instagram como galletisimacl"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle className="instagram-dot" cx="17.4" cy="6.7" r="1"/></svg><span>@galletisimacl</span></a><a className="facebook-link" href={facebookUrl} target="_blank" rel="noreferrer" aria-label="Síguenos en Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 21v-8h2.8l.4-3h-3.2V8.1c0-.9.3-1.5 1.6-1.5H18V3.9c-.7-.1-1.5-.2-2.3-.2-2.3 0-3.9 1.4-3.9 4V10H9v3h2.8v8h2.7Z"/></svg><span>Facebook</span></a></div></div>
           <nav className="footer-links" aria-label="Contacto e información legal"><h2>Información</h2><a href="/contacto">Contacto</a><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones</a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso</a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad</a></nav>
           <form className="footer-newsletter" onSubmit={(event) => { event.preventDefault(); setNotice("¡Gracias! Pronto recibirás nuestras novedades"); }}>
             <div><span>Novedades</span><label htmlFor="email">Recibe nuevos diseños y descuentos exclusivos.</label></div>
