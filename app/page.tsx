@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
-import { CART_UPDATED_EVENT, readCartCount, writeCartCount } from "../lib/cart";
+import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 
 type Category = { id: string; name: string; slug: string };
 
@@ -68,10 +68,6 @@ const currency = new Intl.NumberFormat("es-CL", {
   currency: "CLP",
   maximumFractionDigits: 0,
 });
-
-function getSizes(value: string) {
-  return value.split(/[,;\n]+/).map((size) => size.trim()).filter(Boolean);
-}
 
 function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu, alignRight = false }: { label: string; menuKey: string; categories: Category[]; openMenu: string | null; setOpenMenu: (key: string | null) => void; alignRight?: boolean }) {
   const open = openMenu === menuKey;
@@ -219,12 +215,6 @@ export default function Home() {
     window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 450);
   };
 
-  const add = (name: string) => {
-    writeCartCount(readCartCount() + 1);
-    setNotice(`${name} fue agregado a tu carrito`);
-    window.setTimeout(() => setNotice(""), 2200);
-  };
-
   return (
     <main>
       <div className="benefit-bar">
@@ -277,14 +267,13 @@ export default function Home() {
         <div className="title-line" />
         {catalogProducts.length ? <div className="product-grid">
           {catalogProducts.map((product) => {
-            const sizes = getSizes(product.size);
             return <article className="product-card" key={product.id}>
               <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined, backgroundPosition: product.image_url ? "center" : product.pos }}>
                 {product.featured && <span className="tag">favorito</span>}
               </Link>
               <div className="product-info">
-                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
-                <button className="add" aria-label={`Agregar ${product.name} al carrito`} onClick={() => add(product.name)}>🛒</button>
+                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3><strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
+                <Link className="product-buy" href={`/producto/${product.slug}`} aria-label={`Comprar ${product.name}`}>Comprar</Link>
               </div>
             </article>;
           })}
@@ -305,14 +294,13 @@ export default function Home() {
         <p className="catalog-count">{filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}</p>
         <div className="product-grid">
           {filteredProducts.slice(0, visibleProductCount).map((product) => {
-            const sizes = getSizes(product.size);
             return <article className="product-card" key={product.id}>
               <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined }}>
                 {product.featured && <span className="tag">favorito</span>}
               </Link>
               <div className="product-info">
-                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
-                <button className="add" aria-label={`Agregar ${product.name} al carrito`} onClick={() => add(product.name)}>🛒</button>
+                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3><strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
+                <Link className="product-buy" href={`/producto/${product.slug}`} aria-label={`Comprar ${product.name}`}>Comprar</Link>
               </div>
             </article>;
           })}
