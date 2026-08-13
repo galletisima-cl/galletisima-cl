@@ -126,19 +126,18 @@ export default function Home() {
 
       <footer id="contacto">
         <div className="shell footer-inner">
-          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Convierte tus ideas en algo delicioso.</p><a className="instagram-link" href="https://www.instagram.com/galletisimacl" target="_blank" rel="noreferrer" aria-label="Síguenos en Instagram como galletisimacl"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle className="instagram-dot" cx="17.4" cy="6.7" r="1"/></svg><span>@galletisimacl</span></a></div>
-          <form onSubmit={(event) => { event.preventDefault(); setNotice("¡Gracias! Pronto recibirás nuestras novedades"); }}>
-            <label htmlFor="email">¡No te pierdas novedades<br/>y descuentos exclusivos!</label>
-            <div><input id="email" type="email" placeholder="Tu email" required/><button>✉ Suscribirme</button></div>
+          <div className="footer-brand"><Image src="/galletisima-logo.png" alt="Galletísima" width={220} height={86} /><p>Moldes únicos para convertir tus ideas<br/>en galletas inolvidables.</p><a className="instagram-link" href="https://www.instagram.com/galletisimacl" target="_blank" rel="noreferrer" aria-label="Síguenos en Instagram como galletisimacl"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle className="instagram-dot" cx="17.4" cy="6.7" r="1"/></svg><span>@galletisimacl</span></a></div>
+          <nav className="footer-links" aria-label="Navegación del pie de página"><h2>Explora</h2><a href="/#moldes">Moldes</a><a href="/#categorias">Categorías</a><a href="/contacto">Contacto</a></nav>
+          <nav className="footer-links" aria-label="Ayuda y políticas"><h2>Ayuda</h2><a href="https://galletisima.cl/terminos-y-condiciones">Términos y condiciones</a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso</a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad</a></nav>
+          <form className="footer-newsletter" onSubmit={(event) => { event.preventDefault(); setNotice("¡Gracias! Pronto recibirás nuestras novedades"); }}>
+            <div><span>Novedades</span><label htmlFor="email">Recibe nuevos diseños y descuentos exclusivos.</label></div>
+            <div className="newsletter-field"><input id="email" type="email" placeholder="Tu correo electrónico" required/><button aria-label="Suscribirme">→</button></div>
+            <small>Sin spam. Puedes cancelar cuando quieras.</small>
           </form>
         </div>
         <div className="shell footer-legal">
-          <nav aria-label="Información legal">
-            <a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones</a>
-            <a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso</a>
-            <a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad</a>
-          </nav>
-          <p className="footer-copyright">2026 Galletísima.<br/>Todos los derechos reservados.</p>
+          <p className="footer-copyright">© 2026 Galletísima. Todos los derechos reservados.</p>
+          <a href="/contacto">Hecho con cariño en Chile ♡</a>
         </div>
       </footer>
       <a className="whatsapp" href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" aria-label="Escríbenos por WhatsApp">
