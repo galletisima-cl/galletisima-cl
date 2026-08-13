@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 
@@ -143,10 +144,11 @@ export default function Home() {
         setCatalogProducts([]);
       }
       if (allProductsResult.data) {
-        const selectedSlug = new URLSearchParams(window.location.search).get("categoria");
+        const searchParams = new URLSearchParams(window.location.search);
+        const selectedSlug = searchParams.get("categoria");
         setCategoryFilter(selectedSlug || "");
         setAllProducts(allProductsResult.data);
-        setVisibleProductCount(12);
+        setVisibleProductCount(searchParams.get("ver") === "todos" ? allProductsResult.data.length : 12);
       }
     });
   }, []);
@@ -218,7 +220,7 @@ export default function Home() {
           <DesktopCategoryMenu label="Temáticas" menuKey="themes" categories={categoryGroups.themes} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight />
           <a className="nav-pill" href="#moldes">Altares</a>
           <a className="nav-pill" href="#moldes">Herramientas</a>
-          <a className="nav-pill nav-all" href="#categorias">Ver todo</a>
+          <Link className="nav-pill nav-all" href="/?ver=todos#catalogo">Ver todo</Link>
         </nav>
         <button className="category-trigger" aria-label="Abrir categorías" aria-expanded={menuOpen} aria-controls="mobile-category-drawer" onClick={() => setMenuOpen(true)}>
           <span aria-hidden="true">☰</span>
@@ -232,7 +234,7 @@ export default function Home() {
             🛒<em>{cart}</em>
           </button>
         </div>
-        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio</a><MobileCategoryGroup label="Celebraciones" groupKey="celebrations" categories={categoryGroups.celebrations} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Personajes" groupKey="characters" categories={categoryGroups.characters} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Temáticas" groupKey="themes" categories={categoryGroups.themes} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Altares <span>→</span></a><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Herramientas <span>→</span></a><a className="drawer-direct drawer-all" href="#categorias" onClick={closeMobileMenu}>Ver todo <span>→</span></a></nav></div>}
+        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio</a><MobileCategoryGroup label="Celebraciones" groupKey="celebrations" categories={categoryGroups.celebrations} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Personajes" groupKey="characters" categories={categoryGroups.characters} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Temáticas" groupKey="themes" categories={categoryGroups.themes} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Altares <span>→</span></a><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Herramientas <span>→</span></a><Link className="drawer-direct drawer-all" href="/?ver=todos#catalogo" onClick={closeMobileMenu}>Ver todo <span>→</span></Link></nav></div>}
       </header>
 
       <section id="inicio" className="hero">
@@ -242,7 +244,7 @@ export default function Home() {
           <h1>tus ideas en<br/><strong>galletas<br/>increíbles</strong></h1>
           <p className="hero-copy">Diseños únicos para cada ocasión<br/>o crea tu propio molde personalizado.</p>
           <div className="hero-buttons">
-            <a className="button primary" href="#moldes">VER TODOS LOS MOLDES <span>→</span></a>
+            <Link className="button primary" href="/?ver=todos#catalogo">VER TODOS LOS MOLDES <span>→</span></Link>
             <a className="button secondary" href="#contacto">MOLDE PERSONALIZADO <span>→</span></a>
           </div>
         </div>
@@ -268,7 +270,7 @@ export default function Home() {
             </article>;
           })}
         </div> : <div className="products-empty"><span>♡</span><h3>Aún no hay productos destacados aquí</h3><p>Marca productos como “Más vendidos” desde el panel administrador.</p></div>}
-        <a className="view-all" href="#catalogo">VER TODOS LOS MOLDES →</a>
+        <Link className="view-all" href="/?ver=todos#catalogo">VER TODOS LOS MOLDES →</Link>
       </section>
 
       <section id="catalogo" className="section catalog-section shell">
