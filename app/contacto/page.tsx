@@ -1,8 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import PublicHeader from "../../components/PublicHeader";
 import { createClient } from "../../lib/supabase/client";
 
 export default function ContactPage() {
@@ -17,10 +16,7 @@ export default function ContactPage() {
   const readableNumber = `+56 9 ${whatsappNumber.slice(-8, -4)} ${whatsappNumber.slice(-4)}`;
 
   return <main className="contact-page">
-    <header className="contact-header shell">
-      <Link href="/" aria-label="Volver al inicio"><Image src="/galletisima-logo.png" alt="Galletísima" width={250} height={95} priority /></Link>
-      <Link className="contact-back" href="/">← Volver al inicio</Link>
-    </header>
+    <PublicHeader />
 
     <section className="contact-hero">
       <div className="shell">

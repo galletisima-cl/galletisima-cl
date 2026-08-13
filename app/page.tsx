@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
+import { CART_UPDATED_EVENT, readCartCount, writeCartCount } from "../lib/cart";
 
 type Category = { id: string; name: string; slug: string };
 
@@ -83,7 +84,7 @@ function MobileCategoryGroup({ label, groupKey, categories, openGroup, setOpenGr
 }
 
 export default function Home() {
-  const [cart, setCart] = useState(2);
+  const [cart, setCart] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
@@ -115,6 +116,18 @@ export default function Home() {
       return a.name.localeCompare(b.name, "es");
     });
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort]);
+
+  useEffect(() => {
+    const initialSync = window.setTimeout(() => setCart(readCartCount()), 0);
+    const syncCart = (event: Event) => setCart((event as CustomEvent<number>).detail ?? readCartCount());
+    window.addEventListener(CART_UPDATED_EVENT, syncCart);
+    window.addEventListener("storage", syncCart);
+    return () => {
+      window.clearTimeout(initialSync);
+      window.removeEventListener(CART_UPDATED_EVENT, syncCart);
+      window.removeEventListener("storage", syncCart);
+    };
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -207,7 +220,7 @@ export default function Home() {
   };
 
   const add = (name: string) => {
-    setCart((value) => value + 1);
+    writeCartCount(readCartCount() + 1);
     setNotice(`${name} fue agregado a tu carrito`);
     window.setTimeout(() => setNotice(""), 2200);
   };
