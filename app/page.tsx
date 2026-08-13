@@ -43,6 +43,7 @@ function groupCategories(categories: Category[]) {
 
 type PublicProduct = {
   id: string;
+  slug: string;
   name: string;
   size: string;
   price: number;
@@ -53,12 +54,12 @@ type PublicProduct = {
 };
 
 const fallbackProducts: PublicProduct[] = [
-  { id: "demo-1", name: "Oso Tierno", size: "8 cm", price: 3990, image_url: "", featured: true, pos: "58% 84%" },
-  { id: "demo-2", name: "Flor Vintage", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "72% 10%" },
-  { id: "demo-3", name: "Arcoíris", size: "9 cm", price: 3490, image_url: "", featured: true, pos: "45% 48%" },
-  { id: "demo-4", name: "Dino Rex", size: "10 cm", price: 3990, image_url: "", featured: false, pos: "78% 45%" },
-  { id: "demo-5", name: "Corazón Clásico", size: "6 cm", price: 2990, image_url: "", featured: false, pos: "90% 23%" },
-  { id: "demo-6", name: "Flor de Primavera", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "82% 82%" },
+  { id: "demo-1", slug: "oso-tierno", name: "Oso Tierno", size: "8 cm", price: 3990, image_url: "", featured: true, pos: "58% 84%" },
+  { id: "demo-2", slug: "flor-vintage", name: "Flor Vintage", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "72% 10%" },
+  { id: "demo-3", slug: "arcoiris", name: "Arcoíris", size: "9 cm", price: 3490, image_url: "", featured: true, pos: "45% 48%" },
+  { id: "demo-4", slug: "dino-rex", name: "Dino Rex", size: "10 cm", price: 3990, image_url: "", featured: false, pos: "78% 45%" },
+  { id: "demo-5", slug: "corazon-clasico", name: "Corazón Clásico", size: "6 cm", price: 2990, image_url: "", featured: false, pos: "90% 23%" },
+  { id: "demo-6", slug: "flor-de-primavera", name: "Flor de Primavera", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "82% 82%" },
 ];
 
 const currency = new Intl.NumberFormat("es-CL", {
@@ -83,7 +84,6 @@ function MobileCategoryGroup({ label, groupKey, categories, openGroup, setOpenGr
 
 export default function Home() {
   const [cart, setCart] = useState(2);
-  const [liked, setLiked] = useState<string[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
@@ -122,13 +122,13 @@ export default function Home() {
       supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
       supabase
         .from("products")
-        .select("id,name,size,price,image_url,featured,product_categories(category_id)")
+        .select("id,slug,name,size,price,image_url,featured,product_categories(category_id)")
         .eq("active", true)
         .eq("featured", true)
         .order("name"),
       supabase
         .from("products")
-        .select("id,name,size,price,image_url,featured,product_categories(category_id)")
+        .select("id,slug,name,size,price,image_url,featured,product_categories(category_id)")
         .eq("active", true)
         .order("name"),
     ]).then(([settingsResult, categoriesResult, productsResult, allProductsResult]) => {
@@ -259,15 +259,13 @@ export default function Home() {
         <div className="title-line" />
         {catalogProducts.length ? <div className="product-grid">
           {catalogProducts.map((product) => {
-            const isLiked = liked.includes(product.name);
             const sizes = getSizes(product.size);
             return <article className="product-card" key={product.id}>
-              <div className={`product-photo ${product.image_url ? "has-product-image" : ""}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined, backgroundPosition: product.image_url ? "center" : product.pos }}>
+              <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined, backgroundPosition: product.image_url ? "center" : product.pos }}>
                 {product.featured && <span className="tag">favorito</span>}
-                <button className={`heart ${isLiked ? "active" : ""}`} aria-label={`Guardar ${product.name}`} onClick={() => setLiked(isLiked ? liked.filter((name) => name !== product.name) : [...liked, product.name])}>♡</button>
-              </div>
+              </Link>
               <div className="product-info">
-                <div><h3>{product.name}</h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
+                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
                 <button className="add" aria-label={`Agregar ${product.name} al carrito`} onClick={() => add(product.name)}>🛒</button>
               </div>
             </article>;
@@ -289,15 +287,13 @@ export default function Home() {
         <p className="catalog-count">{filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}</p>
         <div className="product-grid">
           {filteredProducts.slice(0, visibleProductCount).map((product) => {
-            const isLiked = liked.includes(product.name);
             const sizes = getSizes(product.size);
             return <article className="product-card" key={product.id}>
-              <div className={`product-photo ${product.image_url ? "has-product-image" : ""}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined }}>
+              <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined }}>
                 {product.featured && <span className="tag">favorito</span>}
-                <button className={`heart ${isLiked ? "active" : ""}`} aria-label={`Guardar ${product.name}`} onClick={() => setLiked(isLiked ? liked.filter((name) => name !== product.name) : [...liked, product.name])}>♡</button>
-              </div>
+              </Link>
               <div className="product-info">
-                <div><h3>{product.name}</h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
+                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
                 <button className="add" aria-label={`Agregar ${product.name} al carrito`} onClick={() => add(product.name)}>🛒</button>
               </div>
             </article>;
