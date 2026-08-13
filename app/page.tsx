@@ -133,12 +133,12 @@ export default function Home() {
           </form>
         </div>
         <div className="shell footer-legal">
-          <span>© {new Date().getFullYear()} Galletísima</span>
           <nav aria-label="Información legal">
             <a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones</a>
             <a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso</a>
             <a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad</a>
           </nav>
+          <p className="footer-copyright">2026 Galletísima.<br/>Todos los derechos reservados.</p>
         </div>
       </footer>
       <a className="whatsapp" href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer" aria-label="Escríbenos por WhatsApp">
