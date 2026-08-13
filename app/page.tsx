@@ -99,6 +99,7 @@ export default function Home() {
   const [openMobileGroup, setOpenMobileGroup] = useState<string | null>("celebrations");
   const navRef = useRef<HTMLElement>(null);
   const catalogEndRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredProducts = useMemo(() => {
     const selectedCategory = catalogCategories.find((category) => category.slug === categoryFilter);
     const search = productSearch.trim().toLocaleLowerCase("es");
@@ -200,6 +201,10 @@ export default function Home() {
 
   const categoryGroups = groupCategories(catalogCategories);
   const closeMobileMenu = () => setMenuOpen(false);
+  const openSearch = () => {
+    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 450);
+  };
 
   const add = (name: string) => {
     setCart((value) => value + 1);
@@ -232,7 +237,7 @@ export default function Home() {
           <Image src="/galletisima-logo.png" alt="Galletísima" width={360} height={140} priority />
         </a>
         <div className="header-actions">
-          <button className="icon-button search" aria-label="Buscar">⌕</button>
+          <button className="icon-button search" aria-label="Buscar productos" aria-controls="catalog-search-input" onClick={openSearch}>⌕</button>
           <button className="icon-button cart" aria-label={`Carrito con ${cart} productos`}>
             🛒<em>{cart}</em>
           </button>
@@ -279,7 +284,7 @@ export default function Home() {
         <h2>Todos nuestros moldes</h2>
         <div className="title-line" />
         <div className="catalog-filters">
-          <label className="catalog-search"><span>Buscar</span><input type="search" value={productSearch} onChange={(event) => { setProductSearch(event.target.value); setVisibleProductCount(12); }} placeholder="Nombre del molde…" /></label>
+          <label className="catalog-search"><span>Buscar</span><input ref={searchInputRef} id="catalog-search-input" type="search" value={productSearch} onChange={(event) => { setProductSearch(event.target.value); setVisibleProductCount(12); }} placeholder="Nombre del molde…" /></label>
           <label><span>Categoría</span><select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setVisibleProductCount(12); }}><option value="">Todas las categorías</option>{catalogCategories.map((category) => <option key={category.id} value={category.slug}>{displayCategory(category.name)}</option>)}</select></label>
           <label><span>Ordenar</span><select value={productSort} onChange={(event) => { setProductSort(event.target.value); setVisibleProductCount(12); }}><option value="name-asc">Nombre A–Z</option><option value="name-desc">Nombre Z–A</option><option value="price-asc">Precio menor a mayor</option><option value="price-desc">Precio mayor a menor</option></select></label>
           {(productSearch || categoryFilter || productSort !== "name-asc") && <button type="button" onClick={() => { setProductSearch(""); setCategoryFilter(""); setProductSort("name-asc"); setVisibleProductCount(12); }}>Limpiar filtros</button>}
