@@ -79,6 +79,8 @@ h1 strong { color:var(--pink); }
 .product-info h3 { margin:0 0 6px; font-size:16px; }
 .product-info p { color:var(--muted); margin:0 0 4px; font-size:13px; }
 .product-info strong { color:var(--pink); font-size:17px; }
+.product-sizes { display:flex; flex-wrap:wrap; gap:5px; margin:0 0 9px; }
+.product-sizes span { border:1px solid #f1c7d3; background:#fff8fa; color:#6c4552; border-radius:7px; padding:4px 7px; font-size:11px; font-weight:700; }
 .add { width:48px; height:48px; border:0; border-radius:50%; color:white; background:var(--pink); cursor:pointer; transition:.2s; }
 .add:hover { background:var(--pink-dark); transform:scale(1.06); }
 .view-all { width:max-content; display:block; margin:35px auto 0; color:var(--pink); font-weight:800; text-decoration:none; font-size:13px; }

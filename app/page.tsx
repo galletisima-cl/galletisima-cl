@@ -10,14 +10,34 @@ const categories = [
   ["♟", "Profesiones"], ["•••", "Más"],
 ];
 
-const products = [
-  { name: "Oso Tierno", size: "8 cm", price: "$3.990", pos: "58% 84%", tag: "favorito" },
-  { name: "Flor Vintage", size: "7 cm", price: "$3.490", pos: "72% 10%" },
-  { name: "Arcoíris", size: "9 cm", price: "$3.490", pos: "45% 48%", tag: "nuevo" },
-  { name: "Dino Rex", size: "10 cm", price: "$3.990", pos: "78% 45%" },
-  { name: "Corazón Clásico", size: "6 cm", price: "$2.990", pos: "90% 23%" },
-  { name: "Flor de Primavera", size: "7 cm", price: "$3.490", pos: "82% 82%" },
+type PublicProduct = {
+  id: string;
+  name: string;
+  size: string;
+  price: number;
+  image_url: string;
+  featured: boolean;
+  pos?: string;
+};
+
+const fallbackProducts: PublicProduct[] = [
+  { id: "demo-1", name: "Oso Tierno", size: "8 cm", price: 3990, image_url: "", featured: true, pos: "58% 84%" },
+  { id: "demo-2", name: "Flor Vintage", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "72% 10%" },
+  { id: "demo-3", name: "Arcoíris", size: "9 cm", price: 3490, image_url: "", featured: true, pos: "45% 48%" },
+  { id: "demo-4", name: "Dino Rex", size: "10 cm", price: 3990, image_url: "", featured: false, pos: "78% 45%" },
+  { id: "demo-5", name: "Corazón Clásico", size: "6 cm", price: 2990, image_url: "", featured: false, pos: "90% 23%" },
+  { id: "demo-6", name: "Flor de Primavera", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "82% 82%" },
 ];
+
+const currency = new Intl.NumberFormat("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+
+function getSizes(value: string) {
+  return value.split(/[,;\n]+/).map((size) => size.trim()).filter(Boolean);
+}
 
 export default function Home() {
   const [cart, setCart] = useState(2);
@@ -25,11 +45,23 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [catalogProducts, setCatalogProducts] = useState<PublicProduct[]>(fallbackProducts);
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.from("site_settings").select("value").eq("key", "whatsapp_number").single()
-      .then(({ data }) => { if (data?.value) setWhatsappNumber(data.value); });
+    Promise.all([
+      supabase.from("site_settings").select("value").eq("key", "whatsapp_number").single(),
+      supabase
+        .from("products")
+        .select("id,name,size,price,image_url,featured")
+        .eq("active", true)
+        .order("featured", { ascending: false })
+        .order("name")
+        .limit(12),
+    ]).then(([settingsResult, productsResult]) => {
+      if (settingsResult.data?.value) setWhatsappNumber(settingsResult.data.value);
+      if (productsResult.data?.length) setCatalogProducts(productsResult.data);
+    });
   }, []);
 
   const add = (name: string) => {
@@ -98,15 +130,16 @@ export default function Home() {
         <h2>Los más vendidos</h2>
         <div className="title-line" />
         <div className="product-grid">
-          {products.map((product) => {
+          {catalogProducts.map((product) => {
             const isLiked = liked.includes(product.name);
-            return <article className="product-card" key={product.name}>
-              <div className="product-photo" style={{ backgroundPosition: product.pos }}>
-                {product.tag && <span className="tag">{product.tag}</span>}
+            const sizes = getSizes(product.size);
+            return <article className="product-card" key={product.id}>
+              <div className="product-photo" style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined, backgroundPosition: product.image_url ? "center" : product.pos }}>
+                {product.featured && <span className="tag">favorito</span>}
                 <button className={`heart ${isLiked ? "active" : ""}`} aria-label={`Guardar ${product.name}`} onClick={() => setLiked(isLiked ? liked.filter((name) => name !== product.name) : [...liked, product.name])}>♡</button>
               </div>
               <div className="product-info">
-                <div><h3>{product.name}</h3><p>{product.size}</p><strong>{product.price}</strong></div>
+                <div><h3>{product.name}</h3>{sizes.length ? <div className="product-sizes" aria-label={`Medidas disponibles: ${sizes.join(", ")}`}>{sizes.map((size) => <span key={size}>{size}</span>)}</div> : <p>Medida por confirmar</p>}<strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
                 <button className="add" aria-label={`Agregar ${product.name} al carrito`} onClick={() => add(product.name)}>🛒</button>
               </div>
             </article>;

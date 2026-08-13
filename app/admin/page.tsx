@@ -203,7 +203,7 @@ export default function AdminPage() {
         description: editing.description,
         price: Number(editing.price),
         stock: Number(editing.stock),
-        size: editing.size,
+        size: normalizeSizes(editing.size),
         image_url: imageUrl,
         active: editing.active,
         featured: editing.featured,
@@ -584,6 +584,7 @@ function Products({
           <span>Categorías</span>
           <span>Precio</span>
           <span>Stock</span>
+          <span>Medidas</span>
           <span />
         </div>
         {products.map((p) => (
@@ -600,6 +601,7 @@ function Products({
               {p.price ? `$${p.price.toLocaleString("es-CL")}` : "Pendiente"}
             </strong>
             <span>{p.stock}</span>
+            <span className="size-cell">{p.size || "Sin medidas"}</span>
             <span className="row-actions">
               <button onClick={() => edit(p)}>Editar</button>
               <button onClick={() => remove(p.id)}>Eliminar</button>
@@ -774,9 +776,17 @@ function ProductModal({
               required
             />
           </label>
-          <label>
-            Tamaño
-            <input value={product.size} onChange={field("size")} />
+          <label className="wide">
+            Medidas disponibles
+            <input
+              value={product.size}
+              onChange={field("size")}
+              placeholder="6 cm, 8 cm, 10 cm, 12 cm"
+            />
+            <small className="field-help">
+              Separa cada medida con una coma. Si escribes solo el número,
+              agregaremos “cm” automáticamente.
+            </small>
           </label>
           <label>
             Precio
@@ -886,4 +896,12 @@ function cleanSku(v: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .toUpperCase()
     .replace(/[^A-Z0-9]/g, "");
+}
+function normalizeSizes(value: string) {
+  const sizes = value
+    .split(/[,;\n]+/)
+    .map((size) => size.trim())
+    .filter(Boolean)
+    .map((size) => (/^\d+(?:[.,]\d+)?$/.test(size) ? `${size} cm` : size));
+  return [...new Set(sizes)].join(", ");
 }

@@ -16,6 +16,15 @@
   .modal-backdrop{padding:0;align-items:end}.product-modal{width:100%;max-height:94svh;border-radius:22px 22px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom));overflow:auto}.modal-title{position:sticky;top:-20px;z-index:2;background:#fff;padding:18px 0 12px;margin-top:-18px;border-bottom:1px solid #f4edef}.modal-title h2{font-size:19px}.modal-title>button{width:44px;height:44px;font-size:27px}.modal-grid{gap:13px;margin-top:16px}.modal-grid input,.modal-grid textarea{min-height:48px;font-size:16px}.modal-grid textarea{min-height:80px}.category-picker{grid-template-columns:1fr 1fr;gap:5px;max-height:180px;padding:10px}.category-picker label{min-height:38px;font-size:10px}.category-picker input{min-height:auto;width:17px;height:17px}.modal-actions{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom));background:#fff;padding:12px 0 calc(16px + env(safe-area-inset-bottom));margin-top:10px}.modal-actions button{min-height:48px;flex:1}.admin-alert{position:sticky;top:72px;z-index:4;box-shadow:0 6px 18px #0001}
 }
 @media(max-width:370px){.metric-grid{grid-template-columns:1fr}.admin-sidebar nav button{min-width:58px}.category-picker{grid-template-columns:1fr}}
+
+/* Product measurements */
+.product-row{grid-template-columns:1.35fr .75fr 1fr .65fr .45fr 1fr .8fr}
+.size-cell{color:var(--a-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field-help{display:block;margin-top:7px;color:var(--a-muted);font-size:10px;font-weight:400;line-height:1.45}
+@media(max-width:650px){
+  .product-row .size-cell{grid-column:1/-1;white-space:normal;font-size:10px}
+  .product-row .size-cell:before{content:"Medidas: ";color:var(--a-muted);font-weight:700}
+}
 .admin-quick-actions{display:flex;gap:8px}.admin-quick-actions a,.admin-quick-actions button{height:42px;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 14px;border:1px solid #eadfe2;border-radius:10px;background:#fff;color:#5f5359;text-decoration:none;font:800 11px Arial;cursor:pointer}.admin-quick-actions a:hover{border-color:#e9afc2;color:var(--a-pink)}.admin-quick-actions button{color:#9d4a65}.admin-quick-actions button:hover{border-color:#e5b5c4;background:#fff7f9}
 @media(max-width:650px){.top-actions{display:flex}.admin-quick-actions{gap:5px}.admin-quick-actions a,.admin-quick-actions button{display:grid!important;width:42px;height:42px;padding:0;font-size:17px}.admin-quick-actions span{display:none}.top-actions .new-product{display:none!important}}
 .admin-sidebar nav button span{display:inline-grid;place-items:center;vertical-align:middle}.admin-sidebar nav button span svg{width:20px;height:20px;display:block}
