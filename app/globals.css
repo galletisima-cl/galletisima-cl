@@ -89,7 +89,7 @@ h1 strong { color:var(--pink); }
 .value-grid span { color:var(--pink); font-size:32px; }
 .value-grid p { font-size:12px; line-height:1.55; }
 footer { background:linear-gradient(145deg,#fbe3e7,#f8d4dc); padding:58px 0 24px; border-top:1px solid #f1cbd4; }
-.footer-inner { display:grid; grid-template-columns:1.2fr .65fr .9fr 1.35fr; align-items:start; gap:clamp(28px,4vw,64px); }
+.footer-inner { display:grid; grid-template-columns:1fr .9fr 1.2fr; align-items:start; gap:clamp(42px,7vw,100px); }
 .footer-brand img { width:190px; height:auto; display:block; }
 .footer-inner p { margin:13px 0 0; color:#695a61; font-size:12px; line-height:1.7; }
 .instagram-link { width:max-content; display:flex; align-items:center; gap:8px; margin-top:14px; color:#c12d6b; font-size:13px; font-weight:800; text-decoration:none; transition:color .2s,transform .2s; }
