@@ -4,6 +4,7 @@
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; }
 body { margin:0; background:#fff; color:var(--ink); font-family:Arial, Helvetica, sans-serif; }
+section[id] { scroll-margin-top:110px; }
 button,input { font:inherit; }
 button,a { -webkit-tap-highlight-color:transparent; }
 .shell { width:min(1180px, calc(100% - 44px)); margin-inline:auto; }
@@ -318,3 +319,6 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 
 @media(min-width:1051px){.public-menu-button{visibility:hidden}}
 @media(max-width:560px){.public-header{height:78px;grid-template-columns:48px 1fr 48px}.public-header-logo img{width:min(165px,43vw)}.public-menu-button,.public-cart-button{width:43px;height:43px}.public-category-links{grid-template-columns:1fr 1fr}}
+
+/* Encabezado público siempre accesible durante el desplazamiento */
+.header,.public-header{position:sticky;top:0;z-index:60;background:rgba(255,255,255,.97);box-shadow:0 8px 24px rgba(91,32,53,.08);backdrop-filter:blur(12px)}
