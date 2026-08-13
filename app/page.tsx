@@ -74,11 +74,6 @@ function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu
   return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" aria-expanded={open} aria-controls={`mega-${menuKey}`} onClick={() => setOpenMenu(open ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{open && <div className="mega-panel" id={`mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></a>)}</div></div>}</div>;
 }
 
-function MobileCategoryGroup({ label, groupKey, categories, openGroup, setOpenGroup, close }: { label: string; groupKey: string; categories: Category[]; openGroup: string | null; setOpenGroup: (key: string | null) => void; close: () => void }) {
-  const open = openGroup === groupKey;
-  return <section className={`drawer-group ${open ? "open" : ""}`}><button aria-expanded={open} aria-controls={`drawer-${groupKey}`} onClick={() => setOpenGroup(open ? null : groupKey)}><span>{label}</span><i aria-hidden="true">⌄</i></button><div id={`drawer-${groupKey}`} hidden={!open}>{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={close}>{displayCategory(category.name)}</a>)}</div></section>;
-}
-
 export default function Home() {
   const [cart, setCart] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,7 +88,6 @@ export default function Home() {
   const [productSort, setProductSort] = useState("name-asc");
   const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
-  const [openMobileGroup, setOpenMobileGroup] = useState<string | null>("celebrations");
   const navRef = useRef<HTMLElement>(null);
   const catalogEndRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -245,7 +239,7 @@ export default function Home() {
             🛒<em>{cart}</em>
           </button>
         </div>
-        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio</a><MobileCategoryGroup label="Celebraciones" groupKey="celebrations" categories={categoryGroups.celebrations} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Personajes" groupKey="characters" categories={categoryGroups.characters} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><MobileCategoryGroup label="Temáticas" groupKey="themes" categories={categoryGroups.themes} openGroup={openMobileGroup} setOpenGroup={setOpenMobileGroup} close={closeMobileMenu} /><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Altares <span>→</span></a><a className="drawer-direct" href="#moldes" onClick={closeMobileMenu}>Herramientas <span>→</span></a><Link className="drawer-direct drawer-all" href="/?ver=todos#catalogo" onClick={closeMobileMenu}>Ver todo <span>→</span></Link></nav></div>}
+        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio <span>→</span></a><Link className="drawer-direct drawer-all" href="/?ver=todos#catalogo" onClick={closeMobileMenu}>Ver todos los productos <span>→</span></Link><p className="drawer-list-title">Todas las categorías <b>{catalogCategories.length}</b></p><div className="public-category-links">{catalogCategories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={closeMobileMenu}>{displayCategory(category.name)}<span>→</span></a>)}</div><Link className="drawer-direct" href="/contacto" onClick={closeMobileMenu}>Contacto <span>→</span></Link></nav></div>}
       </header>
 
       <section id="inicio" className="hero">
