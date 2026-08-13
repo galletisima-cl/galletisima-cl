@@ -128,6 +128,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 .contact-icon.location-color { background:#fff4e9; color:#de7a45; }
 .contact-card h2 { margin:0 0 12px; font-size:21px; }
 .contact-card p { margin:0 0 25px; color:#74686e; font-size:14px; line-height:1.7; }
+.address-links { display:flex; flex-direction:column; }.address-links a { width:max-content; max-width:100%; color:inherit; text-decoration:none; }.address-links a:hover { color:var(--pink); text-decoration:underline; text-underline-offset:3px; }
 .contact-action { display:flex; justify-content:space-between; gap:18px; width:100%; margin-top:auto; padding-top:18px; border-top:1px solid #f1e8eb; color:var(--pink); text-decoration:none; font-size:14px; font-weight:800; }
 .contact-action span { transition:transform .2s; }.contact-action:hover span { transform:translateX(4px); }
 .whatsapp-action { color:#25a957; }

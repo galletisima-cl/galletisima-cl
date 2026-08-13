@@ -42,7 +42,7 @@ export default function ContactPage() {
       <article className="contact-card">
         <span className="contact-icon location-color">⌖</span>
         <h2>Dirección</h2>
-        <p>Galletísima<br />Metro Vicente Valdés<br />La Florida, Región Metropolitana<br />Chile</p>
+        <p className="address-links">{["Galletísima","Metro Vicente Valdés","La Florida - La Florida","Región Metropolitana - Chile"].map(line=><a key={line} href="https://maps.google.com/maps?q=Metro+Vicente+Valdes+La+Florida%2C+La+Florida%2C+Regi%C3%B3n+Metropolitana%2C+Chile" target="_blank" rel="noreferrer">{line}</a>)}</p>
         <a className="contact-action" href="https://www.google.com/maps/search/?api=1&query=Metro+Vicente+Valdes+La+Florida+Chile" target="_blank" rel="noreferrer">Ver ubicación <span>→</span></a>
       </article>
 
