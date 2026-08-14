@@ -13,7 +13,15 @@ if (!url || !key) throw new Error("Missing Supabase server credentials");
 
 const headers = { apikey: key, Authorization: `Bearer ${key}` };
 const sourceDirectory = "public/products-unique-source";
-const files = fs.readdirSync(sourceDirectory).filter((file) => /\.(png|jpe?g|webp)$/i.test(file));
+const requestedSlugs = new Set(process.argv.slice(2));
+const files = fs.readdirSync(sourceDirectory).filter((file) => {
+  if (!/\.(png|jpe?g|webp)$/i.test(file)) return false;
+  return requestedSlugs.size === 0 || requestedSlugs.has(path.parse(file).name);
+});
+if (requestedSlugs.size > 0 && files.length !== requestedSlugs.size) {
+  const found = new Set(files.map((file) => path.parse(file).name));
+  throw new Error(`Missing source images: ${[...requestedSlugs].filter((slug) => !found.has(slug)).join(", ")}`);
+}
 
 for (const file of files) {
   const slug = path.parse(file).name;
