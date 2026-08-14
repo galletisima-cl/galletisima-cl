@@ -213,7 +213,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
   .eyebrow { margin:0 0 12px; font-size:11px; }
   h1 { margin:0 0 18px; font-size:clamp(38px,12vw,48px); line-height:.96; letter-spacing:-2px; }
   .hero-copy { margin:0; font-size:14px; line-height:1.55; }
-  .hero-buttons { width:100%; margin-top:22px; gap:10px; }
+  .hero-buttons { width:100%; margin-top:34px; gap:11px; align-items:center; }
   .button { width:min(100%,360px); padding:15px 14px; font-size:12px; }
   .hero-image { inset:auto 0 0; height:360px; background-position:61% center; }
   .hero-image:after { background:linear-gradient(180deg,#fff2f4 0%,rgba(255,242,244,.1) 28%,rgba(255,242,244,0) 60%); }
