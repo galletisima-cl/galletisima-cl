@@ -80,7 +80,7 @@ h1 strong { color:var(--pink); }
 .product-card { overflow:hidden; border-radius:14px; background:#fff; box-shadow:0 6px 30px #863a5212; border:1px solid #f8eef1; transition:.25s; }
 .product-card:hover { transform:translateY(-5px); box-shadow:0 16px 40px #863a5220; }
 .product-photo { height:230px; background-image:url('/hero-cookies.webp'); background-size:320%; position:relative; }
-.product-photo.has-product-image { background-size:cover; background-position:center; background-repeat:no-repeat; background-color:#fff4f5; }
+.product-photo.has-product-image { background-size:cover; background-position:center; background-repeat:no-repeat; background-color:#fff; }
 .heart { position:absolute; right:14px; top:12px; width:36px; height:36px; border:0; border-radius:50%; background:#ffffffd9; font-size:27px; cursor:pointer; color:#4a4144; }
 .heart.active { background:var(--pink); color:white; }
 .tag { position:absolute; left:14px; top:14px; background:#fff; color:var(--pink); padding:6px 10px; font-size:10px; border-radius:20px; text-transform:uppercase; font-weight:800; }
