@@ -86,6 +86,7 @@ export default function Home() {
   const [allProducts, setAllProducts] = useState<PublicProduct[]>([]);
   const [visibleProductCount, setVisibleProductCount] = useState(12);
   const [productSearch, setProductSearch] = useState("");
+  const [menuSearch, setMenuSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [productSort, setProductSort] = useState("name-asc");
   const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
@@ -108,6 +109,7 @@ export default function Home() {
       return a.name.localeCompare(b.name, "es");
     });
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort]);
+  const visibleMenuCategories = catalogCategories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setCart(readCartCount()), 0);
@@ -155,7 +157,9 @@ export default function Home() {
       if (allProductsResult.data) {
         const searchParams = new URLSearchParams(window.location.search);
         const selectedSlug = searchParams.get("categoria");
+        const initialSearch = searchParams.get("buscar") || "";
         setCategoryFilter(selectedSlug || "");
+        setProductSearch(initialSearch);
         setAllProducts(allProductsResult.data);
         setVisibleProductCount(searchParams.get("ver") === "todos" ? allProductsResult.data.length : 12);
       }
@@ -242,7 +246,7 @@ export default function Home() {
             🛒<em>{cart}</em>
           </button>
         </div>
-        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio <span>→</span></a><Link className="drawer-direct drawer-all" href="/?ver=todos#catalogo" onClick={closeMobileMenu}>Ver todos los productos <span>→</span></Link><p className="drawer-list-title">Todas las categorías <b>{catalogCategories.length}</b></p><div className="public-category-links">{catalogCategories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={closeMobileMenu}>{displayCategory(category.name)}<span>→</span></a>)}</div><Link className="drawer-direct" href="/contacto" onClick={closeMobileMenu}>Contacto <span>→</span></Link></nav></div>}
+        {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><form className="drawer-search" onSubmit={(event) => { event.preventDefault(); setProductSearch(menuSearch); setVisibleProductCount(12); closeMobileMenu(); document.getElementById("catalogo")?.scrollIntoView({behavior:"smooth"}); }}><label htmlFor="home-drawer-search">Buscar productos o categorías</label><div><input id="home-drawer-search" type="search" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} placeholder="¿Qué molde buscas?" autoComplete="off"/><button type="submit" aria-label="Buscar productos">⌕</button></div></form><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio <span>→</span></a><Link className="drawer-direct drawer-all" href="/?ver=todos#catalogo" onClick={closeMobileMenu}>Ver todos los productos <span>→</span></Link><p className="drawer-list-title">Categorías encontradas <b>{visibleMenuCategories.length}</b></p><div className="public-category-links">{visibleMenuCategories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={closeMobileMenu}>{displayCategory(category.name)}<span>→</span></a>)}</div>{!visibleMenuCategories.length && <p className="drawer-search-empty">No hay categorías con ese nombre. Presiona buscar para revisar los productos.</p>}<Link className="drawer-direct" href="/contacto" onClick={closeMobileMenu}>Contacto <span>→</span></Link></nav></div>}
       </header>
       <CartDrawer open={cartOpen} onClose={closeCart} />
 
