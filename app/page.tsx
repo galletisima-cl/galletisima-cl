@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import CartDrawer from "../components/CartDrawer";
 import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 
@@ -76,6 +77,7 @@ function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu
 
 export default function Home() {
   const [cart, setCart] = useState(0);
+  const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
@@ -204,6 +206,7 @@ export default function Home() {
 
   const categoryGroups = groupCategories(catalogCategories);
   const closeMobileMenu = () => setMenuOpen(false);
+  const closeCart = useCallback(() => setCartOpen(false), []);
   const openSearch = () => {
     document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 450);
@@ -235,12 +238,13 @@ export default function Home() {
         </a>
         <div className="header-actions">
           <button className="icon-button search" aria-label="Buscar productos" aria-controls="catalog-search-input" onClick={openSearch}>⌕</button>
-          <button className="icon-button cart" aria-label={`Carrito con ${cart} productos`}>
+          <button className="icon-button cart" aria-label={`Abrir carrito con ${cart} productos`} onClick={() => setCartOpen(true)}>
             🛒<em>{cart}</em>
           </button>
         </div>
         {menuOpen && <div className="drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar categorías" onClick={closeMobileMenu} /><nav id="mobile-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small><strong>Categorías</strong></div><button aria-label="Cerrar categorías" onClick={closeMobileMenu}>×</button></div><a className="drawer-direct" href="#inicio" onClick={closeMobileMenu}>Inicio <span>→</span></a><Link className="drawer-direct drawer-all" href="/?ver=todos#catalogo" onClick={closeMobileMenu}>Ver todos los productos <span>→</span></Link><p className="drawer-list-title">Todas las categorías <b>{catalogCategories.length}</b></p><div className="public-category-links">{catalogCategories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={closeMobileMenu}>{displayCategory(category.name)}<span>→</span></a>)}</div><Link className="drawer-direct" href="/contacto" onClick={closeMobileMenu}>Contacto <span>→</span></Link></nav></div>}
       </header>
+      <CartDrawer open={cartOpen} onClose={closeCart} />
 
       <section id="inicio" className="hero">
         <div className="hero-image" role="img" aria-label="Moldes verdes y galletas decoradas sobre fondo rosado" />
