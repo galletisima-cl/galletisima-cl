@@ -291,7 +291,7 @@ export default function Home() {
           <label className="catalog-search"><span>Buscar</span><input ref={searchInputRef} id="catalog-search-input" type="search" value={productSearch} onChange={(event) => { setProductSearch(event.target.value); setVisibleProductCount(12); }} placeholder="Nombre del molde…" /></label>
           <label><span>Categoría</span><select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setVisibleProductCount(12); }}><option value="">Todas las categorías</option>{catalogCategories.map((category) => <option key={category.id} value={category.slug}>{displayCategory(category.name)}</option>)}</select></label>
           <label><span>Ordenar</span><select value={productSort} onChange={(event) => { setProductSort(event.target.value); setVisibleProductCount(12); }}><option value="name-asc">Nombre A–Z</option><option value="name-desc">Nombre Z–A</option><option value="price-asc">Precio menor a mayor</option><option value="price-desc">Precio mayor a menor</option></select></label>
-          {(productSearch || categoryFilter || productSort !== "name-asc") && <button type="button" onClick={() => { setProductSearch(""); setCategoryFilter(""); setProductSort("name-asc"); setVisibleProductCount(12); }}>Limpiar filtros</button>}
+          <button type="button" onClick={() => setVisibleProductCount(12)}>Buscar</button>
         </div>
         <p className="catalog-count">{filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}</p>
         <div className="product-grid">
