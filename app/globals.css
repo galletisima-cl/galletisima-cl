@@ -275,6 +275,7 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 .mega-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
 .mega-links a{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:42px;padding:9px 10px!important;border-radius:9px;color:#4a343c!important;font-size:11px!important;font-weight:750!important;text-transform:none;transition:background .15s,color .15s}
 .mega-links a:after{display:none!important}.mega-links a span{color:#e64a80;opacity:0;transform:translateX(-4px);transition:.15s}.mega-links a:hover,.mega-links a:focus-visible{background:#fff0f4;color:#c82f69!important;outline:none}.mega-links a:hover span,.mega-links a:focus-visible span{opacity:1;transform:none}
+.more-panel{width:330px}.more-panel .mega-links{grid-template-columns:1fr}.more-panel .mega-links a{min-height:48px;border-bottom:1px solid #f3e6ea;border-radius:0;font-size:14px!important}.more-panel .mega-links a:last-child{border-bottom:0}
 .category-trigger{display:none}
 .drawer-layer{display:none}
 @keyframes menu-in{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}

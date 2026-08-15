@@ -211,6 +211,7 @@ export default function Home() {
           <a className="nav-pill" href="#catalogo">Altares</a>
           <a className="nav-pill" href="#catalogo">Herramientas</a>
           <Link className="nav-pill nav-all" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setVisibleProductCount(allProducts.length || 12); }}>Ver todo</Link>
+          <div className="mega-menu align-right"><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>Más <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="mega-more"><div className="mega-links"><Link href="/contacto" onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones <span>→</span></a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso <span>→</span></a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad <span>→</span></a></div></div>}</div>
         </nav>
         <button className="category-trigger" aria-label="Abrir categorías" aria-expanded={menuOpen} aria-controls="mobile-category-drawer" onClick={() => setMenuOpen(true)}>
           <span aria-hidden="true">☰</span>
