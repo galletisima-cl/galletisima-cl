@@ -325,7 +325,8 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
   .button { padding-block:14px; }
 }
 
-@media(min-width:1051px){.public-header{grid-template-columns:auto 1fr minmax(260px,360px) auto;gap:24px}.public-menu-button{display:none}.public-header-logo{grid-column:1;justify-self:start}.public-header-search{grid-column:3;display:flex;width:100%}.public-cart-button{grid-column:4}}
+ .public-desktop-nav{display:none}
+@media(min-width:1051px){.public-header{height:132px;grid-template-columns:auto 1fr minmax(260px,360px) auto;gap:24px;padding-bottom:54px}.public-menu-button{display:none}.public-header-logo{grid-column:1;justify-self:start}.public-header-search{grid-column:3;display:flex;width:100%}.public-cart-button{grid-column:4}.public-desktop-nav{display:flex}}
 @media(max-width:560px){.public-header{height:78px;grid-template-columns:48px 1fr 48px}.public-header-logo img{width:min(165px,43vw)}.public-menu-button,.public-cart-button{width:43px;height:43px}.public-category-links{grid-template-columns:1fr 1fr}}
 
 /* Encabezado público siempre accesible durante el desplazamiento */
