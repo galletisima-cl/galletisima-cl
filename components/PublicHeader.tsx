@@ -70,9 +70,9 @@ export default function PublicHeader() {
 
   return <>
     <div className="benefit-bar public-benefit-bar">
-      <span><b>Envíos a todo Chile</b></span>
-      <span><b>Moldes personalizados</b></span>
-      <span><b>Compra 100% segura</b></span>
+      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.75h11.5v10H3zM14.5 10h3.25L21 13.25v3.5h-6.5z"/><path d="M7.25 19a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Zm10.5 0a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z"/></svg><b>Envíos a todo Chile</b></span>
+      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 10.5-10.5M12.75 5.75l5.5 5.5M15.5 3l.6 1.9L18 5.5l-1.9.6-.6 1.9-.6-1.9-1.9-.6 1.9-.6.6-1.9ZM7 7l.45 1.55L9 9l-1.55.45L7 11l-.45-1.55L5 9l1.55-.45L7 7Z"/></svg><b>Moldes personalizados</b></span>
+      <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5.4c0 4.6-3.1 7.7-8 9.6-4.9-1.9-8-5-8-9.6V6l8-3Z"/><path d="m8.5 12 2.25 2.25L15.75 9"/></svg><b>Compra 100% segura</b></span>
     </div>
     <header className="public-header shell">
       <button className="public-menu-button" type="button" aria-label="Abrir menú de categorías" aria-expanded={open} aria-controls="public-category-drawer" onClick={() => setOpen(true)}><span aria-hidden="true">☰</span></button>
