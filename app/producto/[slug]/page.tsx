@@ -103,13 +103,15 @@ export default function ProductPage() {
           <h1>{product.name}</h1>
           <strong className="product-detail-price">{product.price ? currency.format(product.price) : "Consultar"}</strong>
           <p className="product-description">{product.description || "Molde Galletísima creado para dar vida a tus ideas."}</p>
-          {sizes.length ? <fieldset className="size-selector"><legend>Selecciona una medida</legend><div>{sizes.map((size) => <button type="button" key={size} className={selectedSize === size ? "selected" : ""} aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)}>{size}</button>)}</div></fieldset> : <p className="size-pending">Medida por confirmar</p>}
-          {product.stock > 0 && <div className="stock-line"><span className="available" />{product.stock} unidades disponibles</div>}
-          <div className="purchase-row">
-            <div className="quantity-picker" aria-label="Cantidad"><button type="button" aria-label="Disminuir cantidad" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button><strong>{quantity}</strong><button type="button" aria-label="Aumentar cantidad" onClick={() => setQuantity((value) => value + 1)}>+</button></div>
-            <button className="product-add" type="button" onClick={addToCart}>Agregar al carrito</button>
+          <div className="product-order-panel">
+            {sizes.length ? <fieldset className="size-selector"><legend>Selecciona una medida</legend><div>{sizes.map((size) => <button type="button" key={size} className={selectedSize === size ? "selected" : ""} aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)}>{size}</button>)}</div></fieldset> : <p className="size-pending">Medida por confirmar</p>}
+            {product.stock > 0 && <div className="stock-line"><span className="available" />{product.stock} unidades disponibles</div>}
+            <div className="purchase-row">
+              <div className="quantity-picker" aria-label="Cantidad"><button type="button" aria-label="Disminuir cantidad" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button><strong>{quantity}</strong><button type="button" aria-label="Aumentar cantidad" onClick={() => setQuantity((value) => value + 1)}>+</button></div>
+              <button className="product-add" type="button" onClick={addToCart}>Agregar al carrito</button>
+            </div>
+            <div className="product-assurances"><span>♡ Diseñado con cariño</span><span>▣ Envíos a todo Chile</span></div>
           </div>
-          <div className="product-assurances"><span>♡ Diseñado con cariño</span><span>▣ Envíos a todo Chile</span></div>
         </div>
       </section>
       <section className="product-benefits shell" aria-labelledby="product-benefits-title">
