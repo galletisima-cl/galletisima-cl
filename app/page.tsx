@@ -82,8 +82,6 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
   const [facebookUrl, setFacebookUrl] = useState("https://www.facebook.com/share/1Emwhrwy9q/?mibextid=wwXIfr");
-  const [catalogProducts, setCatalogProducts] = useState<PublicProduct[]>([]);
-  const [catalogLoading, setCatalogLoading] = useState(true);
   const [allProducts, setAllProducts] = useState<PublicProduct[]>([]);
   const [visibleProductCount, setVisibleProductCount] = useState(12);
   const [productSearch, setProductSearch] = useState("");
@@ -133,28 +131,12 @@ export default function Home() {
         .from("products")
         .select("id,slug,name,size,price,image_url,featured,product_categories(category_id)")
         .eq("active", true)
-        .eq("featured", true)
         .order("name"),
-      supabase
-        .from("products")
-        .select("id,slug,name,size,price,image_url,featured,product_categories(category_id)")
-        .eq("active", true)
-        .order("name"),
-    ]).then(([settingsResult, categoriesResult, productsResult, allProductsResult]) => {
+    ]).then(([settingsResult, categoriesResult, allProductsResult]) => {
       const settings = Object.fromEntries((settingsResult.data || []).map((setting) => [setting.key, setting.value]));
       if (settings.whatsapp_number) setWhatsappNumber(settings.whatsapp_number);
       if (settings.facebook_url) setFacebookUrl(settings.facebook_url);
       if (categoriesResult.data?.length) setCatalogCategories(categoriesResult.data);
-      if (productsResult.data?.length) {
-        const selectedSlug = new URLSearchParams(window.location.search).get("categoria");
-        const selectedCategory = categoriesResult.data?.find((category) => category.slug === selectedSlug);
-        const visibleProducts = selectedCategory
-          ? productsResult.data.filter((product) => product.product_categories?.some((link) => link.category_id === selectedCategory.id))
-          : productsResult.data;
-        setCatalogProducts(visibleProducts.slice(0, 12));
-      } else {
-        setCatalogProducts([]);
-      }
       if (allProductsResult.data) {
         const searchParams = new URLSearchParams(window.location.search);
         const selectedSlug = searchParams.get("ver") === "todos" ? null : searchParams.get("categoria");
@@ -164,7 +146,7 @@ export default function Home() {
         setAllProducts(allProductsResult.data);
         setVisibleProductCount(searchParams.get("ver") === "todos" ? allProductsResult.data.length : 12);
       }
-    }).finally(() => setCatalogLoading(false));
+    });
   }, []);
 
   useEffect(() => {
@@ -231,8 +213,8 @@ export default function Home() {
           <DesktopCategoryMenu label="Celebraciones" menuKey="celebrations" categories={categoryGroups.celebrations} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} />
           <DesktopCategoryMenu label="Personajes" menuKey="characters" categories={categoryGroups.characters} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} />
           <DesktopCategoryMenu label="Temáticas" menuKey="themes" categories={categoryGroups.themes} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight />
-          <a className="nav-pill" href="#moldes">Altares</a>
-          <a className="nav-pill" href="#moldes">Herramientas</a>
+          <a className="nav-pill" href="#catalogo">Altares</a>
+          <a className="nav-pill" href="#catalogo">Herramientas</a>
           <Link className="nav-pill nav-all" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setVisibleProductCount(allProducts.length || 12); }}>Ver todo</Link>
         </nav>
         <button className="category-trigger" aria-label="Abrir categorías" aria-expanded={menuOpen} aria-controls="mobile-category-drawer" onClick={() => setMenuOpen(true)}>
@@ -263,27 +245,6 @@ export default function Home() {
           </div>
         </div>
         <div className="hero-note"><span aria-hidden="true">✦</span><small>Hechos para</small><strong>crear momentos</strong><b>únicos</b></div>
-      </section>
-
-      <section id="moldes" className="section products-section shell">
-        <h2>Los más vendidos</h2>
-        <div className="title-line" />
-        {catalogLoading ? <div className="product-grid products-loading" aria-label="Cargando productos" aria-busy="true">
-          {Array.from({ length: 6 }, (_, index) => <div className="product-card product-skeleton" key={index} aria-hidden="true"><div className="product-photo" /><div className="product-info"><i /><b /></div></div>)}
-        </div> : catalogProducts.length ? <div className="product-grid">
-          {catalogProducts.map((product) => {
-            return <article className="product-card" key={product.id}>
-              <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined, backgroundPosition: product.image_url ? "center" : product.pos }}>
-                {product.featured && <span className="tag">favorito</span>}
-              </Link>
-              <div className="product-info">
-                <div><h3><Link href={`/producto/${product.slug}`}>{product.name}</Link></h3><strong>{product.price ? currency.format(product.price) : "Consultar"}</strong></div>
-                <Link className="product-buy" href={`/producto/${product.slug}`} aria-label={`Comprar ${product.name}`}>Comprar</Link>
-              </div>
-            </article>;
-          })}
-        </div> : <div className="products-empty"><span>♡</span><h3>Aún no hay productos destacados aquí</h3><p>Marca productos como “Más vendidos” desde el panel administrador.</p></div>}
-        <Link className="view-all" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setVisibleProductCount(allProducts.length || 12); }}>VER TODOS LOS MOLDES →</Link>
       </section>
 
       <section id="catalogo" className="section catalog-section shell">
