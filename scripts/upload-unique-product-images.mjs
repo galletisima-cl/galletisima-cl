@@ -13,6 +13,7 @@ if (!url || !key) throw new Error("Missing Supabase server credentials");
 
 const headers = { apikey: key, Authorization: `Bearer ${key}` };
 const sourceDirectory = "public/products-unique-source";
+const imageVersion = env.PRODUCT_IMAGE_VERSION || "unique-v3";
 const requestedSlugs = new Set(process.argv.slice(2));
 const files = fs.readdirSync(sourceDirectory).filter((file) => {
   if (!/\.(png|jpe?g|webp)$/i.test(file)) return false;
@@ -35,7 +36,7 @@ for (const file of files) {
     .flatten({ background: "#ffffff" })
     .webp({ quality: 88, effort: 6, smartSubsample: true })
     .toBuffer();
-  const objectPath = `unique-v3/${slug}.webp`;
+  const objectPath = `${imageVersion}/${slug}.webp`;
   const upload = await fetch(`${url}/storage/v1/object/product-images/${objectPath}`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "image/webp", "x-upsert": "true", "Cache-Control": "public, max-age=31536000, immutable" },
@@ -53,4 +54,4 @@ for (const file of files) {
   console.log(`${slug}\t${Math.round(image.length / 1024)} KB\t${imageUrl}`);
 }
 
-console.log(JSON.stringify({ uploaded: files.length, format: "webp", size: "1000x1000", path: "unique-v3" }));
+console.log(JSON.stringify({ uploaded: files.length, format: "webp", size: "1000x1000", path: imageVersion }));
