@@ -156,7 +156,7 @@ export default function Home() {
       }
       if (allProductsResult.data) {
         const searchParams = new URLSearchParams(window.location.search);
-        const selectedSlug = searchParams.get("categoria");
+        const selectedSlug = searchParams.get("ver") === "todos" ? null : searchParams.get("categoria");
         const initialSearch = searchParams.get("buscar") || "";
         setCategoryFilter(selectedSlug || "");
         setProductSearch(initialSearch);
@@ -232,7 +232,7 @@ export default function Home() {
           <DesktopCategoryMenu label="Temáticas" menuKey="themes" categories={categoryGroups.themes} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight />
           <a className="nav-pill" href="#moldes">Altares</a>
           <a className="nav-pill" href="#moldes">Herramientas</a>
-          <Link className="nav-pill nav-all" href="/?ver=todos#catalogo">Ver todo</Link>
+          <Link className="nav-pill nav-all" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setVisibleProductCount(allProducts.length || 12); }}>Ver todo</Link>
         </nav>
         <button className="category-trigger" aria-label="Abrir categorías" aria-expanded={menuOpen} aria-controls="mobile-category-drawer" onClick={() => setMenuOpen(true)}>
           <span aria-hidden="true">☰</span>
@@ -257,7 +257,7 @@ export default function Home() {
           <h1>tus ideas en<br/><strong>galletas<br/>increíbles</strong></h1>
           <p className="hero-copy">Diseños únicos para cada ocasión<br/>o crea tu propio molde personalizado.</p>
           <div className="hero-buttons">
-            <Link className="button primary" href="/?ver=todos#catalogo">VER TODOS LOS MOLDES <span>→</span></Link>
+            <Link className="button primary" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setVisibleProductCount(allProducts.length || 12); }}>VER TODOS LOS MOLDES <span>→</span></Link>
             <a className="button secondary" href="#contacto">MOLDE PERSONALIZADO <span>→</span></a>
           </div>
         </div>
@@ -280,7 +280,7 @@ export default function Home() {
             </article>;
           })}
         </div> : <div className="products-empty"><span>♡</span><h3>Aún no hay productos destacados aquí</h3><p>Marca productos como “Más vendidos” desde el panel administrador.</p></div>}
-        <Link className="view-all" href="/?ver=todos#catalogo">VER TODOS LOS MOLDES →</Link>
+        <Link className="view-all" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setVisibleProductCount(allProducts.length || 12); }}>VER TODOS LOS MOLDES →</Link>
       </section>
 
       <section id="catalogo" className="section catalog-section shell">
