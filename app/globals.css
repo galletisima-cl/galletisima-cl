@@ -327,7 +327,18 @@ form button { border:0; color:white; background:var(--pink); padding:0 22px; bor
 }
 
  .public-desktop-nav{display:none}
-@media(min-width:1051px){.public-header{height:132px;grid-template-columns:auto 1fr minmax(260px,360px) auto;gap:24px;padding-bottom:54px}.public-menu-button{display:none}.public-header-logo{grid-column:1;justify-self:start}.public-header-search{grid-column:3;display:flex;width:100%}.public-cart-button{grid-column:4}.public-desktop-nav{display:flex}}
+@media(min-width:1051px){
+  .header{grid-template-columns:auto minmax(0,1fr) auto}
+  .header-actions{grid-column:2/4;width:100%;display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:14px}
+  .header-actions .header-search{grid-column:1;justify-self:center;width:min(100%,430px)}
+  .header-actions .cart{grid-column:2;justify-self:end}
+  .public-header{height:132px;grid-template-columns:auto minmax(0,1fr) 46px;gap:24px;padding-bottom:54px}
+  .public-menu-button{display:none}
+  .public-header-logo{grid-column:1;justify-self:start}
+  .public-header-search{grid-column:2;display:flex;justify-self:center;width:min(100%,430px)}
+  .public-cart-button{grid-column:3}
+  .public-desktop-nav{display:flex}
+}
 @media(max-width:560px){.public-header{height:78px;grid-template-columns:48px 1fr 48px}.public-header-logo img{width:min(165px,43vw)}.public-menu-button,.public-cart-button{width:43px;height:43px}.public-category-links{grid-template-columns:1fr 1fr}}
 
 /* Encabezado público siempre accesible durante el desplazamiento */
