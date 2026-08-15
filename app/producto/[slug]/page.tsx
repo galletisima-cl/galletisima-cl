@@ -27,7 +27,7 @@ const currency = new Intl.NumberFormat("es-CL", {
 });
 
 const productFaqs = [
-  { question: "¿Puedo pagar cuando llega?", answer: "El pedido debe quedar pagado antes de comenzar su preparación. Puedes utilizar los medios de pago disponibles al confirmar tu compra." },
+  { question: "¿Puedo pagar cuando llega?", answer: "Sí, el pago al recibir está disponible exclusivamente para entregas en Santiago. Para otras comunas debes utilizar los medios de pago disponibles al confirmar tu compra." },
   { question: "¿Cuánto tardan en preparar mi pedido?", answer: "El plazo de preparación depende de la cantidad y de los modelos elegidos. Te informaremos la fecha estimada al confirmar el pedido." },
   { question: "¿Hacen envíos a regiones?", answer: "Sí, realizamos envíos a todo Chile. El costo y el plazo de transporte dependen de la comuna de destino." },
   { question: "¿De qué material están hechos los cortadores?", answer: "Nuestros cortadores se fabrican en plástico de uso alimentario, liviano y diseñado para lograr cortes definidos." },
@@ -110,6 +110,15 @@ export default function ProductPage() {
             <button className="product-add" type="button" onClick={addToCart}>Agregar al carrito</button>
           </div>
           <div className="product-assurances"><span>♡ Diseñado con cariño</span><span>▣ Envíos a todo Chile</span></div>
+        </div>
+      </section>
+      <section className="product-benefits shell" aria-labelledby="product-benefits-title">
+        <div className="pay-on-delivery"><strong>✨ PAGA CUANDO LLEGUE ✨</strong><em>exclusivo en Santiago.</em><span>¡Pide hoy y paga al recibir en tu puerta!</span></div>
+        <div className="benefits-intro"><h2 id="product-benefits-title">Diseñados para durar</h2><p>Creamos herramientas mágicas utilizando tecnología de impresión 3D de alta precisión y materiales amigables con el planeta.</p></div>
+        <div className="benefit-cards">
+          <article><span aria-hidden="true">🌱</span><strong>Material Bio-Plástico</strong><h3>PLA Premium</h3><p>Material liviano de origen vegetal, ideal para crear formas precisas.</p></article>
+          <article><span aria-hidden="true">✦</span><strong>Alta precisión</strong><h3>Impresión 3D</h3><p>Bordes definidos y detalles nítidos para resultados consistentes.</p></article>
+          <article><span aria-hidden="true">♡</span><strong>Hecho con cariño</strong><h3>Producción local</h3><p>Cada molde se prepara especialmente para tu pedido.</p></article>
         </div>
       </section>
       <section className="product-faq shell" aria-labelledby="product-faq-title">
