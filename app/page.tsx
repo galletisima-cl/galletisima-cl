@@ -82,7 +82,8 @@ export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
   const [facebookUrl, setFacebookUrl] = useState("https://www.facebook.com/share/1Emwhrwy9q/?mibextid=wwXIfr");
-  const [catalogProducts, setCatalogProducts] = useState<PublicProduct[]>(fallbackProducts);
+  const [catalogProducts, setCatalogProducts] = useState<PublicProduct[]>([]);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [allProducts, setAllProducts] = useState<PublicProduct[]>([]);
   const [visibleProductCount, setVisibleProductCount] = useState(12);
   const [productSearch, setProductSearch] = useState("");
@@ -163,7 +164,7 @@ export default function Home() {
         setAllProducts(allProductsResult.data);
         setVisibleProductCount(searchParams.get("ver") === "todos" ? allProductsResult.data.length : 12);
       }
-    });
+    }).finally(() => setCatalogLoading(false));
   }, []);
 
   useEffect(() => {
@@ -267,7 +268,9 @@ export default function Home() {
       <section id="moldes" className="section products-section shell">
         <h2>Los más vendidos</h2>
         <div className="title-line" />
-        {catalogProducts.length ? <div className="product-grid">
+        {catalogLoading ? <div className="product-grid products-loading" aria-label="Cargando productos" aria-busy="true">
+          {Array.from({ length: 6 }, (_, index) => <div className="product-card product-skeleton" key={index} aria-hidden="true"><div className="product-photo" /><div className="product-info"><i /><b /></div></div>)}
+        </div> : catalogProducts.length ? <div className="product-grid">
           {catalogProducts.map((product) => {
             return <article className="product-card" key={product.id}>
               <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined, backgroundPosition: product.image_url ? "center" : product.pos }}>
