@@ -194,11 +194,6 @@ export default function Home() {
   const categoryGroups = groupCategories(catalogCategories);
   const closeMobileMenu = () => setMenuOpen(false);
   const closeCart = useCallback(() => setCartOpen(false), []);
-  const openSearch = () => {
-    document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 450);
-  };
-
   return (
     <main>
       <div className="benefit-bar">
@@ -224,7 +219,10 @@ export default function Home() {
           <Image src="/galletisima-logo.png" alt="Galletísima" width={360} height={140} priority />
         </a>
         <div className="header-actions">
-          <button className="icon-button search" aria-label="Buscar productos" aria-controls="catalog-search-input" onClick={openSearch}>⌕</button>
+          <form className="header-search" onSubmit={(event) => { event.preventDefault(); setVisibleProductCount(12); document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
+            <input type="search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Busque productos aquí..." aria-label="Buscar productos" />
+            <button type="submit" aria-label="Buscar">⌕</button>
+          </form>
           <button className="icon-button cart" aria-label={`Abrir carrito con ${cart} productos`} onClick={() => setCartOpen(true)}>
             🛒<em>{cart}</em>
           </button>
