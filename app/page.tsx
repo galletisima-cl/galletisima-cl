@@ -86,6 +86,11 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     let frameId = 0;
     let previousTime = 0;
     let interacting = false;
+    let activePointerId: number | null = null;
+    let dragStartX = 0;
+    let dragStartScrollLeft = 0;
+    let dragged = false;
+    let suppressClickUntil = 0;
     const cycleMarkers = () => ({
       middle: carousel.querySelector<HTMLElement>('[data-carousel-copy="1"]')?.offsetLeft || 0,
       third: carousel.querySelector<HTMLElement>('[data-carousel-copy="2"]')?.offsetLeft || 0,
@@ -106,9 +111,41 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       }
       frameId = window.requestAnimationFrame(animate);
     };
-    const onPointerDown = () => { interacting = true; };
-    const onPointerUp = () => { interacting = false; previousTime = performance.now(); };
+    const onPointerDown = (event: PointerEvent) => {
+      if (!event.isPrimary || event.button !== 0) return;
+      interacting = true;
+      activePointerId = event.pointerId;
+      dragStartX = event.clientX;
+      dragStartScrollLeft = carousel.scrollLeft;
+      dragged = false;
+      carousel.setPointerCapture(event.pointerId);
+    };
+    const onPointerMove = (event: PointerEvent) => {
+      if (!interacting || event.pointerId !== activePointerId) return;
+      const distance = event.clientX - dragStartX;
+      if (Math.abs(distance) > 4) dragged = true;
+      if (dragged) {
+        event.preventDefault();
+        carousel.scrollLeft = dragStartScrollLeft - distance;
+      }
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      if (activePointerId !== null && event.pointerId !== activePointerId) return;
+      if (activePointerId !== null && carousel.hasPointerCapture(activePointerId)) carousel.releasePointerCapture(activePointerId);
+      if (dragged) suppressClickUntil = performance.now() + 250;
+      interacting = false;
+      activePointerId = null;
+      previousTime = performance.now();
+    };
+    const onClick = (event: MouseEvent) => {
+      if (performance.now() < suppressClickUntil) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
     carousel.addEventListener("pointerdown", onPointerDown);
+    carousel.addEventListener("pointermove", onPointerMove, { passive: false });
+    carousel.addEventListener("click", onClick, true);
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerUp);
     frameId = window.requestAnimationFrame(animate);
@@ -116,6 +153,8 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       window.cancelAnimationFrame(startAtMiddle);
       window.cancelAnimationFrame(frameId);
       carousel.removeEventListener("pointerdown", onPointerDown);
+      carousel.removeEventListener("pointermove", onPointerMove);
+      carousel.removeEventListener("click", onClick, true);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
     };
