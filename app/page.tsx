@@ -86,6 +86,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     if (!carousel || itemCount === 0) return;
     let frameId = 0;
     let previousTime = 0;
+    let lastFrameTime = performance.now();
     let interacting = false;
     let activePointerId: number | null = null;
     let dragStartX = 0;
@@ -105,6 +106,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       if (middle) carousel.scrollLeft = middle;
     });
     const animate = (time: number) => {
+      lastFrameTime = performance.now();
       const elapsed = previousTime ? Math.min(time - previousTime, 50) : 0;
       previousTime = time;
       if (!interacting && performance.now() >= resumeAt && carousel.scrollWidth > carousel.clientWidth + 2) {
@@ -114,6 +116,12 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
         if (cycleWidth > 0 && carousel.scrollLeft >= third) carousel.scrollLeft -= cycleWidth;
         else if (cycleWidth > 0 && carousel.scrollLeft <= 1) carousel.scrollLeft += cycleWidth;
       }
+      frameId = window.requestAnimationFrame(animate);
+    };
+    const restartAnimation = () => {
+      window.cancelAnimationFrame(frameId);
+      previousTime = performance.now();
+      lastFrameTime = performance.now();
       frameId = window.requestAnimationFrame(animate);
     };
     const onPointerDown = (event: PointerEvent) => {
@@ -174,6 +182,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       interacting = false;
       touchDirection = "pending";
       previousTime = performance.now();
+      restartAnimation();
     };
     const releaseVerticalGesture = () => {
       if (touchDirection !== "horizontal") {
@@ -181,6 +190,13 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
         previousTime = performance.now();
       }
     };
+    const onPageShow = () => restartAnimation();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") restartAnimation();
+    };
+    const watchdog = window.setInterval(() => {
+      if (document.visibilityState === "visible" && performance.now() - lastFrameTime > 750) restartAnimation();
+    }, 1000);
     carousel.addEventListener("pointerdown", onPointerDown);
     carousel.addEventListener("pointermove", onPointerMove, { passive: false });
     carousel.addEventListener("click", onClick, true);
@@ -191,8 +207,12 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     window.addEventListener("touchend", onTouchEnd, { passive: true });
     window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     window.addEventListener("scroll", releaseVerticalGesture, { passive: true });
-    frameId = window.requestAnimationFrame(animate);
+    window.addEventListener("scrollend", restartAnimation, { passive: true });
+    window.addEventListener("pageshow", onPageShow);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    restartAnimation();
     return () => {
+      window.clearInterval(watchdog);
       window.cancelAnimationFrame(startAtMiddle);
       window.cancelAnimationFrame(frameId);
       carousel.removeEventListener("pointerdown", onPointerDown);
@@ -205,6 +225,9 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       window.removeEventListener("touchend", onTouchEnd);
       window.removeEventListener("touchcancel", onTouchEnd);
       window.removeEventListener("scroll", releaseVerticalGesture);
+      window.removeEventListener("scrollend", restartAnimation);
+      window.removeEventListener("pageshow", onPageShow);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [carouselRef, itemCount]);
 }
