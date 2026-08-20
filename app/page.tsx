@@ -89,10 +89,11 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     let interacting = false;
     let activePointerId: number | null = null;
     let dragStartX = 0;
-    let dragStartY = 0;
     let dragStartScrollLeft = 0;
     let dragged = false;
-    let gestureDirection: "pending" | "horizontal" | "vertical" = "pending";
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchDirection: "pending" | "horizontal" | "vertical" = "pending";
     let suppressClickUntil = 0;
     let resumeAt = 0;
     const cycleMarkers = () => ({
@@ -116,29 +117,18 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       frameId = window.requestAnimationFrame(animate);
     };
     const onPointerDown = (event: PointerEvent) => {
-      if (!event.isPrimary || event.button !== 0) return;
+      if (event.pointerType !== "mouse" || !event.isPrimary || event.button !== 0) return;
       interacting = true;
       activePointerId = event.pointerId;
       dragStartX = event.clientX;
-      dragStartY = event.clientY;
       dragStartScrollLeft = carousel.scrollLeft;
       dragged = false;
-      gestureDirection = "pending";
+      carousel.setPointerCapture(event.pointerId);
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!interacting || event.pointerId !== activePointerId) return;
       const distanceX = event.clientX - dragStartX;
-      const distanceY = event.clientY - dragStartY;
-      if (gestureDirection === "pending" && Math.max(Math.abs(distanceX), Math.abs(distanceY)) > 8) {
-        gestureDirection = Math.abs(distanceX) > Math.abs(distanceY) * 1.15 ? "horizontal" : "vertical";
-        if (gestureDirection === "vertical") {
-          interacting = false;
-          activePointerId = null;
-          return;
-        }
-        carousel.setPointerCapture(event.pointerId);
-      }
-      if (gestureDirection === "horizontal") {
+      if (Math.abs(distanceX) > 4) {
         dragged = true;
         event.preventDefault();
         carousel.scrollLeft = dragStartScrollLeft - distanceX;
@@ -161,20 +151,45 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
         event.stopPropagation();
       }
     };
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) return;
+      touchStartX = event.touches[0].clientX;
+      touchStartY = event.touches[0].clientY;
+      touchDirection = "pending";
+      interacting = true;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length !== 1 || touchDirection !== "pending") return;
+      const distanceX = event.touches[0].clientX - touchStartX;
+      const distanceY = event.touches[0].clientY - touchStartY;
+      if (Math.max(Math.abs(distanceX), Math.abs(distanceY)) <= 8) return;
+      touchDirection = Math.abs(distanceX) > Math.abs(distanceY) ? "horizontal" : "vertical";
+      if (touchDirection === "vertical") interacting = false;
+    };
+    const onTouchEnd = () => {
+      if (touchDirection === "horizontal") {
+        resumeAt = performance.now() + CAROUSEL_MANUAL_PAUSE_MS;
+        suppressClickUntil = performance.now() + 250;
+      }
+      interacting = false;
+      touchDirection = "pending";
+      previousTime = performance.now();
+    };
     const releaseVerticalGesture = () => {
-      if (gestureDirection !== "horizontal") {
+      if (touchDirection !== "horizontal") {
         interacting = false;
-        activePointerId = null;
         previousTime = performance.now();
       }
     };
     carousel.addEventListener("pointerdown", onPointerDown);
     carousel.addEventListener("pointermove", onPointerMove, { passive: false });
     carousel.addEventListener("click", onClick, true);
+    carousel.addEventListener("touchstart", onTouchStart, { passive: true });
+    carousel.addEventListener("touchmove", onTouchMove, { passive: true });
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerUp);
-    window.addEventListener("touchend", releaseVerticalGesture, { passive: true });
-    window.addEventListener("touchcancel", releaseVerticalGesture, { passive: true });
+    window.addEventListener("touchend", onTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
     window.addEventListener("scroll", releaseVerticalGesture, { passive: true });
     frameId = window.requestAnimationFrame(animate);
     return () => {
@@ -183,10 +198,12 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       carousel.removeEventListener("pointerdown", onPointerDown);
       carousel.removeEventListener("pointermove", onPointerMove);
       carousel.removeEventListener("click", onClick, true);
+      carousel.removeEventListener("touchstart", onTouchStart);
+      carousel.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
-      window.removeEventListener("touchend", releaseVerticalGesture);
-      window.removeEventListener("touchcancel", releaseVerticalGesture);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("touchcancel", onTouchEnd);
       window.removeEventListener("scroll", releaseVerticalGesture);
     };
   }, [carouselRef, itemCount]);
