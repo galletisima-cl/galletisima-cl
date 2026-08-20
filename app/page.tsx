@@ -89,8 +89,10 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     let interacting = false;
     let activePointerId: number | null = null;
     let dragStartX = 0;
+    let dragStartY = 0;
     let dragStartScrollLeft = 0;
     let dragged = false;
+    let gestureDirection: "pending" | "horizontal" | "vertical" = "pending";
     let suppressClickUntil = 0;
     let resumeAt = 0;
     const cycleMarkers = () => ({
@@ -118,17 +120,29 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       interacting = true;
       activePointerId = event.pointerId;
       dragStartX = event.clientX;
+      dragStartY = event.clientY;
       dragStartScrollLeft = carousel.scrollLeft;
       dragged = false;
+      gestureDirection = "pending";
       carousel.setPointerCapture(event.pointerId);
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!interacting || event.pointerId !== activePointerId) return;
-      const distance = event.clientX - dragStartX;
-      if (Math.abs(distance) > 4) dragged = true;
-      if (dragged) {
+      const distanceX = event.clientX - dragStartX;
+      const distanceY = event.clientY - dragStartY;
+      if (gestureDirection === "pending" && Math.max(Math.abs(distanceX), Math.abs(distanceY)) > 8) {
+        gestureDirection = Math.abs(distanceX) > Math.abs(distanceY) * 1.15 ? "horizontal" : "vertical";
+        if (gestureDirection === "vertical") {
+          interacting = false;
+          activePointerId = null;
+          if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
+          return;
+        }
+      }
+      if (gestureDirection === "horizontal") {
+        dragged = true;
         event.preventDefault();
-        carousel.scrollLeft = dragStartScrollLeft - distance;
+        carousel.scrollLeft = dragStartScrollLeft - distanceX;
       }
     };
     const onPointerUp = (event: PointerEvent) => {
