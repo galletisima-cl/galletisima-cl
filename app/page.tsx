@@ -7,6 +7,7 @@ import CartDrawer from "../components/CartDrawer";
 import MobileCategoryAccordions from "../components/MobileCategoryAccordions";
 import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
+import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
 
 type Category = { id: string; name: string; slug: string };
 type CategoryFeatureBanner = { categoryId: string; imageUrl: string; mobileImageUrl?: string };
@@ -88,6 +89,7 @@ export default function Home() {
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
   const [heroBannerUrl, setHeroBannerUrl] = useState("");
   const [heroMobileBannerUrl, setHeroMobileBannerUrl] = useState("");
+  const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);
   const [categoryBannerUrls, setCategoryBannerUrls] = useState<Record<string, string>>({});
   const [categoryMobileBannerUrls, setCategoryMobileBannerUrls] = useState<Record<string, string>>({});
   const [categoryFeatureBanners, setCategoryFeatureBanners] = useState<CategoryFeatureBanner[]>([]);
@@ -137,7 +139,7 @@ export default function Home() {
   useEffect(() => {
     const supabase = createClient();
     Promise.all([
-      supabase.from("site_settings").select("key,value").in("key", ["whatsapp_number", "hero_banner_url", "hero_mobile_banner_url", "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "seasonal_category_id", "instagram_url"]),
+      supabase.from("site_settings").select("key,value").in("key", ["whatsapp_number", "hero_banner_url", "hero_mobile_banner_url", ...Object.values(HERO_SETTING_KEYS), "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "seasonal_category_id", "instagram_url"]),
       supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
       supabase
         .from("products")
@@ -149,6 +151,13 @@ export default function Home() {
       if (settings.whatsapp_number) setWhatsappNumber(settings.whatsapp_number);
       if (settings.hero_banner_url) setHeroBannerUrl(settings.hero_banner_url);
       if (settings.hero_mobile_banner_url) setHeroMobileBannerUrl(settings.hero_mobile_banner_url);
+      setHeroContent({
+        eyebrow: settings[HERO_SETTING_KEYS.eyebrow] || DEFAULT_HERO_CONTENT.eyebrow,
+        title: settings[HERO_SETTING_KEYS.title] || DEFAULT_HERO_CONTENT.title,
+        subtitle: settings[HERO_SETTING_KEYS.subtitle] || DEFAULT_HERO_CONTENT.subtitle,
+        primaryButton: settings[HERO_SETTING_KEYS.primaryButton] || DEFAULT_HERO_CONTENT.primaryButton,
+        secondaryButton: settings[HERO_SETTING_KEYS.secondaryButton] || DEFAULT_HERO_CONTENT.secondaryButton,
+      });
       if (settings.seasonal_category_id) setSeasonalCategoryId(settings.seasonal_category_id);
       if (settings.instagram_url) setInstagramUrl(settings.instagram_url);
       if (settings.category_banner_urls) {
@@ -286,18 +295,18 @@ export default function Home() {
           aria-label="Moldes y galletas decoradas sobre el banner principal"
         />
         <div className="hero-content shell">
-          <p className="eyebrow">MOLDES QUE CONVIERTEN</p>
-          <h1>tus ideas en<br/><strong>galletas<br/>increíbles</strong></h1>
-          <p className="hero-copy">Diseños únicos para cada ocasión<br/>o crea tu propio molde personalizado.</p>
+          <p className="eyebrow">{heroContent.eyebrow}</p>
+          <h1>{heroContent.title}</h1>
+          <p className="hero-copy">{heroContent.subtitle}</p>
           <div className="hero-buttons">
-            <Link className="button primary" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setCatalogPage(1); }}>VER CATÁLOGO <span>→</span></Link>
+            <Link className="button primary" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setCatalogPage(1); }}>{heroContent.primaryButton} <span>→</span></Link>
             <a
               className="button secondary"
               href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola! Me gusta el catálogo, pero tengo una duda…")}`}
               target="_blank"
               rel="noreferrer"
             >
-              MOLDE PERSONALIZADO <span>→</span>
+              {heroContent.secondaryButton} <span>→</span>
             </a>
           </div>
         </div>

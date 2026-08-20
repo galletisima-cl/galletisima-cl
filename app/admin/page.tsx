@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
+import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS, type HeroContent } from "../../lib/hero-content";
 
 type Category = {
   id: string;
@@ -161,6 +162,7 @@ export default function AdminPage() {
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
   const [heroBannerUrl, setHeroBannerUrl] = useState("");
   const [heroMobileBannerUrl, setHeroMobileBannerUrl] = useState("");
+  const [heroContent, setHeroContent] = useState<HeroContent>(DEFAULT_HERO_CONTENT);
   const [selectedBanner, setSelectedBanner] = useState<File | null>(null);
   const [selectedMobileBanner, setSelectedMobileBanner] = useState<File | null>(null);
   const [categoryBannerUrls, setCategoryBannerUrls] = useState<Record<string, string>>({});
@@ -192,7 +194,7 @@ export default function AdminPage() {
         supabase
           .from("site_settings")
           .select("key,value")
-          .in("key", ["whatsapp_number", "facebook_url", "hero_banner_url", "hero_mobile_banner_url", "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "product_size_prices", "seasonal_category_id", "instagram_url"]),
+          .in("key", ["whatsapp_number", "facebook_url", "hero_banner_url", "hero_mobile_banner_url", ...Object.values(HERO_SETTING_KEYS), "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "product_size_prices", "seasonal_category_id", "instagram_url"]),
       ]);
     const { data: c, error: ce } = categoryResult;
     let { data: p, error: pe } = productResult;
@@ -224,6 +226,13 @@ export default function AdminPage() {
       if (values.facebook_url) setFacebookUrl(values.facebook_url);
       if (values.hero_banner_url) setHeroBannerUrl(values.hero_banner_url);
       if (values.hero_mobile_banner_url) setHeroMobileBannerUrl(values.hero_mobile_banner_url);
+      setHeroContent({
+        eyebrow: values[HERO_SETTING_KEYS.eyebrow] || DEFAULT_HERO_CONTENT.eyebrow,
+        title: values[HERO_SETTING_KEYS.title] || DEFAULT_HERO_CONTENT.title,
+        subtitle: values[HERO_SETTING_KEYS.subtitle] || DEFAULT_HERO_CONTENT.subtitle,
+        primaryButton: values[HERO_SETTING_KEYS.primaryButton] || DEFAULT_HERO_CONTENT.primaryButton,
+        secondaryButton: values[HERO_SETTING_KEYS.secondaryButton] || DEFAULT_HERO_CONTENT.secondaryButton,
+      });
       if (values.seasonal_category_id) setSeasonalCategoryId(values.seasonal_category_id);
       if (values.instagram_url) setInstagramUrl(values.instagram_url);
       if (values.category_banner_urls) {
@@ -473,6 +482,31 @@ export default function AdminPage() {
     }
   }
 
+  async function saveHeroContent(e: FormEvent) {
+    e.preventDefault();
+    const normalized = Object.fromEntries(
+      Object.entries(heroContent).map(([key, value]) => [key, value.trim()]),
+    ) as HeroContent;
+    if (Object.values(normalized).some((value) => !value))
+      return setError("Completa todos los textos del banner");
+    setLoading(true);
+    setError("");
+    const updatedAt = new Date().toISOString();
+    const { error: contentError } = await supabase.from("site_settings").upsert([
+      { key: HERO_SETTING_KEYS.eyebrow, value: normalized.eyebrow, updated_at: updatedAt },
+      { key: HERO_SETTING_KEYS.title, value: normalized.title, updated_at: updatedAt },
+      { key: HERO_SETTING_KEYS.subtitle, value: normalized.subtitle, updated_at: updatedAt },
+      { key: HERO_SETTING_KEYS.primaryButton, value: normalized.primaryButton, updated_at: updatedAt },
+      { key: HERO_SETTING_KEYS.secondaryButton, value: normalized.secondaryButton, updated_at: updatedAt },
+    ]);
+    setLoading(false);
+    if (contentError) setError(contentError.message);
+    else {
+      setHeroContent(normalized);
+      setNotice("Textos de la portada actualizados");
+    }
+  }
+
   async function saveCategoryResponsiveImage(categoryId: string, device: "desktop" | "mobile", file: File) {
     setLoading(true); setError("");
     try {
@@ -706,6 +740,9 @@ export default function AdminPage() {
             setSelectedMobileImage={setSelectedMobileBanner}
             saveDesktop={(event) => saveHeroBanner(event, "desktop")}
             saveMobile={(event) => saveHeroBanner(event, "mobile")}
+            heroContent={heroContent}
+            setHeroContent={setHeroContent}
+            saveHeroContent={saveHeroContent}
             loading={loading}
             categories={categories}
             featureBanners={categoryFeatureBanners}
@@ -1034,6 +1071,9 @@ function Banners({
   setSelectedMobileImage,
   saveDesktop,
   saveMobile,
+  heroContent,
+  setHeroContent,
+  saveHeroContent,
   loading,
   categories,
   featureBanners,
@@ -1052,6 +1092,9 @@ function Banners({
   setSelectedMobileImage: (file: File | null) => void;
   saveDesktop: (e: FormEvent) => void;
   saveMobile: (e: FormEvent) => void;
+  heroContent: HeroContent;
+  setHeroContent: (value: HeroContent) => void;
+  saveHeroContent: (e: FormEvent) => void;
   loading: boolean;
   categories: Category[];
   featureBanners: CategoryFeatureBanner[];
@@ -1103,6 +1146,14 @@ function Banners({
             <p>Es la imagen grande que recibe a tus clientes al entrar.</p>
           </div>
         </div>
+        <form className="hero-content-form" onSubmit={saveHeroContent}>
+          <label><span>Sobretítulo</span><input value={heroContent.eyebrow} onChange={(event) => setHeroContent({ ...heroContent, eyebrow: event.target.value })} maxLength={80} required /></label>
+          <label className="wide"><span>Título principal</span><input value={heroContent.title} onChange={(event) => setHeroContent({ ...heroContent, title: event.target.value })} maxLength={140} required /></label>
+          <label className="wide"><span>Subtítulo</span><textarea value={heroContent.subtitle} onChange={(event) => setHeroContent({ ...heroContent, subtitle: event.target.value })} maxLength={260} required /></label>
+          <label><span>Botón 1</span><input value={heroContent.primaryButton} onChange={(event) => setHeroContent({ ...heroContent, primaryButton: event.target.value })} maxLength={40} required /></label>
+          <label><span>Botón 2</span><input value={heroContent.secondaryButton} onChange={(event) => setHeroContent({ ...heroContent, secondaryButton: event.target.value })} maxLength={40} required /></label>
+          <button className="banner-save" disabled={loading}>{loading ? "Guardando…" : "Guardar textos"}</button>
+        </form>
         <div className="responsive-banner-grid">
           <form className="responsive-banner-card desktop" onSubmit={saveDesktop}>
             <div className="banner-preview" style={{ backgroundImage: `url(${preview})` }}><span>Escritorio</span></div>
