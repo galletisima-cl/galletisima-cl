@@ -77,8 +77,50 @@ const currency = new Intl.NumberFormat("es-CL", {
   currency: "CLP",
   maximumFractionDigits: 0,
 });
-const CAROUSEL_PAUSE_MS = 4500;
-const CAROUSEL_RESUME_AFTER_TOUCH_MS = 5000;
+const CAROUSEL_SPEED_PX_PER_SECOND = 32;
+
+function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, itemCount: number) {
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel || itemCount === 0) return;
+    let frameId = 0;
+    let previousTime = 0;
+    let interacting = false;
+    const cycleMarkers = () => ({
+      middle: carousel.querySelector<HTMLElement>('[data-carousel-copy="1"]')?.offsetLeft || 0,
+      third: carousel.querySelector<HTMLElement>('[data-carousel-copy="2"]')?.offsetLeft || 0,
+    });
+    const startAtMiddle = window.requestAnimationFrame(() => {
+      const { middle } = cycleMarkers();
+      if (middle) carousel.scrollLeft = middle;
+    });
+    const animate = (time: number) => {
+      const elapsed = previousTime ? Math.min(time - previousTime, 50) : 0;
+      previousTime = time;
+      if (!interacting && carousel.scrollWidth > carousel.clientWidth + 2) {
+        carousel.scrollLeft += CAROUSEL_SPEED_PX_PER_SECOND * elapsed / 1000;
+        const { middle, third } = cycleMarkers();
+        const cycleWidth = third - middle;
+        if (cycleWidth > 0 && carousel.scrollLeft >= third) carousel.scrollLeft -= cycleWidth;
+        else if (cycleWidth > 0 && carousel.scrollLeft <= 1) carousel.scrollLeft += cycleWidth;
+      }
+      frameId = window.requestAnimationFrame(animate);
+    };
+    const onPointerDown = () => { interacting = true; };
+    const onPointerUp = () => { interacting = false; previousTime = performance.now(); };
+    carousel.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    frameId = window.requestAnimationFrame(animate);
+    return () => {
+      window.cancelAnimationFrame(startAtMiddle);
+      window.cancelAnimationFrame(frameId);
+      carousel.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [carouselRef, itemCount]);
+}
 
 function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu, alignRight = false }: { label: string; menuKey: string; categories: Category[]; openMenu: string | null; setOpenMenu: (key: string | null) => void; alignRight?: boolean }) {
   const open = openMenu === menuKey;
@@ -87,8 +129,7 @@ function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu
 
 function FeaturedCategoryBanner({ banner, category, products }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[] }) {
   const carouselRef = useRef<HTMLDivElement>(null);
-  const interactingRef = useRef(false);
-  const resumeAtRef = useRef(0);
+  useContinuousCarousel(carouselRef, products.length);
   const move = useCallback((direction: -1 | 1) => {
     const carousel = carouselRef.current;
     if (!carousel) return;
@@ -96,20 +137,6 @@ function FeaturedCategoryBanner({ banner, category, products }: { banner: Catego
     const gap = Number.parseFloat(window.getComputedStyle(carousel).gap) || 0;
     carousel.scrollBy({ left: direction * ((card?.offsetWidth || 190) + gap), behavior: "smooth" });
   }, []);
-
-  useEffect(() => {
-    const carousel = carouselRef.current;
-    if (!carousel || products.length < 2) return;
-    const timer = window.setInterval(() => {
-      if (interactingRef.current || Date.now() < resumeAtRef.current || carousel.scrollWidth <= carousel.clientWidth + 2) return;
-      const card = carousel.querySelector<HTMLElement>(".featured-product-card");
-      const gap = Number.parseFloat(window.getComputedStyle(carousel).gap) || 0;
-      const step = (card?.offsetWidth || 190) + gap;
-      const atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - step * .5;
-      carousel.scrollTo({ left: atEnd ? 0 : carousel.scrollLeft + step, behavior: "smooth" });
-    }, CAROUSEL_PAUSE_MS);
-    return () => window.clearInterval(timer);
-  }, [products.length]);
 
   return (
     <article
@@ -127,18 +154,15 @@ function FeaturedCategoryBanner({ banner, category, products }: { banner: Catego
           <button type="button" aria-label={`Ver más productos de ${displayCategory(category.name)}`} onClick={() => move(1)}>→</button>
         </div>
         <div
-          className="featured-products-carousel"
+          className="featured-products-carousel continuous-carousel"
           ref={carouselRef}
           aria-label={`Productos de ${displayCategory(category.name)}`}
-          onPointerDown={() => { interactingRef.current = true; }}
-          onPointerUp={() => { interactingRef.current = false; resumeAtRef.current = Date.now() + CAROUSEL_RESUME_AFTER_TOUCH_MS; }}
-          onPointerCancel={() => { interactingRef.current = false; resumeAtRef.current = Date.now() + CAROUSEL_RESUME_AFTER_TOUCH_MS; }}
         >
-          {products.map((product) => <Link className="featured-product-card" key={product.id} href={`/producto/${product.slug}`}>
+          {[0, 1, 2].flatMap((copy) => products.map((product, index) => <Link className="featured-product-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}>
             <span><img src={product.image_url} alt={product.name} loading="lazy" /></span>
             <strong>{product.name}</strong>
             <small>desde {currency.format(product.price)}</small>
-          </Link>)}
+          </Link>))}
         </div>
       </div>}
     </article>
@@ -188,43 +212,6 @@ export default function Home() {
     });
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort]);
   const visibleMenuCategories = catalogCategories.filter((category) => !/^AA-Prueba/i.test(category.name) && category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
-
-  useEffect(() => {
-    const carousels = [seasonalCarouselRef.current, celebrationsCarouselRef.current].filter((carousel): carousel is HTMLDivElement => Boolean(carousel));
-    const interacting = new WeakSet<HTMLDivElement>();
-    const resumeAt = new WeakMap<HTMLDivElement, number>();
-    const startInteraction = (carousel: HTMLDivElement) => interacting.add(carousel);
-    const endInteraction = (carousel: HTMLDivElement) => {
-      interacting.delete(carousel);
-      resumeAt.set(carousel, Date.now() + CAROUSEL_RESUME_AFTER_TOUCH_MS);
-    };
-    const cleanups = carousels.map((carousel) => {
-      const onPointerDown = () => startInteraction(carousel);
-      const onPointerUp = () => endInteraction(carousel);
-      carousel.addEventListener("pointerdown", onPointerDown);
-      carousel.addEventListener("pointerup", onPointerUp);
-      carousel.addEventListener("pointercancel", onPointerUp);
-      return () => {
-        carousel.removeEventListener("pointerdown", onPointerDown);
-        carousel.removeEventListener("pointerup", onPointerUp);
-        carousel.removeEventListener("pointercancel", onPointerUp);
-      };
-    });
-    const timer = window.setInterval(() => {
-      carousels.forEach((carousel) => {
-        if (interacting.has(carousel) || Date.now() < (resumeAt.get(carousel) || 0) || carousel.scrollWidth <= carousel.clientWidth + 2) return;
-        const firstCard = carousel.querySelector<HTMLElement>(".category-carousel-card");
-        const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap || window.getComputedStyle(carousel).gap) || 0;
-        const step = (firstCard?.getBoundingClientRect().width || carousel.clientWidth * .75) + gap;
-        const atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - step * .5;
-        carousel.scrollTo({ left: atEnd ? 0 : carousel.scrollLeft + step, behavior: "smooth" });
-      });
-    }, CAROUSEL_PAUSE_MS);
-    return () => {
-      window.clearInterval(timer);
-      cleanups.forEach((cleanup) => cleanup());
-    };
-  }, [seasonalCategoryId, allProducts.length, catalogCategories.length, navigationConfig]);
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setCart(readCartCount()), 0);
@@ -357,6 +344,8 @@ export default function Home() {
   const seasonalProducts = seasonalCategory ? allProducts.filter((product) => product.product_categories?.some((link) => link.category_id === seasonalCategory.id) && product.image_url) : [];
   const celebrationsMenu = navigationConfig.menus.find((menu) => /celebr/i.test(menu.label));
   const celebrationCategories = orderedCategories.filter((category) => celebrationsMenu && navigationConfig.categoryMenu[category.id] === celebrationsMenu.id);
+  useContinuousCarousel(seasonalCarouselRef, seasonalProducts.length);
+  useContinuousCarousel(celebrationsCarouselRef, celebrationCategories.length);
   const categoryImage = (category: Category) => categoryBannerUrls[category.id] || allProducts.find((product) => product.image_url && product.product_categories?.some((link) => link.category_id === category.id))?.image_url || "";
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / 50));
   const pageProducts = filteredProducts.slice((catalogPage - 1) * 50, catalogPage * 50);
@@ -445,8 +434,8 @@ export default function Home() {
               <button type="button" aria-label="Ver más productos" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button>
             </div>
           </div>
-          <div className="category-carousel shell seasonal-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
-            {seasonalProducts.map((product) => <Link className="category-carousel-card" key={product.id} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>)}
+          <div className="category-carousel shell seasonal-carousel continuous-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
+            {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
           </div>
         </section>
       )}
@@ -465,7 +454,7 @@ export default function Home() {
       {celebrationCategories.length > 0 && (
         <section className="category-carousel-section celebrations-section" aria-labelledby="celebrations-title">
           <div className="shell category-carousel-heading"><div><p className="eyebrow">CELEBRA A TU MANERA</p><h2 id="celebrations-title">Celebraciones</h2></div><div className="category-carousel-controls"><button type="button" aria-label="Ver anteriores" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button><button type="button" aria-label="Ver más" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button></div></div>
-          <div className="category-carousel shell" ref={celebrationsCarouselRef}>{celebrationCategories.map((category) => { const image = categoryImage(category); return <Link className="category-carousel-card" key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}{image ? <img src={image} alt={displayCategory(category.name)} loading="lazy" /> : <span className="category-image-placeholder">♡</span>}</picture><strong>{displayCategory(category.name)}</strong><small>Ver colección →</small></Link>; })}</div>
+          <div className="category-carousel shell continuous-carousel" ref={celebrationsCarouselRef}>{[0, 1, 2].flatMap((copy) => celebrationCategories.map((category, index) => { const image = categoryImage(category); return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}{image ? <img src={image} alt={displayCategory(category.name)} loading="lazy" /> : <span className="category-image-placeholder">♡</span>}</picture><strong>{displayCategory(category.name)}</strong><small>Ver colección →</small></Link>; }))}</div>
         </section>
       )}
 
