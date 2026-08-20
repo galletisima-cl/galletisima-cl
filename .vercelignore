@@ -8,3 +8,13 @@ public/products-unique-source/
 .tmp-pulpito-corrected/
 supabase/.temp/
 .devlog.txt
+.deploy-*/
+.deploy-*.zip
+.sites-*/
+.sites-*.zip
+.sites-*.tar.gz
+.next-stale-*/
+.tmp-*/
+.tmp-*.mjs
+.tmp-*.txt
+tsconfig.tsbuildinfo
