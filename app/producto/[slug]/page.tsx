@@ -18,6 +18,7 @@ type Product = {
   stock: number;
   size: string;
   image_url: string;
+  product_images: { image_url: string; sort_order: number }[];
 };
 
 const currency = new Intl.NumberFormat("es-CL", {
@@ -27,7 +28,6 @@ const currency = new Intl.NumberFormat("es-CL", {
 });
 
 const productFaqs = [
-  { question: "¿Puedo pagar cuando llega?", answer: "Sí, el pago al recibir está disponible exclusivamente para entregas en Santiago. Para otras comunas debes utilizar los medios de pago disponibles al confirmar tu compra." },
   { question: "¿Cuánto tardan en preparar mi pedido?", answer: "El plazo de preparación depende de la cantidad y de los modelos elegidos. Te informaremos la fecha estimada al confirmar el pedido." },
   { question: "¿Hacen envíos a regiones?", answer: "Sí, realizamos envíos a todo Chile. El costo y el plazo de transporte dependen de la comuna de destino." },
   { question: "¿De qué material están hechos los cortadores?", answer: "Nuestros cortadores se fabrican en plástico de uso alimentario, liviano y diseñado para lograr cortes definidos." },
@@ -46,24 +46,38 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [notice, setNotice] = useState("");
+  const [sizePrices, setSizePrices] = useState<Record<string, number>>({});
+  const [selectedImageUrl, setSelectedImageUrl] = useState("");
 
   useEffect(() => {
     const supabase = createClient();
-    supabase
-      .from("products")
-      .select("id,name,slug,sku,description,price,stock,size,image_url")
-      .eq("slug", slug)
-      .eq("active", true)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    const loadProduct = async () => {
+      let result = await supabase.from("products").select("id,name,slug,sku,description,price,stock,size,image_url,product_images(image_url,sort_order)").eq("slug", slug).eq("active", true).maybeSingle();
+      if (result.error) {
+        const fallback = await supabase.from("products").select("id,name,slug,sku,description,price,stock,size,image_url").eq("slug", slug).eq("active", true).maybeSingle();
+        result = { data: fallback.data ? { ...fallback.data, product_images: [] } : null, error: fallback.error } as typeof result;
+      }
+      const { data, error } = result;
         if (error || !data) setNotFound(true);
         else {
           setProduct(data);
+          const firstImage = [...(data.product_images || [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.image_url || data.image_url;
+          setSelectedImageUrl(firstImage || "");
           setSelectedSize(parseSizes(data.size)[0] || "");
+          supabase.from("site_settings").select("value").eq("key", "product_size_prices").maybeSingle().then(({ data: setting }) => {
+            try { setSizePrices(JSON.parse(setting?.value || "{}")[data.id] || {}); } catch { setSizePrices({}); }
+          });
         }
         setLoading(false);
-      });
+    };
+    void loadProduct();
   }, [slug]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timeout = window.setTimeout(() => setNotice(""), 3200);
+    return () => window.clearTimeout(timeout);
+  }, [notice]);
 
   const addToCart = () => {
     if (!product) return;
@@ -76,7 +90,7 @@ export default function ProductPage() {
       slug: product.slug,
       name: product.name,
       size: selectedSize,
-      price: product.price,
+      price: sizePrices[selectedSize] ?? product.price,
       imageUrl: product.image_url,
       quantity,
     });
@@ -92,20 +106,26 @@ export default function ProductPage() {
   }
 
   const sizes = parseSizes(product.size);
+  const selectedPrice = sizePrices[selectedSize] ?? product.price;
+  const gallery = (product.product_images || []).length
+    ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order).map((image) => image.image_url)
+    : product.image_url ? [product.image_url] : [];
 
   return (
     <main className="product-page">
       <PublicHeader />
       <section className="product-detail shell">
-        <div className={`product-detail-image ${product.image_url ? "has-image" : ""}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined }} role="img" aria-label={`Imagen de ${product.name}`} />
+        <div className="product-gallery">
+          <div className={`product-detail-image ${selectedImageUrl ? "has-image" : ""}`} style={{ backgroundImage: selectedImageUrl ? `url(${selectedImageUrl})` : undefined }} role="img" aria-label={`Imagen de ${product.name}`} />
+          {gallery.length > 1 && <div className="product-gallery-thumbnails" aria-label="Galería del producto">{gallery.map((url, index) => <button type="button" key={url} className={selectedImageUrl === url ? "selected" : ""} onClick={() => setSelectedImageUrl(url)} aria-label={`Ver foto ${index + 1}`}><img src={url} alt="" /></button>)}</div>}
+        </div>
         <div className="product-detail-content">
           <p className="product-sku">SKU {product.sku}</p>
           <h1>{product.name}</h1>
-          <strong className="product-detail-price">{product.price ? currency.format(product.price) : "Consultar"}</strong>
+          <strong className="product-detail-price" aria-live="polite">{selectedPrice ? currency.format(selectedPrice) : "Consultar"}</strong>
           <p className="product-description">{product.description || "Molde Galletísima creado para dar vida a tus ideas."}</p>
           <div className="product-order-panel">
-            {sizes.length ? <fieldset className="size-selector"><legend>Selecciona una medida</legend><div>{sizes.map((size) => <button type="button" key={size} className={selectedSize === size ? "selected" : ""} aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)}>{size}</button>)}</div></fieldset> : <p className="size-pending">Medida por confirmar</p>}
-            {product.stock > 0 && <div className="stock-line"><span className="available" />{product.stock} unidades disponibles</div>}
+            {sizes.length ? <fieldset className="size-selector"><legend>Selecciona una medida</legend><div>{sizes.map((size) => <button type="button" key={size} className={selectedSize === size ? "selected" : ""} aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)}><span>{size}</span>{sizePrices[size] ? <small>{currency.format(sizePrices[size])}</small> : null}</button>)}</div></fieldset> : <p className="size-pending">Medida por confirmar</p>}
             <div className="purchase-row">
               <div className="quantity-picker" aria-label="Cantidad"><button type="button" aria-label="Disminuir cantidad" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button><strong>{quantity}</strong><button type="button" aria-label="Aumentar cantidad" onClick={() => setQuantity((value) => value + 1)}>+</button></div>
               <button className="product-add" type="button" onClick={addToCart}>Agregar al carrito</button>
@@ -115,7 +135,6 @@ export default function ProductPage() {
         </div>
       </section>
       <section className="product-benefits shell" aria-labelledby="product-benefits-title">
-        <div className="pay-on-delivery"><strong>✨ PAGA CUANDO LLEGUE ✨</strong><em>exclusivo en Santiago.</em><span>¡Pide hoy y paga al recibir en tu puerta!</span></div>
         <div className="benefits-intro"><h2 id="product-benefits-title">Diseñados para durar</h2><p>Creamos herramientas mágicas utilizando tecnología de impresión 3D de alta precisión y materiales amigables con el planeta.</p></div>
         <div className="benefit-cards">
           <article><span aria-hidden="true">🌱</span><strong>Material Bio-Plástico</strong><h3>PLA Premium</h3><p>Material liviano de origen vegetal, ideal para crear formas precisas.</p></article>
@@ -124,8 +143,7 @@ export default function ProductPage() {
         </div>
       </section>
       <section className="product-faq shell" aria-labelledby="product-faq-title">
-        <p>¿Tienes dudas? ¡Te ayudamos!</p>
-        <h2 id="product-faq-title">Preguntas frecuentes</h2>
+        <h2 id="product-faq-title" className="faq-main-title">¿Tienes dudas? ¡Te ayudamos!</h2>
         <div>
           {productFaqs.map((faq) => <details key={faq.question}><summary>{faq.question}<span aria-hidden="true">⌄</span></summary><p>{faq.answer}</p></details>)}
         </div>

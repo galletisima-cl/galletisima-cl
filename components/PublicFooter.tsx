@@ -44,7 +44,7 @@ export default function PublicFooter() {
           </div>
         </div>
         <nav className="footer-links" aria-label="Información legal"><h2>Información</h2><a href="/contacto">Contacto</a><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones</a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso</a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad</a></nav>
-        <div className="footer-contact"><h2>Encuéntranos</h2><a href={`https://wa.me/${whatsappNumber}`} target="_blank" rel="noreferrer"><span>WhatsApp</span><strong>{formatWhatsapp(whatsappNumber)}</strong></a><a href={MAP_URL} target="_blank" rel="noreferrer"><span>Retiro en La Florida</span><strong>Metro Vicente Valdés</strong></a></div>
+        <div className="footer-contact"><h2>Encuéntranos</h2><a href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola! Me gusta el catálogo, pero tengo una duda…")}`} target="_blank" rel="noreferrer"><span>WhatsApp</span><strong>{formatWhatsapp(whatsappNumber)}</strong></a><a href={MAP_URL} target="_blank" rel="noreferrer"><span>Retiro en La Florida</span><strong>Metro Vicente Valdés</strong></a></div>
       </div>
       <div className="shell footer-legal">
         <p className="footer-copyright">© 2026 Galletísima. Todos los derechos reservados.</p>

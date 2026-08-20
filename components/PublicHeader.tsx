@@ -9,6 +9,10 @@ import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { createClient } from "../lib/supabase/client";
 
 type Category = { id: string; name: string; slug: string };
+type NavigationLink = { id: string; label: string; href: string };
+type NavigationConfig = { menus: { id: string; label: string }[]; links?: NavigationLink[]; itemOrder?: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
+const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "/" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "more", label: "Más", href: "/contacto" }];
+const defaultNavigation: NavigationConfig = { menus: [{ id: "celebrations", label: "Celebraciones" }, { id: "characters", label: "Personajes" }, { id: "themes", label: "Temáticas" }], links: defaultLinks, itemOrder: ["link:home", "menu:celebrations", "menu:characters", "menu:themes", "link:altars", "link:tools", "link:all", "link:more"], categoryMenu: {}, categoryOrder: [] };
 
 const celebrationTerms = ["navidad", "baby-shower", "halloween", "ninos", "papa", "mama", "celebracion", "fiestas-patrias", "bebes"];
 const characterTerms = ["toy", "snoopy", "stitch", "pokemon", "bluey", "gabby", "marvel", "pooh", "disney", "bob-esponja", "pawpatrol", "spiderman", "lilo", "netflix"];
@@ -31,22 +35,37 @@ export default function PublicHeader() {
   const [cartOpen, setCartOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [navigation, setNavigation] = useState<NavigationConfig>(defaultNavigation);
   const [menuSearch, setMenuSearch] = useState("");
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
-  const visibleCategories = categories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
-  const categoryGroups = {
-    celebrations: categories.filter((category) => celebrationTerms.some((term) => category.slug.includes(term))),
-    characters: categories.filter((category) => characterTerms.some((term) => category.slug.includes(term))),
-    themes: categories.filter((category) => !celebrationTerms.some((term) => category.slug.includes(term)) && !characterTerms.some((term) => category.slug.includes(term))),
-  };
+  const orderedCategories = [...categories].sort((a, b) => {
+    const ai = navigation.categoryOrder.indexOf(a.id), bi = navigation.categoryOrder.indexOf(b.id);
+    return (ai < 0 ? 9999 : ai) - (bi < 0 ? 9999 : bi) || a.name.localeCompare(b.name, "es");
+  });
+  const visibleCategories = orderedCategories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
+  const fallbackGroup = (category: Category) => celebrationTerms.some((term) => category.slug.includes(term)) ? "celebrations" : characterTerms.some((term) => category.slug.includes(term)) ? "characters" : "themes";
+  const categoriesForMenu = (menuId: string) => orderedCategories.filter((category) => {
+    if (Object.prototype.hasOwnProperty.call(navigation.categoryMenu, category.id)) return navigation.categoryMenu[category.id] === menuId;
+    return fallbackGroup(category) === menuId;
+  });
+  const navLink = (id: string) => navigation.links?.find((item) => item.id === id) || defaultLinks.find((item) => item.id === id)!;
+  const publicNavOrder = navigation.itemOrder || defaultNavigation.itemOrder!;
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setCartCount(readCartCount()), 0);
     const syncCart = (event: Event) => setCartCount((event as CustomEvent<number>).detail ?? readCartCount());
     window.addEventListener(CART_UPDATED_EVENT, syncCart);
     window.addEventListener("storage", syncCart);
-    createClient().from("categories").select("id,name,slug").eq("active", true).order("name")
-      .then(({ data }) => setCategories(data || []));
+    const supabase = createClient();
+    Promise.all([
+      supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
+      supabase.from("site_settings").select("value").eq("key", "category_navigation").maybeSingle(),
+    ]).then(([categoriesResult, navigationResult]) => {
+      setCategories(categoriesResult.data || []);
+      if (navigationResult.data?.value) {
+        try { setNavigation(JSON.parse(navigationResult.data.value)); } catch { setNavigation(defaultNavigation); }
+      }
+    });
     return () => {
       window.clearTimeout(initialSync);
       window.removeEventListener(CART_UPDATED_EVENT, syncCart);
@@ -80,16 +99,19 @@ export default function PublicHeader() {
       <form className="header-search public-header-search" action="/" method="get"><input name="buscar" type="search" placeholder="Busque productos aquí..." aria-label="Buscar productos" /><button type="submit" aria-label="Buscar">⌕</button></form>
       <button className="public-cart-button" type="button" aria-label={`Abrir carrito con ${cartCount} productos`} onClick={() => setCartOpen(true)}><span aria-hidden="true">🛒</span><em>{cartCount}</em></button>
       <nav className="desktop-nav public-desktop-nav" aria-label="Navegación principal">
-        <Link className="nav-pill" href="/">Inicio</Link>
-        <DesktopCategoryMenu label="Celebraciones" menuKey="celebrations" categories={categoryGroups.celebrations} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} />
-        <DesktopCategoryMenu label="Personajes" menuKey="characters" categories={categoryGroups.characters} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} />
-        <DesktopCategoryMenu label="Temáticas" menuKey="themes" categories={categoryGroups.themes} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight />
-        <Link className="nav-pill" href="/?buscar=altares#catalogo">Altares</Link>
-        <Link className="nav-pill" href="/?buscar=herramientas#catalogo">Herramientas</Link>
-        <Link className="nav-pill nav-all" href="/?ver=todos#catalogo">Ver todo</Link>
-        <div className="mega-menu align-right"><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="public-mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>Más <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="public-mega-more"><div className="mega-links"><Link href="/contacto" onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones <span>→</span></a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso <span>→</span></a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad <span>→</span></a></div></div>}</div>
+        {publicNavOrder.map((entry, index) => {
+          if (entry.startsWith("link:")) {
+            const id = entry.slice(5), link = navLink(id);
+            const assignedCategories = orderedCategories.filter((category) => navigation.categoryMenu[category.id] === entry);
+            if (id !== "home" && assignedCategories.length) return <DesktopCategoryMenu key={entry} label={link.label} menuKey={entry} categories={assignedCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= publicNavOrder.length - 2} />;
+            if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="public-mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="public-mega-more"><div className="mega-links"><Link href={link.href} onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones <span>→</span></a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso <span>→</span></a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad <span>→</span></a></div></div>}</div>;
+            return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""}`} href={link.href}>{link.label}</Link>;
+          }
+          const menu = navigation.menus.find((item) => `menu:${item.id}` === entry);
+          return menu ? <DesktopCategoryMenu key={menu.id} label={menu.label} menuKey={menu.id} categories={categoriesForMenu(menu.id)} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index === publicNavOrder.length - 1} /> : null;
+        })}
       </nav>
-      {open && <div className="drawer-layer public-drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar menú" onClick={() => setOpen(false)} /><nav id="public-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small></div><button aria-label="Cerrar menú" onClick={() => setOpen(false)}>×</button></div><form className="drawer-search" action="/" method="get"><label htmlFor="public-drawer-search">Buscar productos o categorías</label><div><input id="public-drawer-search" name="buscar" type="search" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} placeholder="¿Qué molde buscas?" autoComplete="off" /><button type="submit" aria-label="Buscar productos">⌕</button></div></form><Link className="drawer-direct" href="/" onClick={() => setOpen(false)}>Inicio <span>→</span></Link><p className="drawer-list-title">Clasificación <b>{visibleCategories.length}</b></p><MobileCategoryAccordions categories={visibleCategories} close={() => setOpen(false)} />{!visibleCategories.length && <p className="drawer-search-empty">No hay categorías con ese nombre. Presiona buscar para revisar los productos.</p>}<Link className="drawer-direct" href="/contacto" onClick={() => setOpen(false)}>Contacto <span>→</span></Link></nav></div>}
+      {open && <div className="drawer-layer public-drawer-layer"><button className="drawer-backdrop" aria-label="Cerrar menú" onClick={() => setOpen(false)} /><nav id="public-category-drawer" className="category-drawer" aria-label="Categorías"><div className="drawer-head"><div><small>Explora la tienda</small></div><button aria-label="Cerrar menú" onClick={() => setOpen(false)}>×</button></div><form className="drawer-search" action="/" method="get"><label htmlFor="public-drawer-search">Buscar productos o categorías</label><div><input id="public-drawer-search" name="buscar" type="search" value={menuSearch} onChange={(event) => setMenuSearch(event.target.value)} placeholder="¿Qué molde buscas?" autoComplete="off" /><button type="submit" aria-label="Buscar productos">⌕</button></div></form><Link className="drawer-direct" href="/" onClick={() => setOpen(false)}>Inicio <span>→</span></Link><MobileCategoryAccordions categories={visibleCategories} navigation={navigation} close={() => setOpen(false)} />{!visibleCategories.length && <p className="drawer-search-empty">No hay categorías con ese nombre. Presiona buscar para revisar los productos.</p>}<Link className="drawer-direct" href="/contacto" onClick={() => setOpen(false)}>Contacto <span>→</span></Link></nav></div>}
       <CartDrawer open={cartOpen} onClose={closeCart} />
     </header>
   </>;

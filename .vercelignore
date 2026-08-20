@@ -1,0 +1,10 @@
+public/products-ai/
+public/products-unique-source/
+.tmp-menu-check/
+.tmp-sheet-inspect/
+.tmp-image-refs/
+.tmp-lila-preview/
+.tmp-pending-refs/
+.tmp-pulpito-corrected/
+supabase/.temp/
+.devlog.txt
