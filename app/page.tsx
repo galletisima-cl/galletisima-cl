@@ -539,13 +539,15 @@ export default function Home() {
               <p className="eyebrow">TEMPORADA DE TURNO</p>
               <h2 id="seasonal-title">{displayCategory(seasonalCategory.name)}</h2>
             </div>
-            <div className="category-carousel-controls">
+          </div>
+          <div className="category-carousel-frame shell">
+            <div className="category-carousel-controls side-controls">
               <button type="button" aria-label="Ver productos anteriores" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button>
               <button type="button" aria-label="Ver más productos" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button>
             </div>
-          </div>
-          <div className="category-carousel shell seasonal-carousel continuous-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
-            {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
+            <div className="category-carousel seasonal-carousel continuous-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
+              {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
+            </div>
           </div>
         </section>
       )}
@@ -563,8 +565,11 @@ export default function Home() {
 
       {celebrationCategories.length > 0 && (
         <section className="category-carousel-section celebrations-section" aria-labelledby="celebrations-title">
-          <div className="shell category-carousel-heading"><div><p className="eyebrow">CELEBRA A TU MANERA</p><h2 id="celebrations-title">Celebraciones</h2></div><div className="category-carousel-controls"><button type="button" aria-label="Ver anteriores" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button><button type="button" aria-label="Ver más" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button></div></div>
-          <div className="category-carousel shell continuous-carousel" ref={celebrationsCarouselRef}>{[0, 1, 2].flatMap((copy) => celebrationCategories.map((category, index) => { const image = categoryImage(category); return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}{image ? <img src={image} alt={displayCategory(category.name)} loading="lazy" /> : <span className="category-image-placeholder">♡</span>}</picture><strong>{displayCategory(category.name)}</strong><small>Ver colección →</small></Link>; }))}</div>
+          <div className="shell category-carousel-heading"><div><p className="eyebrow">CELEBRA A TU MANERA</p><h2 id="celebrations-title">Celebraciones</h2></div></div>
+          <div className="category-carousel-frame shell">
+            <div className="category-carousel-controls side-controls"><button type="button" aria-label="Ver anteriores" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button><button type="button" aria-label="Ver más" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button></div>
+            <div className="category-carousel continuous-carousel" ref={celebrationsCarouselRef}>{[0, 1, 2].flatMap((copy) => celebrationCategories.map((category, index) => { const image = categoryImage(category); return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}{image ? <img src={image} alt={displayCategory(category.name)} loading="lazy" /> : <span className="category-image-placeholder">♡</span>}</picture><strong>{displayCategory(category.name)}</strong><small>Ver colección →</small></Link>; }))}</div>
+          </div>
         </section>
       )}
 
