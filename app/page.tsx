@@ -78,6 +78,7 @@ const currency = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
 });
 const CAROUSEL_SPEED_PX_PER_SECOND = 32;
+const CAROUSEL_MANUAL_PAUSE_MS = 5000;
 
 function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, itemCount: number) {
   useEffect(() => {
@@ -91,6 +92,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     let dragStartScrollLeft = 0;
     let dragged = false;
     let suppressClickUntil = 0;
+    let resumeAt = 0;
     const cycleMarkers = () => ({
       middle: carousel.querySelector<HTMLElement>('[data-carousel-copy="1"]')?.offsetLeft || 0,
       third: carousel.querySelector<HTMLElement>('[data-carousel-copy="2"]')?.offsetLeft || 0,
@@ -102,7 +104,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     const animate = (time: number) => {
       const elapsed = previousTime ? Math.min(time - previousTime, 50) : 0;
       previousTime = time;
-      if (!interacting && carousel.scrollWidth > carousel.clientWidth + 2) {
+      if (!interacting && performance.now() >= resumeAt && carousel.scrollWidth > carousel.clientWidth + 2) {
         carousel.scrollLeft += CAROUSEL_SPEED_PX_PER_SECOND * elapsed / 1000;
         const { middle, third } = cycleMarkers();
         const cycleWidth = third - middle;
@@ -132,7 +134,10 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     const onPointerUp = (event: PointerEvent) => {
       if (activePointerId !== null && event.pointerId !== activePointerId) return;
       if (activePointerId !== null && carousel.hasPointerCapture(activePointerId)) carousel.releasePointerCapture(activePointerId);
-      if (dragged) suppressClickUntil = performance.now() + 250;
+      if (dragged) {
+        suppressClickUntil = performance.now() + 250;
+        resumeAt = performance.now() + CAROUSEL_MANUAL_PAUSE_MS;
+      }
       interacting = false;
       activePointerId = null;
       previousTime = performance.now();
