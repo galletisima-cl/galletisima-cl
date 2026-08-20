@@ -36,7 +36,7 @@ function displayCategory(name: string) {
 }
 
 function categoryHref(slug: string) {
-  return `/?categoria=${encodeURIComponent(slug)}#catalogo`;
+  return `/categoria/${encodeURIComponent(slug)}`;
 }
 
 function groupCategories(categories: Category[]) {
@@ -106,6 +106,7 @@ export default function Home() {
   const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
   const navRef = useRef<HTMLElement>(null);
+  const seasonalCarouselRef = useRef<HTMLDivElement>(null);
   const celebrationsCarouselRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredProducts = useMemo(() => {
@@ -195,6 +196,24 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const refreshHeroAfterReturn = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      const supabase = createClient();
+      void supabase
+        .from("site_settings")
+        .select("key,value")
+        .in("key", ["hero_banner_url", "hero_mobile_banner_url"])
+        .then(({ data }) => {
+          const settings = Object.fromEntries((data || []).map((setting) => [setting.key, setting.value]));
+          setHeroBannerUrl(settings.hero_banner_url || "");
+          setHeroMobileBannerUrl(settings.hero_mobile_banner_url || "");
+        });
+    };
+    window.addEventListener("pageshow", refreshHeroAfterReturn);
+    return () => window.removeEventListener("pageshow", refreshHeroAfterReturn);
+  }, []);
+
+  useEffect(() => {
     if (!menuOpen) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -257,7 +276,7 @@ export default function Home() {
               const id = entry.slice(5), link = navLink(id);
               const assignedCategories = orderedCategories.filter((category) => navigationConfig.categoryMenu[category.id] === entry);
               if (id !== "home" && assignedCategories.length) return <DesktopCategoryMenu key={entry} label={link.label} menuKey={entry} categories={assignedCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= publicNavOrder.length - 2} />;
-              if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="mega-more"><div className="mega-links"><Link href={link.href} onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones <span>→</span></a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso <span>→</span></a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad <span>→</span></a></div></div>}</div>;
+              if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="mega-more"><div className="mega-links"><Link href="/contacto" onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><Link href="/terminos-y-condiciones" onClick={() => setOpenDesktopMenu(null)}>Términos y Condiciones <span>→</span></Link><Link href="/politica-de-reembolso" onClick={() => setOpenDesktopMenu(null)}>Política de reembolso <span>→</span></Link><Link href="/politica-de-privacidad" onClick={() => setOpenDesktopMenu(null)}>Política de privacidad <span>→</span></Link></div></div>}</div>;
               return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""}`} href={link.href} onClick={id === "all" ? () => { setCategoryFilter(""); setCatalogPage(1); } : undefined}>{link.label}</Link>;
             }
             const menu = navigationConfig.menus.find((item) => `menu:${item.id}` === entry);
@@ -291,7 +310,7 @@ export default function Home() {
       <section id="inicio" className="hero">
         <div
           className="hero-image"
-          style={{ "--hero-desktop": heroBannerUrl ? `url(${heroBannerUrl})` : undefined, "--hero-mobile": heroMobileBannerUrl ? `url(${heroMobileBannerUrl})` : undefined } as React.CSSProperties}
+          style={{ "--hero-desktop": heroBannerUrl ? `url(${heroBannerUrl})` : "none", "--hero-mobile": heroMobileBannerUrl ? `url(${heroMobileBannerUrl})` : heroBannerUrl ? `url(${heroBannerUrl})` : "none" } as React.CSSProperties}
           role="img"
           aria-label="Moldes y galletas decoradas sobre el banner principal"
         />
@@ -321,11 +340,13 @@ export default function Home() {
               <p className="eyebrow">TEMPORADA DE TURNO</p>
               <h2 id="seasonal-title">{displayCategory(seasonalCategory.name)}</h2>
             </div>
-          </div>
-          <div className="season-marquee" aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
-            <div className="season-marquee-track">
-              {[0, 1].map((copy) => <div className="season-marquee-group" key={copy} aria-hidden={copy === 1}>{seasonalProducts.map((product) => <Link className="category-carousel-card" key={`${copy}-${product.id}`} href={`/producto/${product.slug}`} tabIndex={copy === 1 ? -1 : undefined}><picture><img src={product.image_url} alt={copy === 0 ? product.name : ""} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>)}</div>)}
+            <div className="category-carousel-controls">
+              <button type="button" aria-label="Ver productos anteriores" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button>
+              <button type="button" aria-label="Ver más productos" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button>
             </div>
+          </div>
+          <div className="category-carousel shell seasonal-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
+            {seasonalProducts.map((product) => <Link className="category-carousel-card" key={product.id} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>)}
           </div>
         </section>
       )}
@@ -339,7 +360,7 @@ export default function Home() {
               <a
                 className="category-feature-banner"
                 key={`${banner.categoryId}-${index}`}
-                href={`/?categoria=${category.slug}#catalogo`}
+                href={categoryHref(category.slug)}
                 style={{ "--feature-desktop": `url(${banner.imageUrl})`, "--feature-mobile": banner.mobileImageUrl ? `url(${banner.mobileImageUrl})` : undefined } as React.CSSProperties}
               >
                 <span>

@@ -335,13 +335,12 @@ export default function AdminPage() {
       if (error) throw error;
       const savedProductId = data.id;
       const { error: galleryTableError } = await supabase.from("product_images").select("id").limit(1);
-      if (!galleryTableError) {
-        const { error: clearImagesError } = await supabase.from("product_images").delete().eq("product_id", savedProductId);
-        if (clearImagesError) throw clearImagesError;
-        if (imageUrls.length) {
-          const { error: galleryError } = await supabase.from("product_images").insert(imageUrls.map((image_url, sort_order) => ({ product_id: savedProductId, image_url, sort_order })));
-          if (galleryError) throw galleryError;
-        }
+      if (galleryTableError) throw new Error(`No fue posible guardar la galería: ${galleryTableError.message}`);
+      const { error: clearImagesError } = await supabase.from("product_images").delete().eq("product_id", savedProductId);
+      if (clearImagesError) throw clearImagesError;
+      if (imageUrls.length) {
+        const { error: galleryError } = await supabase.from("product_images").insert(imageUrls.map((image_url, sort_order) => ({ product_id: savedProductId, image_url, sort_order })));
+        if (galleryError) throw galleryError;
       }
       const nextSizePrices = { ...productSizePrices, [savedProductId]: parseSizePrices(editing.size_prices) };
       const { error: priceError } = await supabase.from("site_settings").upsert({ key: "product_size_prices", value: JSON.stringify(nextSizePrices), updated_at: new Date().toISOString() });
@@ -367,7 +366,7 @@ export default function AdminPage() {
       setEditing(null);
       setSelectedImages([]);
       setNotice("Producto guardado correctamente");
-      loadCatalog();
+      await loadCatalog();
     } catch (error: any) {
       setError(
         error?.code === "23505"
@@ -1398,7 +1397,7 @@ function ProductModal({
           <div className="wide product-gallery-editor">
             <div className="gallery-editor-heading"><span>Fotos del producto</span><strong>{gallery.length}/8</strong></div>
             <label className="image-picker">
-            <span>Agregar fotos</span>
+            <span>Seleccionar varias fotos</span>
             <input
               type="file"
               multiple
@@ -1411,7 +1410,7 @@ function ProductModal({
               }}
             />
             <small>
-              Hasta 8 imágenes. Se optimizan automáticamente a WebP; la primera será la portada.
+              Selecciona varias imágenes en una sola vez. Hasta 8 fotos; se optimizan automáticamente a WebP y la primera será la portada.
             </small>
             </label>
             {gallery.length ? <div className="gallery-preview-grid">{gallery.map((image, index) => (

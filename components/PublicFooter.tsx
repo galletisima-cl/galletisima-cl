@@ -44,7 +44,7 @@ export default function PublicFooter() {
             <a className="facebook-link" href={facebookUrl} target="_blank" rel="noreferrer" aria-label="Síguenos en Facebook"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 21v-8h2.8l.4-3h-3.2V8.1c0-.9.3-1.5 1.6-1.5H18V3.9c-.7-.1-1.5-.2-2.3-.2-2.3 0-3.9 1.4-3.9 4V10H9v3h2.8v8h2.7Z" /></svg><span>Facebook</span></a>
           </div>
         </div>
-        <nav className="footer-links" aria-label="Información legal"><h2>Información</h2><a href="/contacto">Contacto</a><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones</a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso</a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad</a></nav>
+        <nav className="footer-links" aria-label="Información legal"><h2>Información</h2><a href="/contacto">Contacto</a><a href="/terminos-y-condiciones">Términos y Condiciones</a><a href="/politica-de-reembolso">Política de reembolso</a><a href="/politica-de-privacidad">Política de privacidad</a></nav>
         <div className="footer-contact"><h2>Encuéntranos</h2><a href={createWhatsappUrl(whatsappNumber)} target="_blank" rel="noreferrer"><span>WhatsApp</span><strong>{formatWhatsapp(whatsappNumber)}</strong></a><a href={MAP_URL} target="_blank" rel="noreferrer"><span>Retiro en La Florida</span><strong>Metro Vicente Valdés</strong></a></div>
       </div>
       <div className="shell footer-legal">

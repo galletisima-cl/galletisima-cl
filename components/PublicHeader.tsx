@@ -22,7 +22,7 @@ function displayCategory(name: string) {
 }
 
 function categoryHref(slug: string) {
-  return `/?categoria=${encodeURIComponent(slug)}#catalogo`;
+  return `/categoria/${encodeURIComponent(slug)}`;
 }
 
 function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu, alignRight = false }: { label: string; menuKey: string; categories: Category[]; openMenu: string | null; setOpenMenu: (key: string | null) => void; alignRight?: boolean }) {
@@ -104,7 +104,7 @@ export default function PublicHeader() {
             const id = entry.slice(5), link = navLink(id);
             const assignedCategories = orderedCategories.filter((category) => navigation.categoryMenu[category.id] === entry);
             if (id !== "home" && assignedCategories.length) return <DesktopCategoryMenu key={entry} label={link.label} menuKey={entry} categories={assignedCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= publicNavOrder.length - 2} />;
-            if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="public-mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="public-mega-more"><div className="mega-links"><Link href={link.href} onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><a href="https://galletisima.cl/terminos-y-condiciones">Términos y Condiciones <span>→</span></a><a href="https://galletisima.cl/politica-de-reembolso">Política de reembolso <span>→</span></a><a href="https://galletisima.cl/politica-de-privacidad">Política de privacidad <span>→</span></a></div></div>}</div>;
+            if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="public-mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="public-mega-more"><div className="mega-links"><Link href="/contacto" onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><Link href="/terminos-y-condiciones" onClick={() => setOpenDesktopMenu(null)}>Términos y Condiciones <span>→</span></Link><Link href="/politica-de-reembolso" onClick={() => setOpenDesktopMenu(null)}>Política de reembolso <span>→</span></Link><Link href="/politica-de-privacidad" onClick={() => setOpenDesktopMenu(null)}>Política de privacidad <span>→</span></Link></div></div>}</div>;
             return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""}`} href={link.href}>{link.label}</Link>;
           }
           const menu = navigation.menus.find((item) => `menu:${item.id}` === entry);
