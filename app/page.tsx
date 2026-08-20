@@ -124,7 +124,6 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       dragStartScrollLeft = carousel.scrollLeft;
       dragged = false;
       gestureDirection = "pending";
-      carousel.setPointerCapture(event.pointerId);
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!interacting || event.pointerId !== activePointerId) return;
@@ -135,9 +134,9 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
         if (gestureDirection === "vertical") {
           interacting = false;
           activePointerId = null;
-          if (carousel.hasPointerCapture(event.pointerId)) carousel.releasePointerCapture(event.pointerId);
           return;
         }
+        carousel.setPointerCapture(event.pointerId);
       }
       if (gestureDirection === "horizontal") {
         dragged = true;
@@ -162,11 +161,21 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
         event.stopPropagation();
       }
     };
+    const releaseVerticalGesture = () => {
+      if (gestureDirection !== "horizontal") {
+        interacting = false;
+        activePointerId = null;
+        previousTime = performance.now();
+      }
+    };
     carousel.addEventListener("pointerdown", onPointerDown);
     carousel.addEventListener("pointermove", onPointerMove, { passive: false });
     carousel.addEventListener("click", onClick, true);
     window.addEventListener("pointerup", onPointerUp);
     window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("touchend", releaseVerticalGesture, { passive: true });
+    window.addEventListener("touchcancel", releaseVerticalGesture, { passive: true });
+    window.addEventListener("scroll", releaseVerticalGesture, { passive: true });
     frameId = window.requestAnimationFrame(animate);
     return () => {
       window.cancelAnimationFrame(startAtMiddle);
@@ -176,6 +185,9 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       carousel.removeEventListener("click", onClick, true);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("touchend", releaseVerticalGesture);
+      window.removeEventListener("touchcancel", releaseVerticalGesture);
+      window.removeEventListener("scroll", releaseVerticalGesture);
     };
   }, [carouselRef, itemCount]);
 }
