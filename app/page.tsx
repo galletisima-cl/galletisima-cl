@@ -83,6 +83,65 @@ function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu
   return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" aria-expanded={open} aria-controls={`mega-${menuKey}`} onClick={() => setOpenMenu(open ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{open && <div className="mega-panel" id={`mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></a>)}</div></div>}</div>;
 }
 
+function FeaturedCategoryBanner({ banner, category, products }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[] }) {
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const interactingRef = useRef(false);
+  const move = useCallback((direction: -1 | 1) => {
+    const carousel = carouselRef.current;
+    if (!carousel) return;
+    const card = carousel.querySelector<HTMLElement>(".featured-product-card");
+    const gap = Number.parseFloat(window.getComputedStyle(carousel).gap) || 0;
+    carousel.scrollBy({ left: direction * ((card?.offsetWidth || 190) + gap), behavior: "smooth" });
+  }, []);
+
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel || products.length < 2) return;
+    const timer = window.setInterval(() => {
+      if (interactingRef.current || carousel.scrollWidth <= carousel.clientWidth + 2) return;
+      const card = carousel.querySelector<HTMLElement>(".featured-product-card");
+      const gap = Number.parseFloat(window.getComputedStyle(carousel).gap) || 0;
+      const step = (card?.offsetWidth || 190) + gap;
+      const atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - step * .5;
+      carousel.scrollTo({ left: atEnd ? 0 : carousel.scrollLeft + step, behavior: "smooth" });
+    }, 3200);
+    return () => window.clearInterval(timer);
+  }, [products.length]);
+
+  return (
+    <article
+      className="category-feature-banner"
+      style={{ "--feature-desktop": `url(${banner.imageUrl})`, "--feature-mobile": banner.mobileImageUrl ? `url(${banner.mobileImageUrl})` : undefined } as React.CSSProperties}
+    >
+      <span className="category-feature-copy">
+        <small>Categoría destacada</small>
+        <strong>{displayCategory(category.name)}</strong>
+        <Link href={categoryHref(category.slug)}>Ver colección →</Link>
+      </span>
+      {products.length > 0 && <div className="featured-products-wrap">
+        <div className="featured-products-controls">
+          <button type="button" aria-label={`Ver productos anteriores de ${displayCategory(category.name)}`} onClick={() => move(-1)}>←</button>
+          <button type="button" aria-label={`Ver más productos de ${displayCategory(category.name)}`} onClick={() => move(1)}>→</button>
+        </div>
+        <div
+          className="featured-products-carousel"
+          ref={carouselRef}
+          aria-label={`Productos de ${displayCategory(category.name)}`}
+          onPointerDown={() => { interactingRef.current = true; }}
+          onPointerUp={() => { interactingRef.current = false; }}
+          onPointerCancel={() => { interactingRef.current = false; }}
+        >
+          {products.map((product) => <Link className="featured-product-card" key={product.id} href={`/producto/${product.slug}`}>
+            <span><img src={product.image_url} alt={product.name} loading="lazy" /></span>
+            <strong>{product.name}</strong>
+            <small>desde {currency.format(product.price)}</small>
+          </Link>)}
+        </div>
+      </div>}
+    </article>
+  );
+}
+
 export default function Home() {
   const [cart, setCart] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
@@ -126,6 +185,39 @@ export default function Home() {
     });
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort]);
   const visibleMenuCategories = catalogCategories.filter((category) => !/^AA-Prueba/i.test(category.name) && category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
+
+  useEffect(() => {
+    const carousels = [seasonalCarouselRef.current, celebrationsCarouselRef.current].filter((carousel): carousel is HTMLDivElement => Boolean(carousel));
+    const interacting = new WeakSet<HTMLDivElement>();
+    const startInteraction = (carousel: HTMLDivElement) => interacting.add(carousel);
+    const endInteraction = (carousel: HTMLDivElement) => interacting.delete(carousel);
+    const cleanups = carousels.map((carousel) => {
+      const onPointerDown = () => startInteraction(carousel);
+      const onPointerUp = () => endInteraction(carousel);
+      carousel.addEventListener("pointerdown", onPointerDown);
+      carousel.addEventListener("pointerup", onPointerUp);
+      carousel.addEventListener("pointercancel", onPointerUp);
+      return () => {
+        carousel.removeEventListener("pointerdown", onPointerDown);
+        carousel.removeEventListener("pointerup", onPointerUp);
+        carousel.removeEventListener("pointercancel", onPointerUp);
+      };
+    });
+    const timer = window.setInterval(() => {
+      carousels.forEach((carousel) => {
+        if (interacting.has(carousel) || carousel.scrollWidth <= carousel.clientWidth + 2) return;
+        const firstCard = carousel.querySelector<HTMLElement>(".category-carousel-card");
+        const gap = Number.parseFloat(window.getComputedStyle(carousel).columnGap || window.getComputedStyle(carousel).gap) || 0;
+        const step = (firstCard?.getBoundingClientRect().width || carousel.clientWidth * .75) + gap;
+        const atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - step * .5;
+        carousel.scrollTo({ left: atEnd ? 0 : carousel.scrollLeft + step, behavior: "smooth" });
+      });
+    }, 3200);
+    return () => {
+      window.clearInterval(timer);
+      cleanups.forEach((cleanup) => cleanup());
+    };
+  }, [seasonalCategoryId, allProducts.length, catalogCategories.length, navigationConfig]);
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setCart(readCartCount()), 0);
@@ -357,20 +449,8 @@ export default function Home() {
           {categoryFeatureBanners.map((banner, index) => {
             const category = catalogCategories.find((item) => item.id === banner.categoryId);
             if (!category || !banner.imageUrl) return null;
-            return (
-              <a
-                className="category-feature-banner"
-                key={`${banner.categoryId}-${index}`}
-                href={categoryHref(category.slug)}
-                style={{ "--feature-desktop": `url(${banner.imageUrl})`, "--feature-mobile": banner.mobileImageUrl ? `url(${banner.mobileImageUrl})` : undefined } as React.CSSProperties}
-              >
-                <span>
-                  <small>Categoría destacada</small>
-                  <strong>{displayCategory(category.name)}</strong>
-                  <b>Ver colección →</b>
-                </span>
-              </a>
-            );
+            const products = allProducts.filter((product) => product.image_url && product.product_categories?.some((link) => link.category_id === category.id));
+            return <FeaturedCategoryBanner banner={banner} category={category} products={products} key={`${banner.categoryId}-${index}`} />;
           })}
         </section>
       )}
