@@ -953,7 +953,6 @@ function Products({
           <span>SKU</span>
           <span>Categorías</span>
           <span>Precio</span>
-          <span>Medidas</span>
           <span />
         </div>
         {visibleProducts.map((p) => (
@@ -972,7 +971,6 @@ function Products({
             <strong>
               {p.price ? `$${p.price.toLocaleString("es-CL")}` : "Pendiente"}
             </strong>
-            <span className="size-cell">{p.size || "Sin medidas"}</span>
             <span className="row-actions">
               <button type="button" className="edit-product" onClick={() => edit(p)} aria-label={`Editar ${p.name}`}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>
