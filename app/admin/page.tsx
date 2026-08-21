@@ -1256,8 +1256,20 @@ function Banners({
           {[0, 1, 2].map((slot) => (
             <article key={slot}>
               <div className="feature-device-previews">
-                <div className="feature-banner-admin-preview" style={featureBanners[slot]?.imageUrl ? { backgroundImage: `url(${featureBanners[slot].imageUrl})` } : undefined}><span>Escritorio</span></div>
-                <div className="feature-banner-admin-preview mobile" style={(featureBanners[slot]?.mobileImageUrl || featureBanners[slot]?.imageUrl) ? { backgroundImage: `url(${featureBanners[slot]?.mobileImageUrl || featureBanners[slot]?.imageUrl})` } : undefined}><span>Móvil</span></div>
+                <div className="feature-device-preview-card desktop">
+                  <div className="feature-banner-admin-preview" style={featureBanners[slot]?.imageUrl ? { backgroundImage: `url(${featureBanners[slot].imageUrl})` } : undefined}>
+                    <span>Escritorio</span>
+                    {!featureBanners[slot]?.imageUrl && <strong>Sin imagen de escritorio</strong>}
+                  </div>
+                  <small>Vista horizontal</small>
+                </div>
+                <div className="feature-device-preview-card mobile">
+                  <div className="feature-banner-admin-preview mobile" style={(featureBanners[slot]?.mobileImageUrl || featureBanners[slot]?.imageUrl) ? { backgroundImage: `url(${featureBanners[slot]?.mobileImageUrl || featureBanners[slot]?.imageUrl})` } : undefined}>
+                    <span>Móvil</span>
+                    {!featureBanners[slot]?.mobileImageUrl && <strong>{featureBanners[slot]?.imageUrl ? "Usará la imagen de escritorio" : "Sin imagen móvil"}</strong>}
+                  </div>
+                  <small>Vista vertical en celulares</small>
+                </div>
               </div>
               <div>
                 <label>
