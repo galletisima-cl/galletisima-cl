@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import AdminProductCsvImporter from "../../components/AdminProductCsvImporter";
 import { createClient } from "../../lib/supabase/client";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS, type HeroContent } from "../../lib/hero-content";
+import type { CsvImportProduct } from "../../lib/product-csv-import";
 
 type Category = {
   id: string;
@@ -28,6 +30,7 @@ type Product = {
   active: boolean;
   featured: boolean;
 };
+type ExistingImportProduct = { id: string; sku: string; slug: string; description: string };
 type CategoryFeatureBanner = { categoryId: string; imageUrl: string; mobileImageUrl?: string };
 type NavigationLink = { id: string; label: string; href: string };
 type NavigationConfig = { menus: { id: string; label: string }[]; links: NavigationLink[]; itemOrder: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
@@ -386,6 +389,81 @@ export default function AdminPage() {
       loadCatalog();
     }
   }
+  async function importCsvProducts(importedProducts: CsvImportProduct[]) {
+    setLoading(true);
+    setError("");
+    setNotice("");
+    let completed = 0;
+    try {
+      const categoryBySlug = new Map(categories.map((category) => [category.slug, category]));
+      const requestedCategoryNames = [...new Set(importedProducts.flatMap((product) => product.categories))];
+      for (const name of requestedCategoryNames) {
+        const slug = slugify(name);
+        if (categoryBySlug.has(slug)) continue;
+        const { data, error } = await supabase.from("categories").insert({ name, slug, description: "", active: true }).select("id,name,slug,description,active").single();
+        if (error?.code === "23505") {
+          const existing = await supabase.from("categories").select("id,name,slug,description,active").eq("slug", slug).single();
+          if (existing.error) throw existing.error;
+          categoryBySlug.set(slug, existing.data as Category);
+        } else {
+          if (error) throw error;
+          categoryBySlug.set(slug, data as Category);
+        }
+      }
+      const { data: existingRows, error: existingError } = await supabase.from("products").select("id,name,slug,sku,description,price,stock,size,image_url,active,featured");
+      if (existingError) throw existingError;
+      const existingCatalog = (existingRows || []) as ExistingImportProduct[];
+      const existingBySku = new Map(existingCatalog.map((product) => [product.sku, product]));
+      const existingBySlug = new Map(existingCatalog.map((product) => [product.slug, product]));
+      const nextSizePrices = { ...productSizePrices };
+      for (const product of importedProducts) {
+        const slug = slugify(product.name);
+        const existing = existingBySku.get(product.sku) || existingBySlug.get(slug);
+        const categoryIds = product.categories.map((name) => categoryBySlug.get(slugify(name))?.id).filter((id): id is string => Boolean(id));
+        if (!categoryIds.length) throw new Error(`${product.name}: no fue posible asociar sus categorías`);
+        const payload: Record<string, string | number | boolean> = {
+          name: product.name.trim(), slug, sku: product.sku,
+          description: product.description || existing?.description || "",
+          price: product.price, stock: product.stock,
+          size: product.sizes.join(", "), active: product.active,
+          featured: product.featured, category_id: categoryIds[0],
+        };
+        if (product.images.length) payload.image_url = product.images[0];
+        const query = existing
+          ? supabase.from("products").update(payload).eq("id", existing.id)
+          : supabase.from("products").insert(payload);
+        const { data: saved, error: productError } = await query.select("id").single();
+        if (productError) throw new Error(`${product.name}: ${productError.message}`);
+        const productId = saved.id;
+        const { error: unlinkError } = await supabase.from("product_categories").delete().eq("product_id", productId);
+        if (unlinkError) throw new Error(`${product.name}: ${unlinkError.message}`);
+        const { error: linkError } = await supabase.from("product_categories").insert(categoryIds.map((category_id) => ({ product_id: productId, category_id })));
+        if (linkError) throw new Error(`${product.name}: ${linkError.message}`);
+        if (product.images.length) {
+          const { error: clearImagesError } = await supabase.from("product_images").delete().eq("product_id", productId);
+          if (clearImagesError) throw new Error(`${product.name}: ${clearImagesError.message}`);
+          const { error: imageError } = await supabase.from("product_images").insert(product.images.slice(0, 8).map((image_url, sort_order) => ({ product_id: productId, image_url, sort_order })));
+          if (imageError) throw new Error(`${product.name}: ${imageError.message}`);
+        }
+        if (Object.keys(product.sizePrices).length) nextSizePrices[productId] = product.sizePrices;
+        const savedIndex = { id: productId, sku: product.sku, slug, description: String(payload.description) };
+        existingBySku.set(product.sku, savedIndex);
+        existingBySlug.set(slug, savedIndex);
+        completed += 1;
+      }
+      const { error: priceError } = await supabase.from("site_settings").upsert({ key: "product_size_prices", value: JSON.stringify(nextSizePrices), updated_at: new Date().toISOString() });
+      if (priceError) throw priceError;
+      setProductSizePrices(nextSizePrices);
+      await loadCatalog();
+      setNotice(`${completed} productos importados correctamente`);
+    } catch (importError) {
+      const message = importError instanceof Error ? importError.message : "No fue posible importar el CSV";
+      setError(`${completed ? `${completed} productos alcanzaron a importarse. ` : ""}${message}`);
+      await loadCatalog();
+    } finally {
+      setLoading(false);
+    }
+  }
   async function addCategory(e: FormEvent) {
     e.preventDefault();
     const name = categoryName.trim();
@@ -703,15 +781,15 @@ export default function AdminPage() {
           <Dashboard products={products} categories={categories} />
         )}{" "}
         {view === "Productos" && (
-          <Products
-            products={products}
-            categories={categories}
-            edit={(p) => {
-              setSelectedImages([]);
-              setEditing({ ...p });
-            }}
-            remove={deleteProduct}
-          />
+          <><AdminProductCsvImporter loading={loading} onImport={importCsvProducts} /><Products
+              products={products}
+              categories={categories}
+              edit={(p) => {
+                setSelectedImages([]);
+                setEditing({ ...p });
+              }}
+              remove={deleteProduct}
+            /></>
         )}{" "}
         {view === "Categorías" && (
           <Categories
