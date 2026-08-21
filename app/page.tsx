@@ -103,6 +103,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     let touchDirection: "pending" | "horizontal" | "vertical" = "pending";
     let suppressClickUntil = 0;
     let resumeAt = 0;
+    let recoveryTimer = 0;
     const cycleMarkers = () => ({
       middle: carousel.querySelector<HTMLElement>('[data-carousel-copy="1"]')?.offsetLeft || 0,
       third: carousel.querySelector<HTMLElement>('[data-carousel-copy="2"]')?.offsetLeft || 0,
@@ -202,6 +203,11 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       previousTime = performance.now();
     };
     const onPageShow = () => restartAnimation();
+    const recoverAfterGlobalGesture = () => {
+      restartAnimation();
+      window.clearTimeout(recoveryTimer);
+      recoveryTimer = window.setTimeout(restartAnimation, 180);
+    };
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") restartAnimation();
     };
@@ -220,11 +226,15 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     carousel.addEventListener("scroll", releaseVerticalGesture, { passive: true });
     carousel.addEventListener("scrollend", restartAnimation, { passive: true });
     carousel.addEventListener("carousel-manual-navigation", onManualNavigation);
+    window.addEventListener("touchend", recoverAfterGlobalGesture, { passive: true });
+    window.addEventListener("touchcancel", recoverAfterGlobalGesture, { passive: true });
+    window.addEventListener("scrollend", recoverAfterGlobalGesture, { passive: true });
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibilityChange);
     restartAnimation();
     return () => {
       window.clearInterval(watchdog);
+      window.clearTimeout(recoveryTimer);
       window.cancelAnimationFrame(startAtMiddle);
       window.cancelAnimationFrame(frameId);
       carousel.removeEventListener("pointerdown", onPointerDown);
@@ -239,6 +249,9 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       carousel.removeEventListener("scroll", releaseVerticalGesture);
       carousel.removeEventListener("scrollend", restartAnimation);
       carousel.removeEventListener("carousel-manual-navigation", onManualNavigation);
+      window.removeEventListener("touchend", recoverAfterGlobalGesture);
+      window.removeEventListener("touchcancel", recoverAfterGlobalGesture);
+      window.removeEventListener("scrollend", recoverAfterGlobalGesture);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
