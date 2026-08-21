@@ -80,6 +80,12 @@ const currency = new Intl.NumberFormat("es-CL", {
 const CAROUSEL_SPEED_PX_PER_SECOND = 32;
 const CAROUSEL_MANUAL_PAUSE_MS = 5000;
 
+function moveCarousel(carousel: HTMLDivElement | null, left: number) {
+  if (!carousel) return;
+  carousel.dispatchEvent(new Event("carousel-manual-navigation"));
+  carousel.scrollBy({ left, behavior: "smooth" });
+}
+
 function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, itemCount: number) {
   useEffect(() => {
     const carousel = carouselRef.current;
@@ -190,6 +196,11 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
         previousTime = performance.now();
       }
     };
+    const onManualNavigation = () => {
+      interacting = false;
+      resumeAt = performance.now() + CAROUSEL_MANUAL_PAUSE_MS;
+      previousTime = performance.now();
+    };
     const onPageShow = () => restartAnimation();
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") restartAnimation();
@@ -202,12 +213,13 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     carousel.addEventListener("click", onClick, true);
     carousel.addEventListener("touchstart", onTouchStart, { passive: true });
     carousel.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("pointerup", onPointerUp);
-    window.addEventListener("pointercancel", onPointerUp);
-    window.addEventListener("touchend", onTouchEnd, { passive: true });
-    window.addEventListener("touchcancel", onTouchEnd, { passive: true });
-    window.addEventListener("scroll", releaseVerticalGesture, { passive: true });
-    window.addEventListener("scrollend", restartAnimation, { passive: true });
+    carousel.addEventListener("pointerup", onPointerUp);
+    carousel.addEventListener("pointercancel", onPointerUp);
+    carousel.addEventListener("touchend", onTouchEnd, { passive: true });
+    carousel.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    carousel.addEventListener("scroll", releaseVerticalGesture, { passive: true });
+    carousel.addEventListener("scrollend", restartAnimation, { passive: true });
+    carousel.addEventListener("carousel-manual-navigation", onManualNavigation);
     window.addEventListener("pageshow", onPageShow);
     document.addEventListener("visibilitychange", onVisibilityChange);
     restartAnimation();
@@ -220,12 +232,13 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       carousel.removeEventListener("click", onClick, true);
       carousel.removeEventListener("touchstart", onTouchStart);
       carousel.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("pointerup", onPointerUp);
-      window.removeEventListener("pointercancel", onPointerUp);
-      window.removeEventListener("touchend", onTouchEnd);
-      window.removeEventListener("touchcancel", onTouchEnd);
-      window.removeEventListener("scroll", releaseVerticalGesture);
-      window.removeEventListener("scrollend", restartAnimation);
+      carousel.removeEventListener("pointerup", onPointerUp);
+      carousel.removeEventListener("pointercancel", onPointerUp);
+      carousel.removeEventListener("touchend", onTouchEnd);
+      carousel.removeEventListener("touchcancel", onTouchEnd);
+      carousel.removeEventListener("scroll", releaseVerticalGesture);
+      carousel.removeEventListener("scrollend", restartAnimation);
+      carousel.removeEventListener("carousel-manual-navigation", onManualNavigation);
       window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
@@ -245,7 +258,7 @@ function FeaturedCategoryBanner({ banner, category, products }: { banner: Catego
     if (!carousel) return;
     const card = carousel.querySelector<HTMLElement>(".featured-product-card");
     const gap = Number.parseFloat(window.getComputedStyle(carousel).gap) || 0;
-    carousel.scrollBy({ left: direction * ((card?.offsetWidth || 190) + gap), behavior: "smooth" });
+    moveCarousel(carousel, direction * ((card?.offsetWidth || 190) + gap));
   }, []);
 
   return (
@@ -542,8 +555,8 @@ export default function Home() {
           </div>
           <div className="category-carousel-frame shell">
             <div className="category-carousel-controls side-controls">
-              <button type="button" aria-label="Ver productos anteriores" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button>
-              <button type="button" aria-label="Ver más productos" onClick={() => seasonalCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button>
+              <button type="button" aria-label="Ver productos anteriores" onClick={() => moveCarousel(seasonalCarouselRef.current, -420)}>←</button>
+              <button type="button" aria-label="Ver más productos" onClick={() => moveCarousel(seasonalCarouselRef.current, 420)}>→</button>
             </div>
             <div className="category-carousel seasonal-carousel continuous-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
               {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
@@ -567,7 +580,7 @@ export default function Home() {
         <section className="category-carousel-section celebrations-section" aria-labelledby="celebrations-title">
           <div className="shell category-carousel-heading"><div><p className="eyebrow">CELEBRA A TU MANERA</p><h2 id="celebrations-title">Celebraciones</h2></div></div>
           <div className="category-carousel-frame shell">
-            <div className="category-carousel-controls side-controls"><button type="button" aria-label="Ver anteriores" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: -420, behavior: "smooth" })}>←</button><button type="button" aria-label="Ver más" onClick={() => celebrationsCarouselRef.current?.scrollBy({ left: 420, behavior: "smooth" })}>→</button></div>
+            <div className="category-carousel-controls side-controls"><button type="button" aria-label="Ver anteriores" onClick={() => moveCarousel(celebrationsCarouselRef.current, -420)}>←</button><button type="button" aria-label="Ver más" onClick={() => moveCarousel(celebrationsCarouselRef.current, 420)}>→</button></div>
             <div className="category-carousel continuous-carousel" ref={celebrationsCarouselRef}>{[0, 1, 2].flatMap((copy) => celebrationCategories.map((category, index) => { const image = categoryImage(category); return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}{image ? <img src={image} alt={displayCategory(category.name)} loading="lazy" /> : <span className="category-image-placeholder">♡</span>}</picture><strong>{displayCategory(category.name)}</strong><small>Ver colección →</small></Link>; }))}</div>
           </div>
         </section>
