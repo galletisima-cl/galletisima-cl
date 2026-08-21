@@ -93,6 +93,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     let frameId = 0;
     let previousTime = 0;
     let lastFrameTime = performance.now();
+    let pendingDistance = 0;
     let interacting = false;
     let activePointerId: number | null = null;
     let dragStartX = 0;
@@ -117,7 +118,12 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       const elapsed = previousTime ? Math.min(time - previousTime, 50) : 0;
       previousTime = time;
       if (!interacting && performance.now() >= resumeAt && carousel.scrollWidth > carousel.clientWidth + 2) {
-        carousel.scrollLeft += CAROUSEL_SPEED_PX_PER_SECOND * elapsed / 1000;
+        pendingDistance += CAROUSEL_SPEED_PX_PER_SECOND * elapsed / 1000;
+        const wholePixels = Math.trunc(pendingDistance);
+        if (wholePixels !== 0) {
+          carousel.scrollLeft += wholePixels;
+          pendingDistance -= wholePixels;
+        }
         const { middle, third } = cycleMarkers();
         const cycleWidth = third - middle;
         if (cycleWidth > 0 && carousel.scrollLeft >= third) carousel.scrollLeft -= cycleWidth;
@@ -134,6 +140,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType !== "mouse" || !event.isPrimary || event.button !== 0) return;
       interacting = true;
+      pendingDistance = 0;
       activePointerId = event.pointerId;
       dragStartX = event.clientX;
       dragStartScrollLeft = carousel.scrollLeft;
@@ -172,6 +179,7 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       touchStartY = event.touches[0].clientY;
       touchDirection = "pending";
       interacting = true;
+      pendingDistance = 0;
     };
     const onTouchMove = (event: TouchEvent) => {
       if (event.touches.length !== 1 || touchDirection !== "pending") return;
@@ -191,15 +199,10 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       previousTime = performance.now();
       restartAnimation();
     };
-    const releaseVerticalGesture = () => {
-      if (touchDirection !== "horizontal") {
-        interacting = false;
-        previousTime = performance.now();
-      }
-    };
     const onManualNavigation = () => {
       interacting = false;
       resumeAt = performance.now() + CAROUSEL_MANUAL_PAUSE_MS;
+      pendingDistance = 0;
       previousTime = performance.now();
     };
     const onPageShow = () => restartAnimation();
@@ -223,8 +226,6 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
     carousel.addEventListener("pointercancel", onPointerUp);
     carousel.addEventListener("touchend", onTouchEnd, { passive: true });
     carousel.addEventListener("touchcancel", onTouchEnd, { passive: true });
-    carousel.addEventListener("scroll", releaseVerticalGesture, { passive: true });
-    carousel.addEventListener("scrollend", restartAnimation, { passive: true });
     carousel.addEventListener("carousel-manual-navigation", onManualNavigation);
     window.addEventListener("touchend", recoverAfterGlobalGesture, { passive: true });
     window.addEventListener("touchcancel", recoverAfterGlobalGesture, { passive: true });
@@ -246,8 +247,6 @@ function useContinuousCarousel(carouselRef: { current: HTMLDivElement | null }, 
       carousel.removeEventListener("pointercancel", onPointerUp);
       carousel.removeEventListener("touchend", onTouchEnd);
       carousel.removeEventListener("touchcancel", onTouchEnd);
-      carousel.removeEventListener("scroll", releaseVerticalGesture);
-      carousel.removeEventListener("scrollend", restartAnimation);
       carousel.removeEventListener("carousel-manual-navigation", onManualNavigation);
       window.removeEventListener("touchend", recoverAfterGlobalGesture);
       window.removeEventListener("touchcancel", recoverAfterGlobalGesture);
