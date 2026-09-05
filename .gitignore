@@ -38,3 +38,21 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+
+# Local deployment bundles and staging directories
+.deploy-*/
+.deploy-*.zip
+.sites-*/
+.sites-*.zip
+.sites-*.tar.gz
+.next-stale-*/
+
+# Local audit/migration scratch files
+.tmp-*/
+.tmp-*.mjs
+.tmp-*.txt
+.devlog.txt
+supabase/.temp/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
