@@ -1,4 +1,4 @@
-create table public.product_images (
+create table if not exists public.product_images (
   id uuid primary key default gen_random_uuid(),
   product_id uuid not null references public.products(id) on delete cascade,
   image_url text not null check (length(trim(image_url)) > 0),
@@ -13,7 +13,7 @@ set public = true,
     allowed_mime_types = array['image/webp']
 where id = 'product-images';
 
-create index idx_product_images_product_order
+create index if not exists idx_product_images_product_order
   on public.product_images(product_id, sort_order);
 
 create or replace function public.enforce_product_image_limit()
@@ -29,6 +29,8 @@ begin
 end;
 $$;
 
+drop trigger if exists product_images_limit on public.product_images;
+
 create trigger product_images_limit
 before insert on public.product_images
 for each row execute function public.enforce_product_image_limit();
@@ -40,6 +42,9 @@ where length(trim(image_url)) > 0
 on conflict (product_id, sort_order) do nothing;
 
 alter table public.product_images enable row level security;
+
+drop policy if exists "Public can view active product images" on public.product_images;
+drop policy if exists "Admins manage product images" on public.product_images;
 
 create policy "Public can view active product images"
 on public.product_images for select to anon, authenticated
