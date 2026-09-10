@@ -1019,13 +1019,11 @@ function Products({
               {p.price ? `$${p.price.toLocaleString("es-CL")}` : "Pendiente"}
             </strong>
             <span className="row-actions">
-              <button type="button" className="edit-product" onClick={() => edit(p)} aria-label={`Editar ${p.name}`}>
+              <button type="button" className="edit-product" onClick={() => edit(p)} aria-label={`Editar ${p.name}`} title={`Editar ${p.name}`}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>
-                Editar
               </button>
-              <button type="button" className="delete-product" onClick={() => void remove([p.id])} disabled={loading} aria-label={`Eliminar ${p.name}`}>
+              <button type="button" className="delete-product" onClick={() => void remove([p.id])} disabled={loading} aria-label={`Eliminar ${p.name}`} title={`Eliminar ${p.name}`}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
-                Eliminar
               </button>
             </span>
           </div>
