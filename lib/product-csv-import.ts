@@ -114,9 +114,15 @@ export function parseProductCsv(text: string): CsvImportPreview {
     images.filter((image) => !isWebUrl(image)).forEach((image) => errors.push(`${name || permalink}: URL de imagen inválida “${image}”`));
     if (images.length > 8) warnings.push(`${name || permalink}: incluye ${images.length} imágenes; solo se importarán las primeras 8`);
     if (!images.length) warnings.push(`${name || permalink}: no incluye imágenes; se conservarán las existentes`);
-    const price = integerValue(base.values.Price || "", true) || Math.min(...Object.values(sizePrices));
+    // Jumpseller exports include a product-level row followed by variant rows.
+    // The product-level price can be an old placeholder, so the storefront's
+    // "desde" price must come from the lowest valid variant when variants exist.
+    const variantPrices = Object.values(sizePrices);
+    const price = variantPrices.length
+      ? Math.min(...variantPrices)
+      : integerValue(base.values.Price || "", true);
     if (!price || !Number.isFinite(price)) errors.push(`Fila ${base.row}: falta un precio válido y mayor que cero para ${name || permalink}`);
-    products.push({ row: base.row, permalink, name, description: base.values.Description || "", sku, categories, images: images.slice(0, 8), active: ACTIVE_STATUSES.has(status), featured: featured ?? false, stock: stock ?? 0, price, sizes, sizePrices });
+    products.push({ row: base.row, permalink, name, description: base.values.Description || "", sku, categories, images: images.slice(0, 8), active: ACTIVE_STATUSES.has(status), featured: featured ?? false, stock: stock ?? 0, price: price ?? 0, sizes, sizePrices });
   }
   return { products, errors, warnings, sourceRows: records.length };
 }
