@@ -110,13 +110,24 @@ export default function ProductPage() {
   const gallery = (product.product_images || []).length
     ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order).map((image) => image.image_url)
     : product.image_url ? [product.image_url] : [];
+  const moveGallery = (direction: -1 | 1) => {
+    if (gallery.length < 2) return;
+    const currentIndex = Math.max(0, gallery.indexOf(selectedImageUrl));
+    setSelectedImageUrl(gallery[(currentIndex + direction + gallery.length) % gallery.length]);
+  };
 
   return (
     <main className="product-page">
       <PublicHeader />
       <section className="product-detail shell">
         <div className="product-gallery">
-          <div className={`product-detail-image ${selectedImageUrl ? "has-image" : ""}`} style={{ backgroundImage: selectedImageUrl ? `url(${selectedImageUrl})` : undefined }} role="img" aria-label={`Imagen de ${product.name}`} />
+          <div className={`product-detail-image ${selectedImageUrl ? "has-image" : ""}`} style={{ backgroundImage: selectedImageUrl ? `url(${selectedImageUrl})` : undefined }} role="img" aria-label={`Imagen de ${product.name}`}>
+            {gallery.length > 1 && <>
+              <button type="button" className="product-gallery-arrow previous" onClick={() => moveGallery(-1)} aria-label="Ver foto anterior">‹</button>
+              <button type="button" className="product-gallery-arrow next" onClick={() => moveGallery(1)} aria-label="Ver foto siguiente">›</button>
+              <span className="product-gallery-count" aria-live="polite">{Math.max(0, gallery.indexOf(selectedImageUrl)) + 1} / {gallery.length}</span>
+            </>}
+          </div>
           {gallery.length > 1 && <div className="product-gallery-thumbnails" aria-label="Galería del producto">{gallery.map((url, index) => <button type="button" key={url} className={selectedImageUrl === url ? "selected" : ""} onClick={() => setSelectedImageUrl(url)} aria-label={`Ver foto ${index + 1}`}><img src={url} alt="" /></button>)}</div>}
         </div>
         <div className="product-detail-content">

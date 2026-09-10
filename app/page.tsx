@@ -80,6 +80,12 @@ const currency = new Intl.NumberFormat("es-CL", {
 const CAROUSEL_SPEED_PX_PER_SECOND = 32;
 const CAROUSEL_MANUAL_PAUSE_MS = 5000;
 
+function productDisplayPrice(product: PublicProduct, configuredPrices: Record<string, Record<string, number>>) {
+  const firstSize = product.size.split(/[,;\n]+/).map((size) => size.trim()).find(Boolean);
+  const configuredPrice = firstSize ? Number(configuredPrices[product.id]?.[firstSize]) : 0;
+  return configuredPrice > 0 ? configuredPrice : product.price;
+}
+
 function moveCarousel(carousel: HTMLDivElement | null, left: number) {
   if (!carousel) return;
   carousel.dispatchEvent(new Event("carousel-manual-navigation"));
@@ -327,6 +333,7 @@ export default function Home() {
   const [productSort, setProductSort] = useState("name-asc");
   const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const seasonalCarouselRef = useRef<HTMLDivElement>(null);
   const celebrationsCarouselRef = useRef<HTMLDivElement>(null);
@@ -361,9 +368,28 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const updateBackToTop = () => setShowBackToTop(window.scrollY > 650);
+    updateBackToTop();
+    window.addEventListener("scroll", updateBackToTop, { passive: true });
+    return () => window.removeEventListener("scroll", updateBackToTop);
+  }, []);
+
+  const showCatalog = () => {
+    setCategoryFilter("");
+    setCatalogPage(1);
+    window.history.replaceState(null, "", "/?ver=todos#catalogo");
+    window.requestAnimationFrame(() => document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
+
+  const returnToTop = () => {
+    window.history.replaceState(null, "", window.location.pathname);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  useEffect(() => {
     const supabase = createClient();
     Promise.all([
-      supabase.from("site_settings").select("key,value").in("key", ["whatsapp_number", "hero_banner_url", "hero_mobile_banner_url", ...Object.values(HERO_SETTING_KEYS), "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "seasonal_category_id", "instagram_url"]),
+      supabase.from("site_settings").select("key,value").in("key", ["whatsapp_number", "hero_banner_url", "hero_mobile_banner_url", ...Object.values(HERO_SETTING_KEYS), "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "product_size_prices", "seasonal_category_id", "instagram_url"]),
       supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
       supabase
         .from("products")
@@ -411,7 +437,12 @@ export default function Home() {
         const initialSearch = searchParams.get("buscar") || "";
         setCategoryFilter(selectedSlug || "");
         setProductSearch(initialSearch);
-        setAllProducts(allProductsResult.data);
+        let configuredPrices: Record<string, Record<string, number>> = {};
+        try { configuredPrices = JSON.parse(settings.product_size_prices || "{}"); } catch { configuredPrices = {}; }
+        setAllProducts(allProductsResult.data.map((product) => ({
+          ...product,
+          price: productDisplayPrice(product, configuredPrices),
+        })));
         setCatalogPage(1);
       }
     });
@@ -543,7 +574,7 @@ export default function Home() {
           <h1>{heroContent.title}</h1>
           <p className="hero-copy">{heroContent.subtitle}</p>
           <div className="hero-buttons">
-            <Link className="button primary" href="/?ver=todos#catalogo" onClick={() => { setCategoryFilter(""); setCatalogPage(1); }}>{heroContent.primaryButton} <span>→</span></Link>
+            <button className="button primary" type="button" onClick={showCatalog}>{heroContent.primaryButton} <span>→</span></button>
             <a
               className="button secondary"
               href={createWhatsappUrl(whatsappNumber)}
@@ -647,6 +678,7 @@ export default function Home() {
           <svg viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16.04 3A12.9 12.9 0 0 0 5 22.57L3.28 29l6.58-1.72A12.98 12.98 0 1 0 16.04 3Zm0 23.76a10.7 10.7 0 0 1-5.45-1.49l-.39-.23-3.9 1.02 1.04-3.8-.25-.4a10.72 10.72 0 1 1 8.95 4.9Zm5.88-8.03c-.32-.16-1.9-.94-2.2-1.05-.29-.11-.5-.16-.71.16-.22.32-.83 1.05-1.02 1.27-.18.21-.37.24-.69.08-1.89-.94-3.12-1.69-4.37-3.82-.33-.57.33-.53.94-1.76.11-.21.05-.4-.03-.56-.08-.16-.72-1.73-.98-2.37-.26-.62-.52-.54-.72-.55h-.61c-.22 0-.56.08-.85.4-.29.32-1.12 1.1-1.12 2.66s1.15 3.08 1.3 3.29c.16.21 2.25 3.43 5.45 4.81.76.33 1.36.53 1.82.67.77.24 1.46.21 2.01.13.62-.09 1.9-.78 2.17-1.53.27-.75.27-1.4.19-1.53-.08-.14-.29-.22-.61-.38Z"/></svg>
         </a>
       </div>
+      {showBackToTop && <button className="back-to-top" type="button" onClick={returnToTop} aria-label="Volver al inicio"><span aria-hidden="true">↑</span> Subir</button>}
     </main>
   );
 }

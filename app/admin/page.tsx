@@ -30,7 +30,6 @@ type Product = {
   active: boolean;
   featured: boolean;
 };
-type ExistingImportProduct = { id: string; sku: string; slug: string; description: string };
 type CategoryFeatureBanner = { categoryId: string; imageUrl: string; mobileImageUrl?: string };
 type NavigationLink = { id: string; label: string; href: string };
 type NavigationConfig = { menus: { id: string; label: string }[]; links: NavigationLink[]; itemOrder: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
@@ -380,86 +379,51 @@ export default function AdminPage() {
       setLoading(false);
     }
   }
-  async function deleteProduct(id: string) {
-    if (!confirm("¿Eliminar este producto?")) return;
-    const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) setError(error.message);
-    else {
-      setNotice("Producto eliminado");
-      loadCatalog();
+  async function deleteProducts(ids: string[]) {
+    const uniqueIds = [...new Set(ids)];
+    if (!uniqueIds.length) return false;
+    const message = uniqueIds.length === 1
+      ? "¿Eliminar este producto? Esta acción no se puede deshacer."
+      : `¿Eliminar los ${uniqueIds.length} productos seleccionados? Esta acción no se puede deshacer.`;
+    if (!confirm(message)) return false;
+    setLoading(true);
+    setError("");
+    try {
+      const { error } = await supabase.from("products").delete().in("id", uniqueIds);
+      if (error) throw error;
+      const nextSizePrices = { ...productSizePrices };
+      uniqueIds.forEach((id) => delete nextSizePrices[id]);
+      const { error: settingError } = await supabase.from("site_settings").upsert({ key: "product_size_prices", value: JSON.stringify(nextSizePrices), updated_at: new Date().toISOString() });
+      if (settingError) throw settingError;
+      setProductSizePrices(nextSizePrices);
+      await loadCatalog();
+      setNotice(uniqueIds.length === 1 ? "Producto eliminado" : `${uniqueIds.length} productos eliminados`);
+      return true;
+    } catch (deleteError) {
+      setError(deleteError && typeof deleteError === "object" && "message" in deleteError ? String(deleteError.message) : "No fue posible eliminar los productos");
+      await loadCatalog();
+      return false;
+    } finally {
+      setLoading(false);
     }
   }
   async function importCsvProducts(importedProducts: CsvImportProduct[]) {
     setLoading(true);
     setError("");
     setNotice("");
-    let completed = 0;
     try {
-      const categoryBySlug = new Map(categories.map((category) => [category.slug, category]));
-      const requestedCategoryNames = [...new Set(importedProducts.flatMap((product) => product.categories))];
-      for (const name of requestedCategoryNames) {
-        const slug = slugify(name);
-        if (categoryBySlug.has(slug)) continue;
-        const { data, error } = await supabase.from("categories").insert({ name, slug, description: "", active: true }).select("id,name,slug,description,active").single();
-        if (error?.code === "23505") {
-          const existing = await supabase.from("categories").select("id,name,slug,description,active").eq("slug", slug).single();
-          if (existing.error) throw existing.error;
-          categoryBySlug.set(slug, existing.data as Category);
-        } else {
-          if (error) throw error;
-          categoryBySlug.set(slug, data as Category);
-        }
-      }
-      const { data: existingRows, error: existingError } = await supabase.from("products").select("id,name,slug,sku,description,price,stock,size,image_url,active,featured");
-      if (existingError) throw existingError;
-      const existingCatalog = (existingRows || []) as ExistingImportProduct[];
-      const existingBySku = new Map(existingCatalog.map((product) => [product.sku, product]));
-      const existingBySlug = new Map(existingCatalog.map((product) => [product.slug, product]));
-      const nextSizePrices = { ...productSizePrices };
-      for (const product of importedProducts) {
-        const slug = slugify(product.name);
-        const existing = existingBySku.get(product.sku) || existingBySlug.get(slug);
-        const categoryIds = product.categories.map((name) => categoryBySlug.get(slugify(name))?.id).filter((id): id is string => Boolean(id));
-        if (!categoryIds.length) throw new Error(`${product.name}: no fue posible asociar sus categorías`);
-        const payload: Record<string, string | number | boolean> = {
-          name: product.name.trim(), slug, sku: product.sku,
-          description: product.description || existing?.description || "",
-          price: product.price, stock: product.stock,
-          size: product.sizes.join(", "), active: product.active,
-          featured: product.featured, category_id: categoryIds[0],
-        };
-        if (product.images.length) payload.image_url = product.images[0];
-        const query = existing
-          ? supabase.from("products").update(payload).eq("id", existing.id)
-          : supabase.from("products").insert(payload);
-        const { data: saved, error: productError } = await query.select("id").single();
-        if (productError) throw new Error(`${product.name}: ${productError.message}`);
-        const productId = saved.id;
-        const { error: unlinkError } = await supabase.from("product_categories").delete().eq("product_id", productId);
-        if (unlinkError) throw new Error(`${product.name}: ${unlinkError.message}`);
-        const { error: linkError } = await supabase.from("product_categories").insert(categoryIds.map((category_id) => ({ product_id: productId, category_id })));
-        if (linkError) throw new Error(`${product.name}: ${linkError.message}`);
-        if (product.images.length) {
-          const { error: clearImagesError } = await supabase.from("product_images").delete().eq("product_id", productId);
-          if (clearImagesError) throw new Error(`${product.name}: ${clearImagesError.message}`);
-          const { error: imageError } = await supabase.from("product_images").insert(product.images.slice(0, 8).map((image_url, sort_order) => ({ product_id: productId, image_url, sort_order })));
-          if (imageError) throw new Error(`${product.name}: ${imageError.message}`);
-        }
-        if (Object.keys(product.sizePrices).length) nextSizePrices[productId] = product.sizePrices;
-        const savedIndex = { id: productId, sku: product.sku, slug, description: String(payload.description) };
-        existingBySku.set(product.sku, savedIndex);
-        existingBySlug.set(slug, savedIndex);
-        completed += 1;
-      }
-      const { error: priceError } = await supabase.from("site_settings").upsert({ key: "product_size_prices", value: JSON.stringify(nextSizePrices), updated_at: new Date().toISOString() });
-      if (priceError) throw priceError;
-      setProductSizePrices(nextSizePrices);
+      const { data, error: importError } = await supabase.rpc("import_product_catalog", { catalog: importedProducts });
+      if (importError) throw importError;
+      const imported = Number((data as { imported?: number } | null)?.imported || importedProducts.length);
       await loadCatalog();
-      setNotice(`${completed} productos importados correctamente`);
+      setNotice(`${imported} productos importados correctamente. Todos los cambios se aplicaron en una sola transacción.`);
+      return true;
     } catch (importError) {
-      const message = importError instanceof Error ? importError.message : "No fue posible importar el CSV";
-      setError(`${completed ? `${completed} productos alcanzaron a importarse. ` : ""}${message}`);
-      await loadCatalog();
+      const message = importError && typeof importError === "object" && "message" in importError
+        ? String(importError.message)
+        : "No fue posible importar el archivo";
+      setError(`No se aplicó ningún cambio. ${message}`);
+      return false;
     } finally {
       setLoading(false);
     }
@@ -788,7 +752,8 @@ export default function AdminPage() {
                 setSelectedImages([]);
                 setEditing({ ...p });
               }}
-              remove={deleteProduct}
+              remove={deleteProducts}
+              loading={loading}
             /></>
         )}{" "}
         {view === "Categorías" && (
@@ -918,13 +883,16 @@ function Products({
   categories,
   edit,
   remove,
+  loading,
 }: {
   products: Product[];
   categories: Category[];
   edit: (p: Product) => void;
-  remove: (id: string) => void;
+  remove: (ids: string[]) => Promise<boolean>;
+  loading: boolean;
 }) {
   const [search, setSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const normalizedSearch = search.trim().toLocaleLowerCase("es-CL");
   const visibleProducts = normalizedSearch
     ? products.filter((product) => {
@@ -934,6 +902,28 @@ function Products({
         return `${product.name} ${product.sku} ${categoryNames}`.toLocaleLowerCase("es-CL").includes(normalizedSearch);
       })
     : products;
+  const visibleIds = visibleProducts.map((product) => product.id);
+  const selectedVisibleCount = visibleIds.filter((id) => selectedIds.has(id)).length;
+  const allVisibleSelected = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+  const toggleProduct = (id: string) => setSelectedIds((current) => {
+    const next = new Set(current);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const toggleVisible = () => setSelectedIds((current) => {
+    const next = new Set(current);
+    visibleIds.forEach((id) => allVisibleSelected ? next.delete(id) : next.add(id));
+    return next;
+  });
+  const runBulkAction = async (action: string) => {
+    if (action !== "delete") return;
+    const deleted = await remove([...selectedIds]);
+    if (deleted) setSelectedIds(new Set());
+  };
+  useEffect(() => {
+    const availableIds = new Set(products.map((product) => product.id));
+    setSelectedIds((current) => new Set([...current].filter((id) => availableIds.has(id))));
+  }, [products]);
   return (
     <section className="panel orders-panel">
       <div className="panel-title">
@@ -941,14 +931,21 @@ function Products({
           <h2>Catálogo</h2>
           <p>{normalizedSearch ? `${visibleProducts.length} de ${products.length} productos` : `${products.length} productos registrados`}</p>
         </div>
-        <label className="product-admin-search">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nombre, SKU o categoría…" aria-label="Buscar productos" />
-          {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar búsqueda">×</button>}
-        </label>
+        <div className="product-catalog-tools">
+          <label className="product-admin-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></svg>
+            <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nombre, SKU o categoría…" aria-label="Buscar productos" />
+            {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar búsqueda">×</button>}
+          </label>
+          <select className="product-bulk-actions" value="" disabled={!selectedIds.size || loading} onChange={(event) => void runBulkAction(event.target.value)} aria-label="Acciones para productos seleccionados">
+            <option value="">Acciones{selectedIds.size ? ` (${selectedIds.size})` : ""}</option>
+            <option value="delete">Eliminar seleccionados</option>
+          </select>
+        </div>
       </div>
       <div className="orders-table">
         <div className="order-row product-row order-head">
+          <label className="product-select"><input type="checkbox" checked={allVisibleSelected} onChange={toggleVisible} disabled={!visibleIds.length || loading} /><span className="sr-only">Seleccionar todos los productos visibles</span></label>
           <span>Producto</span>
           <span>SKU</span>
           <span>Categorías</span>
@@ -957,18 +954,19 @@ function Products({
         </div>
         {visibleProducts.map((p) => (
           <div className="order-row product-row" key={p.id}>
+            <label className="product-select"><input type="checkbox" checked={selectedIds.has(p.id)} onChange={() => toggleProduct(p.id)} disabled={loading} /><span className="sr-only">Seleccionar {p.name}</span></label>
             <div className="product-table-name">
               <span className="product-table-thumb">{p.image_url ? <img src={p.image_url} alt="" /> : <span aria-hidden="true">◇</span>}</span>
               <div><strong>{p.name}</strong><small>{p.active ? "Publicado" : "Oculto"}</small></div>
             </div>
-            <span>{p.sku}</span>
+            <span className="product-sku-cell">{p.sku}</span>
             <span className="category-cell">
               {p.category_ids
                 .map((id) => categories.find((c) => c.id === id)?.name)
                 .filter(Boolean)
                 .join(", ") || "Sin categoría"}
             </span>
-            <strong>
+            <strong className="product-price-cell">
               {p.price ? `$${p.price.toLocaleString("es-CL")}` : "Pendiente"}
             </strong>
             <span className="row-actions">
@@ -976,7 +974,7 @@ function Products({
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4l11-11-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>
                 Editar
               </button>
-              <button type="button" className="delete-product" onClick={() => remove(p.id)} aria-label={`Eliminar ${p.name}`}>
+              <button type="button" className="delete-product" onClick={() => void remove([p.id])} disabled={loading} aria-label={`Eliminar ${p.name}`}>
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></svg>
                 Eliminar
               </button>
