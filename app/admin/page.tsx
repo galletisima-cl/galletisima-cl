@@ -407,6 +407,38 @@ export default function AdminPage() {
       setLoading(false);
     }
   }
+  async function updateProductsInBulk(ids: string[], action: string) {
+    const uniqueIds = [...new Set(ids)];
+    if (!uniqueIds.length) return false;
+    setLoading(true);
+    setError("");
+    try {
+      if (action === "publish" || action === "hide") {
+        const active = action === "publish";
+        const { error: updateError } = await supabase.from("products").update({ active }).in("id", uniqueIds);
+        if (updateError) throw updateError;
+        setNotice(`${uniqueIds.length} ${uniqueIds.length === 1 ? "producto actualizado" : "productos actualizados"} como ${active ? "publicado" : "oculto"}`);
+      } else if (action.startsWith("category:")) {
+        const categoryId = action.slice("category:".length);
+        const category = categories.find((item) => item.id === categoryId);
+        if (!category) throw new Error("La categoría seleccionada no existe");
+        const links = uniqueIds.map((product_id) => ({ product_id, category_id: categoryId }));
+        const { error: categoryError } = await supabase.from("product_categories").upsert(links, { onConflict: "product_id,category_id", ignoreDuplicates: true });
+        if (categoryError) throw categoryError;
+        setNotice(`${uniqueIds.length} ${uniqueIds.length === 1 ? "producto añadido" : "productos añadidos"} a ${category.name}`);
+      } else {
+        return false;
+      }
+      await loadCatalog();
+      return true;
+    } catch (bulkError) {
+      setError(bulkError && typeof bulkError === "object" && "message" in bulkError ? String(bulkError.message) : "No fue posible actualizar los productos");
+      await loadCatalog();
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
   async function importCsvProducts(importedProducts: CsvImportProduct[]) {
     setLoading(true);
     setError("");
@@ -753,6 +785,7 @@ export default function AdminPage() {
                 setEditing({ ...p });
               }}
               remove={deleteProducts}
+              updateBulk={updateProductsInBulk}
               loading={loading}
             /></>
         )}{" "}
@@ -883,12 +916,14 @@ function Products({
   categories,
   edit,
   remove,
+  updateBulk,
   loading,
 }: {
   products: Product[];
   categories: Category[];
   edit: (p: Product) => void;
   remove: (ids: string[]) => Promise<boolean>;
+  updateBulk: (ids: string[], action: string) => Promise<boolean>;
   loading: boolean;
 }) {
   const [search, setSearch] = useState("");
@@ -916,9 +951,15 @@ function Products({
     return next;
   });
   const runBulkAction = async (action: string) => {
-    if (action !== "delete") return;
-    const deleted = await remove([...selectedIds]);
-    if (deleted) setSelectedIds(new Set());
+    if (action === "select-all") {
+      setSelectedIds(new Set(visibleIds));
+      return;
+    }
+    if (!selectedIds.size) return;
+    const completed = action === "delete"
+      ? await remove([...selectedIds])
+      : await updateBulk([...selectedIds], action);
+    if (completed) setSelectedIds(new Set());
   };
   useEffect(() => {
     const availableIds = new Set(products.map((product) => product.id));
@@ -937,9 +978,17 @@ function Products({
             <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar nombre, SKU o categoría…" aria-label="Buscar productos" />
             {search && <button type="button" onClick={() => setSearch("")} aria-label="Limpiar búsqueda">×</button>}
           </label>
-          <select className="product-bulk-actions" value="" disabled={!selectedIds.size || loading} onChange={(event) => void runBulkAction(event.target.value)} aria-label="Acciones para productos seleccionados">
-            <option value="">Acciones{selectedIds.size ? ` (${selectedIds.size})` : ""}</option>
-            <option value="delete">Eliminar seleccionados</option>
+          <select className="product-bulk-actions" value="" disabled={loading || !visibleIds.length} onChange={(event) => void runBulkAction(event.target.value)} aria-label="Acciones para productos seleccionados">
+            <option value="">Acciones{selectedIds.size ? ` · ${selectedIds.size} seleccionados` : ""}</option>
+            <option value="select-all">Seleccionar todos ({visibleIds.length})</option>
+            <optgroup label="Cambiar estado">
+              <option value="publish" disabled={!selectedIds.size}>Publicar</option>
+              <option value="hide" disabled={!selectedIds.size}>Ocultar</option>
+            </optgroup>
+            <optgroup label="Añadir a categoría">
+              {categories.map((category) => <option value={`category:${category.id}`} disabled={!selectedIds.size} key={category.id}>{category.name}</option>)}
+            </optgroup>
+            <option value="delete" disabled={!selectedIds.size}>Eliminar seleccionados</option>
           </select>
         </div>
       </div>
