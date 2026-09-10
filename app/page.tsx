@@ -32,7 +32,7 @@ const groupMatchers = {
 };
 
 function displayCategory(name: string) {
-  return name.replace(/^Todo\s+/i, "").replace(/Pokemon/i, "Pokémon").replace(/Futbol/i, "Fútbol").replace(/Superheroes/i, "Superhéroes").replace(/ToyStory/i, "Toy Story").replace(/Winie The Pooh/i, "Winnie the Pooh").replace(/FoodHall/i, "Food Hall").replace(/LiLo-Stitch/i, "Lilo & Stitch");
+  return name;
 }
 
 function categoryHref(slug: string) {
@@ -352,7 +352,7 @@ export default function Home() {
       return a.name.localeCompare(b.name, "es");
     });
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort]);
-  const visibleMenuCategories = catalogCategories.filter((category) => !/^AA-Prueba/i.test(category.name) && category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
+  const visibleMenuCategories = catalogCategories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setCart(readCartCount()), 0);
@@ -507,7 +507,7 @@ export default function Home() {
     };
   }, []);
 
-  const publicCategories = catalogCategories.filter((category) => !/^AA-Prueba/i.test(category.name));
+  const publicCategories = catalogCategories;
   const categoryGroups = groupCategories(publicCategories);
   const orderedCategories = [...publicCategories].sort((a, b) => {
     const ai = navigationConfig.categoryOrder.indexOf(a.id);

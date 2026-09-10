@@ -18,7 +18,7 @@ const celebrationTerms = ["navidad", "baby-shower", "halloween", "ninos", "papa"
 const characterTerms = ["toy", "snoopy", "stitch", "pokemon", "bluey", "gabby", "marvel", "pooh", "disney", "bob-esponja", "pawpatrol", "spiderman", "lilo", "netflix"];
 
 function displayCategory(name: string) {
-  return name.replace(/^Todo\s+/i, "");
+  return name;
 }
 
 function categoryHref(slug: string) {
