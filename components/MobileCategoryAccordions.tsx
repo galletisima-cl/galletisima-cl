@@ -26,7 +26,7 @@ export default function MobileCategoryAccordions({ categories, close, navigation
   const itemOrder = navigation.itemOrder || defaultNavigation.itemOrder!;
   const accordion = (key: string, title: string, items: Category[]) => {
     const expanded = open === key;
-    return <section className={`drawer-group ${expanded ? "open" : ""}`} key={key}><button type="button" aria-expanded={expanded} aria-controls={`mobile-group-${key}`} onClick={() => setOpen(expanded ? null : key)}><span>{title}</span><i aria-hidden="true">⌄</i></button><div id={`mobile-group-${key}`} hidden={!expanded}>{items.map((category) => <Link key={category.id} href={`/categoria/${encodeURIComponent(category.slug)}`} onClick={close}>{label(category.name)}</Link>)}</div></section>;
+    return <section className={`drawer-group ${expanded ? "open" : ""}`} key={key}><button type="button" aria-expanded={expanded} aria-controls={`mobile-group-${key}`} onClick={() => setOpen(expanded ? null : key)}><span>{title}</span><i aria-hidden="true">⌄</i></button><div id={`mobile-group-${key}`} hidden={!expanded}>{items.map((category) => <a key={category.id} href={`/?categoria=${encodeURIComponent(category.slug)}#catalogo`} onClick={close}>{label(category.name)}</a>)}</div></section>;
   };
   return <div className="mobile-category-accordions">{itemOrder.map((entry) => {
     if (entry.startsWith("menu:")) {

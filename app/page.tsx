@@ -36,7 +36,7 @@ function displayCategory(name: string) {
 }
 
 function categoryHref(slug: string) {
-  return `/categoria/${encodeURIComponent(slug)}`;
+  return `/?categoria=${encodeURIComponent(slug)}#catalogo`;
 }
 
 function groupCategories(categories: Category[]) {
@@ -452,6 +452,11 @@ export default function Home() {
           price: productDisplayPrice(product, configuredPrices),
         })));
         setCatalogPage(1);
+        if (selectedSlug) {
+          window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+            document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }));
+        }
       }
     });
   }, []);

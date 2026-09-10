@@ -22,12 +22,12 @@ function displayCategory(name: string) {
 }
 
 function categoryHref(slug: string) {
-  return `/categoria/${encodeURIComponent(slug)}`;
+  return `/?categoria=${encodeURIComponent(slug)}#catalogo`;
 }
 
 function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu, alignRight = false }: { label: string; menuKey: string; categories: Category[]; openMenu: string | null; setOpenMenu: (key: string | null) => void; alignRight?: boolean }) {
   const expanded = openMenu === menuKey;
-  return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" type="button" aria-expanded={expanded} aria-controls={`public-mega-${menuKey}`} onClick={() => setOpenMenu(expanded ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{expanded && <div className="mega-panel" id={`public-mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <Link key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></Link>)}</div></div>}</div>;
+  return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" type="button" aria-expanded={expanded} aria-controls={`public-mega-${menuKey}`} onClick={() => setOpenMenu(expanded ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{expanded && <div className="mega-panel" id={`public-mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></a>)}</div></div>}</div>;
 }
 
 export default function PublicHeader() {
