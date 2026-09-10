@@ -160,6 +160,7 @@ export default function AdminPage() {
     [products, setProducts] = useState<Product[]>([]);
   const [editing, setEditing] = useState<typeof emptyProduct | null>(null),
     [selectedImages, setSelectedImages] = useState<File[]>([]),
+    [coverImageIndex, setCoverImageIndex] = useState(0),
     [categoryName, setCategoryName] = useState("");
   const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
   const [heroBannerUrl, setHeroBannerUrl] = useState("");
@@ -314,7 +315,11 @@ export default function AdminPage() {
         if (uploadError) throw uploadError;
         uploadedUrls.push(supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl);
       }
-      const imageUrls = [...existingUrls, ...uploadedUrls];
+      const galleryUrls = [...existingUrls, ...uploadedUrls];
+      const selectedCoverIndex = Math.min(coverImageIndex, Math.max(0, galleryUrls.length - 1));
+      const imageUrls = galleryUrls.length
+        ? [galleryUrls[selectedCoverIndex], ...galleryUrls.filter((_, index) => index !== selectedCoverIndex)]
+        : [];
       const imageUrl = imageUrls[0] || "";
       const payload: Record<string, string | number | boolean> = {
         name: editing.name.trim(),
@@ -749,6 +754,7 @@ export default function AdminPage() {
               className="new-product"
               onClick={() => {
                 setSelectedImages([]);
+                setCoverImageIndex(0);
                 setEditing({ ...emptyProduct });
                 setView("Productos");
               }}
@@ -782,6 +788,7 @@ export default function AdminPage() {
               categories={categories}
               edit={(p) => {
                 setSelectedImages([]);
+                setCoverImageIndex(0);
                 setEditing({ ...p });
               }}
               remove={deleteProducts}
@@ -859,11 +866,14 @@ export default function AdminPage() {
           save={saveProduct}
           close={() => {
             setSelectedImages([]);
+            setCoverImageIndex(0);
             setEditing(null);
           }}
           loading={loading}
           selectedImages={selectedImages}
           setSelectedImages={setSelectedImages}
+          coverImageIndex={coverImageIndex}
+          setCoverImageIndex={setCoverImageIndex}
         />
       )}
     </main>
@@ -1421,6 +1431,8 @@ function ProductModal({
   loading,
   selectedImages,
   setSelectedImages,
+  coverImageIndex,
+  setCoverImageIndex,
 }: {
   product: typeof emptyProduct;
   setProduct: (p: typeof emptyProduct) => void;
@@ -1430,6 +1442,8 @@ function ProductModal({
   loading: boolean;
   selectedImages: File[];
   setSelectedImages: (files: File[]) => void;
+  coverImageIndex: number;
+  setCoverImageIndex: (index: number) => void;
 }) {
   const field =
     (key: keyof typeof product) =>
@@ -1451,6 +1465,12 @@ function ProductModal({
     [selectedImages],
   );
   const gallery = [...product.image_urls.map((url) => ({ url, existing: true })), ...selectedPreviews.map(({ url }) => ({ url, existing: false }))];
+  const removeGalleryImage = (image: { url: string; existing: boolean }, index: number) => {
+    if (image.existing) setProduct({ ...product, image_urls: product.image_urls.filter((url) => url !== image.url) });
+    else setSelectedImages(selectedImages.filter((_, fileIndex) => fileIndex !== index - product.image_urls.length));
+    if (index === coverImageIndex) setCoverImageIndex(0);
+    else if (index < coverImageIndex) setCoverImageIndex(coverImageIndex - 1);
+  };
   const [variants, setVariants] = useState(() => buildSizeVariants(product.size, product.size_prices, product.price));
   const updateVariants = (next: { size: string; price: number }[]) => {
     setVariants(next);
@@ -1543,16 +1563,16 @@ function ProductModal({
               }}
             />
             <small>
-              Selecciona varias imágenes en una sola vez. Hasta 8 fotos; se optimizan automáticamente a WebP y la primera será la portada.
+              Selecciona varias imágenes en una sola vez. Hasta 8 fotos; se optimizan automáticamente a WebP. Haz clic en una foto para elegirla como portada.
             </small>
             </label>
             {gallery.length ? <div className="gallery-preview-grid">{gallery.map((image, index) => (
-              <article key={`${image.url}-${index}`}>
-                <img src={image.url} alt={`Foto ${index + 1} del producto`} />
-                {index === 0 && <span>Portada</span>}
-                <button type="button" aria-label={`Quitar foto ${index + 1}`} onClick={() => image.existing
-                  ? setProduct({ ...product, image_urls: product.image_urls.filter((url) => url !== image.url) })
-                  : setSelectedImages(selectedImages.filter((_, fileIndex) => fileIndex !== index - product.image_urls.length))}>×</button>
+              <article className={index === coverImageIndex ? "is-cover" : ""} key={`${image.url}-${index}`}>
+                <button className="gallery-cover-button" type="button" aria-label={`Usar foto ${index + 1} como portada`} aria-pressed={index === coverImageIndex} onClick={() => setCoverImageIndex(index)}>
+                  <img src={image.url} alt={`Foto ${index + 1} del producto`} />
+                  {index === coverImageIndex && <span>Portada</span>}
+                </button>
+                <button className="gallery-remove-button" type="button" aria-label={`Quitar foto ${index + 1}`} onClick={() => removeGalleryImage(image, index)}>×</button>
               </article>
             ))}</div> : <p className="gallery-empty">Aún no hay fotos cargadas.</p>}
           </div>
