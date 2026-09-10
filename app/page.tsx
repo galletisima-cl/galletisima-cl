@@ -377,8 +377,16 @@ export default function Home() {
   const showCatalog = () => {
     setCategoryFilter("");
     setCatalogPage(1);
-    window.history.replaceState(null, "", "/?ver=todos#catalogo");
-    window.requestAnimationFrame(() => document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    const catalog = document.getElementById("catalogo");
+    if (!catalog) return;
+    // Remove the existing hash first so clicking the same call-to-action always
+    // starts a fresh navigation, even after the user has manually scrolled up.
+    window.history.replaceState(null, "", window.location.pathname);
+    window.requestAnimationFrame(() => {
+      const top = catalog.getBoundingClientRect().top + window.scrollY;
+      window.scrollTo({ top, behavior: "smooth" });
+      window.history.replaceState(null, "", `${window.location.pathname}?ver=todos#catalogo`);
+    });
   };
 
   const returnToTop = () => {
