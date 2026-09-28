@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdminProductCsvImporter from "../../components/AdminProductCsvImporter";
+import AdminOrdersPanel from "../../components/AdminOrdersPanel";
+import AdminShippingPanel from "../../components/AdminShippingPanel";
 import { createClient } from "../../lib/supabase/client";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS, type HeroContent } from "../../lib/hero-content";
 import type { CsvImportProduct } from "../../lib/product-csv-import";
@@ -87,6 +89,7 @@ const nav = [
   "Categorías",
   "Banners",
   "Clientes",
+  "Envíos",
   "Configuración",
 ].map((label) => [<AdminNavIcon key={label} name={label} />, label] as const);
 function AdminNavIcon({ name }: { name: string }) {
@@ -139,6 +142,14 @@ function AdminNavIcon({ name }: { name: string }) {
       <svg viewBox="0 0 24 24" {...p}>
         <circle cx="9" cy="7" r="4" />
         <path d="M2.5 21v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 3.5 5.5V21" />
+      </svg>
+    );
+  if (name === "Envíos")
+    return (
+      <svg viewBox="0 0 24 24" {...p}>
+        <path d="M3 6h11v11H3zM14 10h4l3 3v4h-7z" />
+        <circle cx="7" cy="18" r="2" />
+        <circle cx="18" cy="18" r="2" />
       </svg>
     );
   return (
@@ -731,14 +742,6 @@ export default function AdminPage() {
             </button>
           ))}
         </nav>
-        <div className="sidebar-user">
-          <span>AD</span>
-          <div>
-            <strong>Administración</strong>
-            <small>Supabase Auth</small>
-          </div>
-          <button onClick={logout}>↪</button>
-        </div>
       </aside>
       <section className="admin-content">
         <header className="admin-topbar">
@@ -782,6 +785,7 @@ export default function AdminPage() {
         {view === "Resumen" && (
           <Dashboard products={products} categories={categories} />
         )}{" "}
+        {view === "Pedidos" && <AdminOrdersPanel notify={setNotice} fail={setError} />}{" "}
         {view === "Productos" && (
           <><AdminProductCsvImporter loading={loading} onImport={importCsvProducts} /><Products
               products={products}
@@ -846,7 +850,8 @@ export default function AdminPage() {
             loading={loading}
           />
         )}{" "}
-        {!["Resumen", "Productos", "Categorías", "Banners", "Configuración"].includes(
+        {view === "Envíos" && <AdminShippingPanel notify={setNotice} fail={setError} />}{" "}
+        {!["Resumen", "Pedidos", "Productos", "Categorías", "Banners", "Envíos", "Configuración"].includes(
           view,
         ) && (
           <section className="panel empty-state">

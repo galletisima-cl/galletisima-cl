@@ -3,6 +3,7 @@ import { Fredoka, Nunito } from "next/font/google";
 import { createClient } from "@supabase/supabase-js";
 import "./globals.css";
 import "./admin/admin.css";
+import "./admin/orders.css";
 import PublicFooter from "../components/PublicFooter";
 
 const fredoka = Fredoka({ subsets: ["latin", "latin-ext"], weight: "variable", variable: "--font-title", display: "swap" });

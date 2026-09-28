@@ -141,7 +141,16 @@ export default function ProductPage() {
               <div className="quantity-picker" aria-label="Cantidad"><button type="button" aria-label="Disminuir cantidad" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button><strong>{quantity}</strong><button type="button" aria-label="Aumentar cantidad" onClick={() => setQuantity((value) => value + 1)}>+</button></div>
               <button className="product-add" type="button" onClick={addToCart}>Agregar al carrito</button>
             </div>
-            <div className="product-assurances"><span>♡ Diseñado con cariño</span><span>▣ Envíos a todo Chile</span></div>
+            <div className="product-assurances">
+              <span>♡ Diseñado con cariño</span>
+              <span>
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M3 6.75h11.5v10H3zM14.5 10h3.25L21 13.25v3.5h-6.5z" />
+                  <path d="M7.25 19a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Zm10.5 0a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z" />
+                </svg>
+                Envíos a todo Chile
+              </span>
+            </div>
           </div>
         </div>
       </section>
