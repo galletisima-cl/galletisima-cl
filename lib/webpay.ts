@@ -7,6 +7,7 @@ import {
 } from "transbank-sdk";
 
 const isProduction = process.env.WEBPAY_ENVIRONMENT === "production";
+const productionReturnUrl = "https://www.galletisima.cl/api/webpay/return";
 
 export function getWebpayTransaction() {
   if (isProduction) {
@@ -29,4 +30,9 @@ export function getWebpayTransaction() {
 
 export function getWebpayEnvironment() {
   return isProduction ? "production" : "integration";
+}
+
+export function getWebpayReturnUrl(requestUrl: string) {
+  if (isProduction) return productionReturnUrl;
+  return new URL("/api/webpay/return", requestUrl).toString();
 }

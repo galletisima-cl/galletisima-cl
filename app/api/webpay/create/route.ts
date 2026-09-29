@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { calculateCheckoutTotal } from "../../../../lib/checkout";
-import { getWebpayTransaction } from "../../../../lib/webpay";
+import { getWebpayReturnUrl, getWebpayTransaction } from "../../../../lib/webpay";
 import { createPendingOrder, getNextOrderNumber, type Buyer } from "../../../../lib/orders";
 
 export const runtime = "nodejs";
@@ -13,14 +13,11 @@ export async function POST(request: Request) {
     const identifier = crypto.randomUUID().replaceAll("-", "");
     const buyOrder = await getNextOrderNumber();
     const sessionId = identifier;
-    const origin = process.env.WEBPAY_ENVIRONMENT === "production"
-      ? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || new URL(request.url).origin
-      : new URL(request.url).origin;
     const response = await getWebpayTransaction().create(
       buyOrder,
       sessionId,
       total,
-      `${origin}/api/webpay/return`,
+      getWebpayReturnUrl(request.url),
     );
 
     await createPendingOrder({ buyOrder, sessionId, token: response.token, subtotal, shipping, shippingOption, total, buyer, lines });
