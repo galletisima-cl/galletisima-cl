@@ -1,0 +1,50 @@
+.discounts-admin { display: grid; gap: 20px; min-width: 0; font-size: 15px; line-height: 1.5; }
+.discounts-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; }
+.discounts-heading h2 { margin: 0 0 6px; font-size: 24px; }
+.discounts-heading p { margin: 0; color: #79666e; }
+.discounts-heading > span { border-radius: 999px; background: #fff0f5; padding: 8px 16px; color: #a52a57; font-weight: 700; }
+.discounts-policy { margin: 0; border: 1px solid #efd9e2; border-radius: 12px; padding: 16px 20px; background: #fff6f9; color: #70515d; font-size: 14px; }
+.discounts-layout { display: grid; grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr); gap: 22px; align-items: start; }
+.discount-editor { min-width: 0; }
+.discount-editor form { display: block; width: 100%; }
+.discount-editor h3, .discount-empty h3 { margin: 0 0 18px; font-size: 20px; }
+.discount-editor fieldset { display: grid; gap: 18px; width: 100%; min-width: 0; margin: 0; padding: 0; border: 0; }
+.discount-editor label { display: grid; gap: 7px; min-width: 0; font-size: 14px; font-weight: 700; color: #49383f; }
+.discount-editor input:not([type=checkbox]), .discount-editor select { width: 100%; min-width: 0; height: 46px; padding: 0 12px; border: 1px solid #deced5; border-radius: 9px; background: #fff; color: #49383f; font: inherit; font-size: 16px; }
+.discount-editor input:focus-visible, .discount-editor select:focus-visible { outline: 2px solid var(--a-pink); outline-offset: 2px; }
+.discount-editor small { color: #79666e; font-size: 13px; font-weight: 400; }
+.discount-value-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.discount-editor .discount-active { display: flex; align-items: center; gap: 10px; }
+.discount-active input { width: 20px; height: 20px; flex-shrink: 0; accent-color: var(--a-pink); }
+.discount-editor-actions, .discount-card footer { display: flex; flex-wrap: wrap; gap: 9px; }
+.discounts-admin button { min-height: 44px; padding: 0 14px; border: 1px solid #deced5; border-radius: 9px; background: #fff; color: #70515d; font-size: 14px; font-weight: 700; cursor: pointer; }
+.discounts-admin button.primary { background: var(--a-pink); border-color: var(--a-pink); color: #fff; }
+.discounts-admin button.danger { color: #b12d4d; }
+.discounts-admin button:disabled { opacity: .55; cursor: not-allowed; }
+.discount-list { display: grid; min-width: 0; gap: 14px; }
+.discount-card { min-width: 0; overflow-wrap: anywhere; }
+.discount-card header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.discount-card h3 { margin: 3px 0 12px; font-size: 18px; }
+.discount-card small { color: #79666e; font-size: 13px; }
+.discount-card p, .discount-empty p { margin: 0 0 10px; color: #79666e; font-size: 14px; }
+.discount-card .discount-benefit { color: #49383f; font-size: 16px; font-weight: 700; }
+.discount-badge { flex-shrink: 0; padding: 4px 9px; border-radius: 999px; background: #f3edef; color: #70515d; font-size: 12px; font-weight: 700; }
+.discount-badge.active { background: #e7f7ed; color: #2d7b49; }
+.discount-card footer { margin-top: 18px; padding: 0; border: 0; background: none; }
+.discounts-load-error { color: #b12d4d; }
+@media (max-width: 1100px) { .discounts-layout { grid-template-columns: 1fr; } }
+@media (max-width: 400px) { .discount-value-fields { grid-template-columns: 1fr; } .discount-editor-actions > button { width: 100%; } }
+
+.webpay-total .checkout-discount, .checkout-discount { color: #2d7b49; }
+.checkout-form-card .webpay-total { font-size: 14px; line-height: 1.5; }
+.checkout-form-card .webpay-total b { font-size: 17px; }
+.checkout-form-card .webpay-total small { font-size: 13px; }
+.webpay-total .checkout-discount > span { min-width: 0; overflow-wrap: anywhere; }
+.webpay-total .checkout-discount > strong { flex-shrink: 0; }
+.checkout-quote-retry { min-height: 44px; padding: 10px 14px; border: 1px solid #efd9e2; border-radius: 9px; background: #fff6f9; color: #a52a57; font-weight: 700; cursor: pointer; }
+.order-pricing { display: grid; gap: 9px; padding-top: 14px; border-top: 1px solid #eadde1; font-size: 14px; color: #725d65; }
+.order-pricing > div { display: flex; justify-content: space-between; gap: 16px; }
+.order-pricing span { overflow-wrap: anywhere; }
+.order-pricing strong { flex-shrink: 0; }
+.order-pricing small { font-size: 13px; overflow-wrap: anywhere; }
+.cart-discounts-note { display: block; margin: 0 0 14px; color: #79666e; font-size: 13px; line-height: 1.5; }

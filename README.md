@@ -16,6 +16,105 @@ npm run dev
 npm run build
 ```
 
+## Descuentos automáticos
+
+Antes de publicar esta funcionalidad, aplicar la migración
+`supabase/migrations/20261001010000_add_order_discounts.sql` en Supabase.
+Agrega los campos que conservan el desglose de descuentos de cada pedido.
+La migración no crea ni activa promociones.
+
+En **Administración → Descuentos** se pueden crear, editar, activar y eliminar
+promociones de envío gratis, monto total, producto o monto mínimo de compra.
+Los valores son porcentajes enteros o montos en pesos chilenos; un descuento
+fijo por producto se aplica por unidad y a todas sus medidas. Los mínimos
+consideran el subtotal original de productos, sin envío.
+
+Se elige el mayor ahorro entre los descuentos por producto y el descuento al
+total; el envío gratis se puede combinar. El checkout consulta y recalcula
+precios, envío y promociones en el servidor. Si el total cambia antes de pagar,
+el cliente debe confirmar el nuevo importe. Los pedidos de total cero no se
+envían a Webpay.
+
+`npm test` ejecuta las pruebas del catálogo, descuentos, checkout y avisos de
+estado e Instagram (con servicios externos simulados), y compila la aplicación con Next.js.
+
+## Avisos de estado y seguimiento
+
+Antes de desplegar, aplicar también
+`supabase/migrations/20261001020000_order_status_notifications.sql` en Supabase.
+Agrega los datos de seguimiento y el historial de avisos; no modifica estados
+existentes ni envía correos antiguos. Requiere las variables de servidor ya
+usadas por la tienda: `SUPABASE_URL` (o `NEXT_PUBLIC_SUPABASE_URL`),
+`SUPABASE_SERVICE_ROLE_KEY` (o `SUPABASE_SECRET_KEY`), `RESEND_API_KEY` y
+`RESEND_FROM_EMAIL`. `SELLER_NOTIFICATION_EMAIL` es la dirección de respuesta.
+
+Los cambios de estado desde la tabla o el editor de pedidos pasan por
+`POST /api/orders/status`, que verifica el usuario y su rol de administrador.
+El estado y su aviso pendiente se guardan juntos en una transacción. Al elegir
+**Enviado** se solicitan número y enlace de seguimiento; la empresa es opcional.
+Corregir esos datos mientras está Enviado genera un nuevo aviso. Guardar el
+mismo estado sin cambios reutiliza el aviso anterior. El cliente también puede
+ver el seguimiento en `/seguimiento` usando su número de pedido y correo.
+
+Los avisos se envían inmediatamente al correo guardado en el pedido. Si el
+proveedor falla, la lista muestra **Correo sin confirmar** y el detalle permite
+**Reintentar correo**, incluso después de recargar. El contenido y la clave de
+envío se conservan para el reintento. **Correo enviado** significa que Resend
+aceptó el mensaje; no confirma entrega ni lectura. No se instaló un proceso de
+reintentos en segundo plano. La confirmación de compra de Webpay conserva su
+correo existente; estos avisos cubren los cambios administrativos de estado.
+
+Resend mantiene las [claves de idempotencia durante 24 horas](https://resend.com/docs/dashboard/emails/idempotency-keys).
+Por precaución, los intentos sin confirmación se bloquean al cumplir 23 horas
+desde el primer intento: un administrador debe revisar en Resend la clave
+`order-status-<id del aviso>` antes de resolver manualmente el registro o
+reenviar. No borrar `email_payload` ni `first_attempt_at` sin confirmar primero
+si el proveedor aceptó el mensaje, porque podría producir duplicados.
+
+## Galería de Instagram
+
+La portada muestra hasta 12 publicaciones, con seis imágenes visibles en
+escritorio y dos en móvil. Los reels usan su imagen de portada y cada tarjeta
+abre la publicación original. Sin conexión se conserva el enlace al perfil.
+
+Para activar la integración:
+
+1. Aplicar `supabase/migrations/20261002010000_instagram_connection.sql`.
+2. Configurar una aplicación de Meta con **Instagram API with Instagram Login**
+   para una cuenta profesional (empresa o creador), con el permiso de lectura
+   `instagram_business_basic`. Preparar el acceso de la cuenta en el panel de
+   Meta y completar los requisitos que indique para el modo de la aplicación.
+3. Registrar exactamente `https://www.galletisima.cl/api/instagram/callback`
+   como URI de redirección. Usar el mismo dominio para entrar a administración
+   e iniciar la conexión, porque la autorización se valida con una cookie.
+4. Configurar en el servidor `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`,
+   `INSTAGRAM_REDIRECT_URI`, `INSTAGRAM_GRAPH_API_VERSION` (por defecto `v25.0`)
+   y `NEXT_PUBLIC_SITE_URL`. Los dos primeros son los de la aplicación de
+   Instagram; nunca llevan el prefijo `NEXT_PUBLIC_`. Se usan también las
+   credenciales de servidor de Supabase existentes. Consultar `.env.example`.
+5. Publicar y abrir **Administración → Banners → Publicaciones de Instagram →
+   Conectar Instagram**. La autorización se completa en Instagram; la tienda
+   no pide la contraseña. El panel permite actualizar, reconectar y desconectar.
+
+Las credenciales y los estados de autorización se guardan en tablas privadas,
+accesibles solo por `service_role`, nunca en `site_settings` ni en la respuesta
+pública. Desconectar elimina la conexión local y las autorizaciones pendientes;
+los permisos concedidos a la aplicación también se pueden retirar en Instagram.
+
+La galería se actualiza al recibir visitas, como máximo una vez cada 15 minutos.
+En esas consultas se renueva el acceso cuando le quedan menos de 30 días.
+No hay una tarea programada: si no se visita la tienda antes del vencimiento,
+será necesario reconectar. Los fallos temporales conservan la última galería
+durante un máximo de 24 horas; un permiso revocado o vencido oculta la galería.
+Las imágenes se leen desde la CDN de Meta y no se copian al almacenamiento de
+la tienda. Si una imagen deja de estar disponible, se mantiene el enlace a su
+publicación.
+
+Las pruebas locales simulan Meta y Supabase. La autorización real y la lectura
+de publicaciones deben verificarse al configurar y autorizar la cuenta.
+Referencias: [API oficial de Meta](https://www.postman.com/meta/instagram/folder/6raa77c/instagram-api-with-instagram-login)
+y [componente de Instagram de Jumpseller](https://es.jumpseller.com/support/component-instagram/).
+
 This starter does not use `wrangler.jsonc`.
 
 ## Included Shape

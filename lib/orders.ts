@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import type { CheckoutLine } from "./checkout";
+import type { AppliedDiscount } from "./discounts";
 
 export type Buyer = { name: string; email: string; phone: string; communeId: string; address: string; addressExtra: string };
 
@@ -8,6 +9,9 @@ export type StoredOrder = {
   buy_order: string;
   public_order_number: string;
   total: number;
+  discount_amount?: number;
+  shipping_discount?: number;
+  applied_discounts?: AppliedDiscount[];
   buyer_name: string;
   buyer_email: string;
   buyer_phone: string;
@@ -42,6 +46,9 @@ export async function createPendingOrder(input: {
   shippingOption: { regionId: string; region: string; communeId: string; commune: string };
   buyer: Buyer;
   lines: CheckoutLine[];
+  discountAmount: number;
+  shippingDiscount: number;
+  appliedDiscounts: AppliedDiscount[];
 }) {
   const supabase = adminSupabase();
   const { data: order, error } = await supabase.from("orders").insert({
@@ -49,6 +56,11 @@ export async function createPendingOrder(input: {
     subtotal: input.subtotal,
     shipping: input.shipping,
     total: input.total,
+    ...(input.appliedDiscounts.length ? {
+      discount_amount: input.discountAmount,
+      shipping_discount: input.shippingDiscount,
+      applied_discounts: input.appliedDiscounts,
+    } : {}),
     buyer_name: input.buyer.name,
     buyer_email: input.buyer.email,
     buyer_phone: input.buyer.phone,

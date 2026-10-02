@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import AdminProductCsvImporter from "../../components/AdminProductCsvImporter";
 import AdminOrdersPanel from "../../components/AdminOrdersPanel";
 import AdminShippingPanel from "../../components/AdminShippingPanel";
+import AdminDiscountsPanel from "../../components/AdminDiscountsPanel";
+import AdminInstagramPanel from "../../components/AdminInstagramPanel";
 import { createClient } from "../../lib/supabase/client";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS, type HeroContent } from "../../lib/hero-content";
 import type { CsvImportProduct } from "../../lib/product-csv-import";
@@ -90,6 +92,7 @@ const nav = [
   "Banners",
   "Clientes",
   "Envíos",
+  "Descuentos",
   "Configuración",
 ].map((label) => [<AdminNavIcon key={label} name={label} />, label] as const);
 function AdminNavIcon({ name }: { name: string }) {
@@ -144,6 +147,8 @@ function AdminNavIcon({ name }: { name: string }) {
         <path d="M2.5 21v-2a6.5 6.5 0 0 1 13 0v2M16 4.5a4 4 0 0 1 0 7.5M18 14a6 6 0 0 1 3.5 5.5V21" />
       </svg>
     );
+  if (name === "Descuentos")
+    return <svg viewBox="0 0 24 24" {...p}><path d="m4 4 8-.5L21 12l-9 9-8.5-9L4 4Z"/><circle cx="8" cy="8" r="1"/><path d="m10 16 6-6"/></svg>;
   if (name === "Envíos")
     return (
       <svg viewBox="0 0 24 24" {...p}>
@@ -195,6 +200,16 @@ export default function AdminPage() {
     supabase.auth.getUser().then(({ data }) => {
       setSignedIn(Boolean(data.user));
       setReady(true);
+      const result = new URLSearchParams(window.location.search).get("instagram");
+      if (result) {
+        setView("Banners");
+        if (result === "connected") setNotice("Instagram conectado. Revisa las publicaciones en Temporada e Instagram.");
+        else if (result === "cancelled") setNotice("Conexión con Instagram cancelada.");
+        else setError("No se pudo conectar Instagram. Vuelve a intentarlo desde Banners → Temporada e Instagram.");
+        const url = new URL(window.location.href);
+        url.searchParams.delete("instagram");
+        window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+      }
       if (data.user) loadCatalog();
     });
   }, []);
@@ -851,7 +866,8 @@ export default function AdminPage() {
           />
         )}{" "}
         {view === "Envíos" && <AdminShippingPanel notify={setNotice} fail={setError} />}{" "}
-        {!["Resumen", "Pedidos", "Productos", "Categorías", "Banners", "Envíos", "Configuración"].includes(
+        {view === "Descuentos" && <AdminDiscountsPanel products={products} notify={setNotice} fail={setError} />}{" "}
+        {!["Resumen", "Pedidos", "Productos", "Categorías", "Banners", "Envíos", "Descuentos", "Configuración"].includes(
           view,
         ) && (
           <section className="panel empty-state">
@@ -1353,12 +1369,13 @@ function Banners({
       </details>
 
       <section className="banner-editor-card">
-        <div className="banner-editor-heading"><span className="banner-step">3</span><div><h3>Temporada e Instagram</h3><p>Elige qué colección encabeza la temporada y conecta el perfil social.</p></div></div>
+        <div className="banner-editor-heading"><span className="banner-step">3</span><div><h3>Temporada e Instagram</h3><p>Elige la colección destacada y administra la presencia de Instagram en la portada.</p></div></div>
         <form className="homepage-structure-form" onSubmit={saveHomepageStructure}>
           <label><span>Categoría de temporada</span><select value={seasonalCategoryId} onChange={(event) => setSeasonalCategoryId(event.target.value)} required><option value="">Seleccionar categoría</option>{categories.filter((category) => !/^AA-Prueba/i.test(category.name)).map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select><small>La portada mostrará un carrusel con todos sus productos.</small></label>
-          <label><span>Perfil de Instagram</span><input type="url" value={instagramUrl} onChange={(event) => setInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/tu-cuenta/" /><small>Se mostrará un acceso directo; no requiere entregar contraseñas.</small></label>
+          <label><span>Perfil de Instagram</span><input type="url" value={instagramUrl} onChange={(event) => setInstagramUrl(event.target.value)} placeholder="https://www.instagram.com/tu-cuenta/" /><small>Enlace al perfil cuando la galería no esté disponible. Conecta la cuenta debajo para mostrar sus publicaciones.</small></label>
           <button className="banner-save" disabled={loading}>{loading ? "Guardando…" : "Guardar estructura"}</button>
         </form>
+        <AdminInstagramPanel />
       </section>
     </section>
   );
@@ -1550,7 +1567,9 @@ function ProductModal({
             <textarea
               value={product.description}
               onChange={field("description")}
+              aria-describedby="product-description-help"
             />
+            <small id="product-description-help">Los saltos de línea y las líneas en blanco se conservarán en la ficha del producto.</small>
           </label>
           <div className="wide product-gallery-editor">
             <div className="gallery-editor-heading"><span>Fotos del producto</span><strong>{gallery.length}/8</strong></div>

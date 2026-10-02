@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Revisa el número de pedido y el correo." }, { status: 400 });
     }
     const { data, error } = await adminSupabase().from("orders")
-      .select("public_order_number,status,payment_status,total,shipping_commune,created_at,paid_at")
+      .select("public_order_number,status,payment_status,total,shipping_commune,created_at,paid_at,shipping_tracking_number,shipping_tracking_url,shipping_carrier")
       .eq("public_order_number", orderNumber).eq("buyer_email", email).maybeSingle();
     if (error) throw error;
     if (!data) return NextResponse.json({ error: "No encontramos un pedido con esos datos." }, { status: 404 });

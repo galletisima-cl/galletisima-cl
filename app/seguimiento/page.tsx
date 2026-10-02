@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import PublicHeader from "../../components/PublicHeader";
+import { safeTrackingUrl } from "../../lib/order-status";
 
-type TrackedOrder = { public_order_number: string; status: string; payment_status: string; total: number; shipping_commune: string; created_at: string; paid_at: string | null };
+type TrackedOrder = { public_order_number: string; status: string; payment_status: string; total: number; shipping_commune: string; created_at: string; paid_at: string | null; shipping_tracking_number?: string; shipping_tracking_url?: string; shipping_carrier?: string };
 
 const steps = [
   { key: "review", label: "Pedido recibido", copy: "Tu pago fue confirmado y revisaremos los productos." },
@@ -47,6 +48,12 @@ export default function TrackingPage() {
       {order && <section className="tracking-result" aria-live="polite">
         <div className="tracking-order-head"><div><small>PEDIDO</small><strong>#{order.public_order_number}</strong></div><div><small>DESTINO</small><strong>{order.shipping_commune}</strong></div><div><small>TOTAL</small><strong>{money.format(order.total)}</strong></div></div>
         {order.status === "cancelled" || order.payment_status !== "authorized" ? <div className="tracking-cancelled"><strong>Pedido no completado</strong><p>El pago fue cancelado o todavía no ha sido confirmado.</p></div> : <ol className="tracking-timeline">{steps.map((step, index) => <li className={index <= currentStep ? "complete" : ""} key={step.key}><span>{index < currentStep ? "✓" : index + 1}</span><div><strong>{step.label}</strong><p>{step.copy}</p></div></li>)}</ol>}
+        {["shipped", "delivered"].includes(order.status) && order.shipping_tracking_number && <div className="tracking-shipment">
+          <h2>Seguimiento del envío</h2>
+          {order.shipping_carrier && <p>Empresa: <strong>{order.shipping_carrier}</strong></p>}
+          <p>Número de seguimiento: <strong>{order.shipping_tracking_number}</strong></p>
+          {safeTrackingUrl(order.shipping_tracking_url) && <a href={safeTrackingUrl(order.shipping_tracking_url)!} target="_blank" rel="noopener noreferrer">Seguir mi envío ↗</a>}
+        </div>}
         <p className="tracking-help">¿Necesitas ayuda? Escríbenos indicando tu número de pedido.</p>
       </section>}
     </section>

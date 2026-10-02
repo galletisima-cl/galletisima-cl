@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { calculateCheckoutTotal } from "../../../../lib/checkout";
+import { calculateCheckoutTotal, checkoutPricing } from "../../../../lib/checkout";
 import { getWebpayReturnUrl, getWebpayTransaction } from "../../../../lib/webpay";
 import { createPendingOrder, getNextOrderNumber, type Buyer } from "../../../../lib/orders";
 
@@ -9,7 +9,11 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const buyer = validateBuyer(body?.buyer);
-    const { subtotal, shipping, shippingOption, total, lines } = await calculateCheckoutTotal(body?.items, buyer.communeId);
+    const checkout = await calculateCheckoutTotal(body?.items, buyer.communeId);
+    const { subtotal, shipping, shippingOption, total, lines, discountAmount, shippingDiscount, appliedDiscounts } = checkout;
+    if (!Number.isSafeInteger(body?.expectedTotal) || body.expectedTotal !== total) {
+      return NextResponse.json({ error: "El total de tu compra cambió. Revisa el nuevo importe y vuelve a continuar.", pricing: checkoutPricing(checkout) }, { status: 409 });
+    }
     const identifier = crypto.randomUUID().replaceAll("-", "");
     const buyOrder = await getNextOrderNumber();
     const sessionId = identifier;
@@ -20,7 +24,7 @@ export async function POST(request: Request) {
       getWebpayReturnUrl(request.url),
     );
 
-    await createPendingOrder({ buyOrder, sessionId, token: response.token, subtotal, shipping, shippingOption, total, buyer, lines });
+    await createPendingOrder({ buyOrder, sessionId, token: response.token, subtotal, shipping, shippingOption, total, buyer, lines, discountAmount, shippingDiscount, appliedDiscounts });
 
     return NextResponse.json({ url: response.url, token: response.token });
   } catch (error) {

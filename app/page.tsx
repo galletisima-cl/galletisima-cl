@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CartDrawer from "../components/CartDrawer";
 import MobileCategoryAccordions from "../components/MobileCategoryAccordions";
+import InstagramFeed from "../components/InstagramFeed";
 import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
@@ -62,15 +63,6 @@ type PublicProduct = {
   product_categories?: { category_id: string }[];
   pos?: string;
 };
-
-const fallbackProducts: PublicProduct[] = [
-  { id: "demo-1", slug: "oso-tierno", name: "Oso Tierno", size: "8 cm", price: 3990, image_url: "", featured: true, pos: "58% 84%" },
-  { id: "demo-2", slug: "flor-vintage", name: "Flor Vintage", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "72% 10%" },
-  { id: "demo-3", slug: "arcoiris", name: "Arcoíris", size: "9 cm", price: 3490, image_url: "", featured: true, pos: "45% 48%" },
-  { id: "demo-4", slug: "dino-rex", name: "Dino Rex", size: "10 cm", price: 3990, image_url: "", featured: false, pos: "78% 45%" },
-  { id: "demo-5", slug: "corazon-clasico", name: "Corazón Clásico", size: "6 cm", price: 2990, image_url: "", featured: false, pos: "90% 23%" },
-  { id: "demo-6", slug: "flor-de-primavera", name: "Flor de Primavera", size: "7 cm", price: 3490, image_url: "", featured: false, pos: "82% 82%" },
-];
 
 const currency = new Intl.NumberFormat("es-CL", {
   style: "currency",
@@ -268,6 +260,35 @@ function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu
   return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" aria-expanded={open} aria-controls={`mega-${menuKey}`} onClick={() => setOpenMenu(open ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{open && <div className="mega-panel" id={`mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></a>)}</div></div>}</div>;
 }
 
+function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mobileImages, onSelect }: {
+  id: string; title: string; eyebrow: string; categories: Category[];
+  categoryImage: (category: Category) => string; mobileImages: Record<string, string>;
+  onSelect: (slug: string) => void;
+}) {
+  const carouselRef = useRef<HTMLDivElement>(null);
+  useContinuousCarousel(carouselRef, categories.length);
+  if (!categories.length) return null;
+
+  return <section className={`category-carousel-section ${id}-section`} aria-labelledby={`${id}-title`}>
+    <div className="shell category-carousel-heading"><div><p className="eyebrow">{eyebrow}</p><h2 id={`${id}-title`}>{title}</h2></div></div>
+    <div className="category-carousel-frame shell">
+      <div className="category-carousel-controls side-controls">
+        <button type="button" aria-label={`Ver anteriores de ${title}`} onClick={() => moveCarousel(carouselRef.current, -420)}>←</button>
+        <button type="button" aria-label={`Ver más de ${title}`} onClick={() => moveCarousel(carouselRef.current, 420)}>→</button>
+      </div>
+      <div className="category-carousel continuous-carousel" ref={carouselRef} aria-label={`Colecciones de ${title}`}>
+        {[0, 1, 2].flatMap(copy => categories.map((category, index) => {
+          const image = categoryImage(category);
+          return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => onSelect(category.slug)}>
+            <picture>{mobileImages[category.id] && <source media="(max-width: 650px)" srcSet={mobileImages[category.id]} />}{image ? <Image src={image} alt={displayCategory(category.name)} width={260} height={220} unoptimized /> : <span className="category-image-placeholder">♡</span>}</picture>
+            <strong>{displayCategory(category.name)}</strong><small>Ver colección →</small>
+          </Link>;
+        }))}
+      </div>
+    </div>
+  </section>;
+}
+
 function FeaturedCategoryBanner({ banner, category, products }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[] }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   useContinuousCarousel(carouselRef, products.length);
@@ -335,7 +356,6 @@ export default function Home() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const seasonalCarouselRef = useRef<HTMLDivElement>(null);
-  const celebrationsCarouselRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredProducts = useMemo(() => {
     const selectedCategory = catalogCategories.find((category) => category.slug === categoryFilter);
@@ -520,10 +540,20 @@ export default function Home() {
   const closeCart = useCallback(() => setCartOpen(false), []);
   const seasonalCategory = publicCategories.find((category) => category.id === seasonalCategoryId) || publicCategories.find((category) => /fiestas patrias/i.test(category.name));
   const seasonalProducts = seasonalCategory ? allProducts.filter((product) => product.product_categories?.some((link) => link.category_id === seasonalCategory.id) && product.image_url) : [];
-  const celebrationsMenu = navigationConfig.menus.find((menu) => /celebr/i.test(menu.label));
-  const celebrationCategories = orderedCategories.filter((category) => celebrationsMenu && navigationConfig.categoryMenu[category.id] === celebrationsMenu.id);
+  const collectionSections = [
+    { id: "celebrations", title: "Celebraciones", eyebrow: "CELEBRA A TU MANERA", labelMatcher: /celebr/i },
+    { id: "characters", title: "Personajes", eyebrow: "TUS PERSONAJES FAVORITOS", labelMatcher: /personaj/i },
+    { id: "themes", title: "Temáticas", eyebrow: "UNA IDEA PARA CADA OCASIÓN", labelMatcher: /tem[aá]tic/i },
+  ].map(section => {
+    const menu = navigationConfig.menus.find(menu => menu.id === section.id) || navigationConfig.menus.find(menu => section.labelMatcher.test(menu.label));
+    const fallback = categoryGroups[section.id as keyof typeof categoryGroups];
+    const categories = orderedCategories.filter(category => {
+      if (Object.prototype.hasOwnProperty.call(navigationConfig.categoryMenu, category.id)) return navigationConfig.categoryMenu[category.id] === (menu?.id || section.id);
+      return fallback.some(candidate => candidate.id === category.id);
+    });
+    return { ...section, categories };
+  });
   useContinuousCarousel(seasonalCarouselRef, seasonalProducts.length);
-  useContinuousCarousel(celebrationsCarouselRef, celebrationCategories.length);
   const categoryImage = (category: Category) => categoryBannerUrls[category.id] || allProducts.find((product) => product.image_url && product.product_categories?.some((link) => link.category_id === category.id))?.image_url || "";
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / 50));
   const pageProducts = filteredProducts.slice((catalogPage - 1) * 50, catalogPage * 50);
@@ -604,7 +634,7 @@ export default function Home() {
         <section className="category-carousel-section seasonal-section" aria-labelledby="seasonal-title">
           <div className="shell category-carousel-heading">
             <div>
-              <p className="eyebrow">TEMPORADA DE TURNO</p>
+              <p className="eyebrow">Tus cortadores favoritos</p>
               <h2 id="seasonal-title">{displayCategory(seasonalCategory.name)}</h2>
             </div>
           </div>
@@ -631,22 +661,14 @@ export default function Home() {
         </section>
       )}
 
-      {celebrationCategories.length > 0 && (
-        <section className="category-carousel-section celebrations-section" aria-labelledby="celebrations-title">
-          <div className="shell category-carousel-heading"><div><p className="eyebrow">CELEBRA A TU MANERA</p><h2 id="celebrations-title">Celebraciones</h2></div></div>
-          <div className="category-carousel-frame shell">
-            <div className="category-carousel-controls side-controls"><button type="button" aria-label="Ver anteriores" onClick={() => moveCarousel(celebrationsCarouselRef.current, -420)}>←</button><button type="button" aria-label="Ver más" onClick={() => moveCarousel(celebrationsCarouselRef.current, 420)}>→</button></div>
-            <div className="category-carousel continuous-carousel" ref={celebrationsCarouselRef}>{[0, 1, 2].flatMap((copy) => celebrationCategories.map((category, index) => { const image = categoryImage(category); return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}{image ? <img src={image} alt={displayCategory(category.name)} loading="lazy" /> : <span className="category-image-placeholder">♡</span>}</picture><strong>{displayCategory(category.name)}</strong><small>Ver colección →</small></Link>; }))}</div>
-          </div>
-        </section>
-      )}
+      {collectionSections.map(section => <CollectionCarousel key={section.id} id={section.id} title={section.title} eyebrow={section.eyebrow} categories={section.categories} categoryImage={categoryImage} mobileImages={categoryMobileBannerUrls} onSelect={slug => { setCategoryFilter(slug); setCatalogPage(1); }} />)}
 
       <section className="all-categories-section shell" aria-labelledby="all-categories-title">
         <p className="eyebrow">TODAS LAS COLECCIONES</p><h2 id="all-categories-title">Encuentra tu molde perfecto</h2>
         <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><span>{image ? <img src={image} alt="" loading="lazy" /> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
       </section>
 
-      <section className="instagram-section shell" aria-labelledby="instagram-title"><div><p className="eyebrow">INSPÍRATE CON NOSOTROS</p><h2 id="instagram-title">Galletísima en Instagram</h2><p>Nuevos diseños, ideas para decorar y novedades de la tienda.</p></div>{instagramUrl ? <a className="button primary" href={instagramUrl} target="_blank" rel="noreferrer">VER INSTAGRAM <span>↗</span></a> : <span className="instagram-pending">Agrega el perfil desde el panel administrador</span>}</section>
+      <InstagramFeed profileUrl={instagramUrl} />
 
       <section id="catalogo" className="section catalog-section shell">
         <p className="eyebrow catalog-eyebrow">CATÁLOGO COMPLETO</p>
