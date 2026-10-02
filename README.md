@@ -79,7 +79,8 @@ abre la publicación original. Sin conexión se conserva el enlace al perfil.
 
 Para activar la integración:
 
-1. Aplicar `supabase/migrations/20261002010000_instagram_connection.sql`.
+1. Aplicar las migraciones `20261002010000_instagram_connection.sql` y
+   `20261002020000_instagram_facebook_login.sql`.
 2. Configurar una aplicación de Meta con **Instagram API with Instagram Login**
    para una cuenta profesional (empresa o creador), con el permiso de lectura
    `instagram_business_basic`. Preparar el acceso de la cuenta en el panel de
@@ -93,8 +94,19 @@ Para activar la integración:
    Instagram; nunca llevan el prefijo `NEXT_PUBLIC_`. Se usan también las
    credenciales de servidor de Supabase existentes. Consultar `.env.example`.
 5. Publicar y abrir **Administración → Banners → Publicaciones de Instagram →
-   Conectar Instagram**. La autorización se completa en Instagram; la tienda
+   Conectar con Instagram**. La autorización se completa en Instagram; la tienda
    no pide la contraseña. El panel permite actualizar, reconectar y desconectar.
+
+También se puede conectar mediante Facebook cuando el administrador gestiona
+la página vinculada a Instagram. Crear una configuración de **Facebook Login
+for Business** con token de usuario y permisos `instagram_basic` y
+`pages_show_list`; seleccionar solo la página y cuenta de la tienda al autorizar.
+Registrar la misma URI de callback en Facebook Login y configurar en el servidor
+`INSTAGRAM_FACEBOOK_APP_ID`, `INSTAGRAM_FACEBOOK_APP_SECRET`,
+`INSTAGRAM_FACEBOOK_CONFIG_ID` e `INSTAGRAM_FACEBOOK_ACCOUNT_ID` (ID de la cuenta
+profesional de Instagram). El panel habilita **Conectar con Facebook**. El servidor
+comprueba esa cuenta fija y utiliza tokens de usuario de larga duración; no
+necesita permisos para mensajes, anuncios ni publicar contenido.
 
 Las credenciales y los estados de autorización se guardan en tablas privadas,
 accesibles solo por `service_role`, nunca en `site_settings` ni en la respuesta
@@ -102,7 +114,10 @@ pública. Desconectar elimina la conexión local y las autorizaciones pendientes
 los permisos concedidos a la aplicación también se pueden retirar en Instagram.
 
 La galería se actualiza al recibir visitas, como máximo una vez cada 15 minutos.
-En esas consultas se renueva el acceso cuando le quedan menos de 30 días.
+Con Instagram Login se renueva el acceso cuando le quedan menos de 30 días.
+Facebook Login requiere volver a autorizar antes de que caduque su token de
+larga duración (habitualmente 60 días); el panel muestra la fecha de vencimiento.
+No se intenta renovar un token de Facebook en el endpoint de Instagram.
 No hay una tarea programada: si no se visita la tienda antes del vencimiento,
 será necesario reconectar. Los fallos temporales conservan la última galería
 durante un máximo de 24 horas; un permiso revocado o vencido oculta la galería.
@@ -112,7 +127,8 @@ publicación.
 
 Las pruebas locales simulan Meta y Supabase. La autorización real y la lectura
 de publicaciones deben verificarse al configurar y autorizar la cuenta.
-Referencias: [API oficial de Meta](https://www.postman.com/meta/instagram/folder/6raa77c/instagram-api-with-instagram-login)
+Referencias: [API oficial de Meta](https://www.postman.com/meta/instagram/folder/6raa77c/instagram-api-with-instagram-login),
+[Instagram con Facebook Login](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-facebook-login/get-started)
 y [componente de Instagram de Jumpseller](https://es.jumpseller.com/support/component-instagram/).
 
 This starter does not use `wrangler.jsonc`.

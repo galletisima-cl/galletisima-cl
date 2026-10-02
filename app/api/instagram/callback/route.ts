@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function GET(request: NextRequest) {
-  const config = instagramConfig();
+  const config = instagramConfig() || instagramConfig("facebook");
   if (!config) return NextResponse.json({ error: "Instagram aún no está configurado." }, { status: 503 });
   const redirect = (result: string) => {
     const response = NextResponse.redirect(new URL(`/admin?instagram=${result}`, config.origin));
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const hash = createHash("sha256").update(state).digest("hex");
   try {
     const db = instagramDatabase();
-    const { data, error } = await db.from("instagram_oauth_states").select("admin_id").eq("state_hash", hash).gt("expires_at", new Date().toISOString()).maybeSingle();
+    const { data, error } = await db.from("instagram_oauth_states").select("admin_id,provider").eq("state_hash", hash).gt("expires_at", new Date().toISOString()).maybeSingle();
     if (error || !data) return redirect("invalid");
     if (request.nextUrl.searchParams.has("error")) {
       await db.from("instagram_oauth_states").delete().eq("state_hash", hash);
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     // Confirm the initiating user still has admin access after leaving the store.
     const { data: auth, error: authError } = await db.auth.admin.getUserById(data.admin_id);
     if (authError || auth.user?.app_metadata.role !== "admin") return redirect("invalid");
-    const account = await exchangeInstagramCode(code);
+    const account = await exchangeInstagramCode(code, data.provider || "instagram");
     const { error: saveError } = await db.rpc("finish_instagram_connection", {
       p_state_hash: hash, p_account_id: account.account_id, p_username: account.username,
       p_access_token: account.access_token, p_expires_at: account.expires_at,

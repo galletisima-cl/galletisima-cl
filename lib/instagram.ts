@@ -8,17 +8,22 @@ export function instagramDatabase() {
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 }
 
-export function instagramConfig() {
-  const appId = process.env.INSTAGRAM_APP_ID;
-  const secret = process.env.INSTAGRAM_APP_SECRET;
+export type InstagramProvider = "instagram" | "facebook";
+
+export function instagramConfig(provider: InstagramProvider = "instagram") {
+  const appId = provider === "facebook" ? process.env.INSTAGRAM_FACEBOOK_APP_ID : process.env.INSTAGRAM_APP_ID;
+  const secret = provider === "facebook" ? process.env.INSTAGRAM_FACEBOOK_APP_SECRET : process.env.INSTAGRAM_APP_SECRET;
+  const configId = process.env.INSTAGRAM_FACEBOOK_CONFIG_ID;
+  const accountId = process.env.INSTAGRAM_FACEBOOK_ACCOUNT_ID;
   const site = process.env.NEXT_PUBLIC_SITE_URL;
   if (!appId || !secret || !site) return null;
+  if (provider === "facebook" && (!configId || !accountId || !/^\d+$/.test(accountId))) return null;
   try {
     const redirect = new URL(process.env.INSTAGRAM_REDIRECT_URI || `${site.replace(/\/$/, "")}/api/instagram/callback`);
     if ((redirect.protocol !== "https:" && !(redirect.protocol === "http:" && ["localhost", "127.0.0.1"].includes(redirect.hostname))) || redirect.username || redirect.password || redirect.search || redirect.hash) return null;
     const version = process.env.INSTAGRAM_GRAPH_API_VERSION || "v25.0";
     if (!/^v\d+\.\d+$/.test(version)) return null;
-    return { appId, secret, redirectUri: redirect.href, origin: redirect.origin, version };
+    return { appId, secret, redirectUri: redirect.href, origin: redirect.origin, version, provider, configId, accountId };
   } catch { return null; }
 }
 
@@ -42,9 +47,24 @@ async function instagramJson(url: string | URL, init?: RequestInit) {
   return data;
 }
 
-export async function exchangeInstagramCode(code: string) {
-  const config = instagramConfig();
+export async function exchangeInstagramCode(code: string, provider: InstagramProvider = "instagram") {
+  const config = instagramConfig(provider);
   if (!config) throw new Error("Falta configurar la aplicación de Instagram.");
+  if (provider === "facebook") {
+    const endpoint = `https://graph.facebook.com/${config.version}/oauth/access_token`;
+    const exchange = new URL(endpoint);
+    exchange.search = new URLSearchParams({ client_id: config.appId, client_secret: config.secret, redirect_uri: config.redirectUri, code }).toString();
+    const short = await instagramJson(exchange);
+    if (typeof short.access_token !== "string") throw new InstagramError("reconnect");
+    const long = new URL(endpoint);
+    long.search = new URLSearchParams({ client_id: config.appId, client_secret: config.secret, grant_type: "fb_exchange_token", fb_exchange_token: short.access_token }).toString();
+    const token = await instagramJson(long);
+    if (typeof token.access_token !== "string" || !Number.isFinite(token.expires_in) || token.expires_in <= 0) throw new InstagramError("reconnect");
+    // This store reads only its configured Instagram account, even if the user manages other pages.
+    const profile = await instagramJson(`https://graph.facebook.com/${config.version}/${config.accountId}?fields=id,username`, { headers: { Authorization: `Bearer ${token.access_token}` } });
+    if (String(profile.id) !== config.accountId || typeof profile.username !== "string" || !instagramProfileUrl(profile.username)) throw new InstagramError("reconnect");
+    return { account_id: String(profile.id), username: profile.username as string, access_token: token.access_token as string, expires_at: new Date(Date.now() + token.expires_in * 1000).toISOString() };
+  }
   const form = new FormData();
   for (const [key, value] of Object.entries({ client_id: config.appId, client_secret: config.secret, grant_type: "authorization_code", redirect_uri: config.redirectUri, code })) form.set(key, value);
   const response = await instagramJson("https://api.instagram.com/oauth/access_token", { method: "POST", body: form });
@@ -84,6 +104,7 @@ export function normalizeInstagramPosts(value: unknown): InstagramPost[] {
 
 type Connection = {
   id: boolean; connection_id: string; account_id: string; username: string; access_token: string; expires_at: string;
+  provider: InstagramProvider;
   posts: InstagramPost[]; synced_at: string | null; checked_at: string | null; sync_lock_until: string; last_error: string | null;
 };
 const freshness = 15 * 60 * 1000;
@@ -96,13 +117,13 @@ function publicFeed(connection: Connection): InstagramFeed {
 }
 
 export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
-  const config = instagramConfig();
-  if (!config) return emptyFeed;
   const db = instagramDatabase();
   const { data, error } = await db.from("instagram_connection").select("*").eq("id", true).maybeSingle();
   if (error) throw new Error("No se pudo leer la conexión de Instagram.");
   if (!data) return emptyFeed;
   let connection = data as Connection;
+  const config = instagramConfig(connection.provider || "instagram");
+  if (!config) return emptyFeed;
   if (connection.last_error === "reconnect" || Date.parse(connection.expires_at) <= Date.now()) return emptyFeed;
   if (!force && connection.checked_at && Date.now() - Date.parse(connection.checked_at) < freshness) return publicFeed(connection);
   const { data: locked, error: lockError } = await db.from("instagram_connection")
@@ -112,7 +133,7 @@ export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
   if (!locked) return publicFeed(connection);
   try {
     // Refresh on visits, well before expiration; no background scheduler is required.
-    if (Date.parse(connection.expires_at) - Date.now() < 30 * 24 * 60 * 60 * 1000) {
+    if (config.provider === "instagram" && Date.parse(connection.expires_at) - Date.now() < 30 * 24 * 60 * 60 * 1000) {
       const refresh = new URL("https://graph.instagram.com/refresh_access_token");
       refresh.search = new URLSearchParams({ grant_type: "ig_refresh_token", access_token: connection.access_token }).toString();
       const renewed = await instagramJson(refresh);
@@ -122,7 +143,8 @@ export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
       if (tokenError) throw new Error("No se pudo guardar la renovación.");
       connection = { ...connection, ...patch };
     }
-    const media = new URL(`https://graph.instagram.com/${config.version}/${connection.account_id}/media`);
+    const host = config.provider === "facebook" ? "graph.facebook.com" : "graph.instagram.com";
+    const media = new URL(`https://${host}/${config.version}/${connection.account_id}/media`);
     media.search = new URLSearchParams({ fields: "id,caption,media_type,media_url,thumbnail_url,permalink,timestamp", limit: "12" }).toString();
     const response = await instagramJson(media, { headers: { Authorization: `Bearer ${connection.access_token}` } });
     if (!Array.isArray(response.data)) throw new InstagramError("unavailable");

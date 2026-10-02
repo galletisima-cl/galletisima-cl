@@ -10,9 +10,9 @@ export async function GET(request: Request) {
   try {
     const auth = await instagramAdmin(request);
     if (!auth) return NextResponse.json({ error: "Inicia sesión como administrador." }, { status: 401, headers: noStore });
-    const config = instagramConfig();
-    const { data, error } = await auth.db.from("instagram_connection").select("username,expires_at,synced_at,last_error").eq("id", true).maybeSingle();
-    return NextResponse.json({ configured: !!config, storageReady: !error, connection: error ? null : data, needsReconnect: !!data && (data.last_error === "reconnect" || Date.parse(data.expires_at) <= Date.now()) }, { headers: noStore });
+    const providers = { instagram: !!instagramConfig(), facebook: !!instagramConfig("facebook") };
+    const { data, error } = await auth.db.from("instagram_connection").select("username,expires_at,synced_at,last_error,provider").eq("id", true).maybeSingle();
+    return NextResponse.json({ configured: providers.instagram || providers.facebook, providers, storageReady: !error, connection: error ? null : data, needsReconnect: !!data && (data.last_error === "reconnect" || Date.parse(data.expires_at) <= Date.now()) }, { headers: noStore });
   } catch { return NextResponse.json({ error: "No se pudo consultar la conexión." }, { status: 500, headers: noStore }); }
 }
 
@@ -26,20 +26,25 @@ export async function POST(request: Request) {
       if (error) throw new Error("Disconnect failed");
       return NextResponse.json({ disconnected: true }, { headers: noStore });
     }
-    const config = instagramConfig();
-    if (!config) return NextResponse.json({ error: "Falta configurar la aplicación de Meta en el servidor." }, { status: 503 });
     if (body?.action === "sync") {
       await loadInstagramFeed(true);
       return NextResponse.json({ refreshed: true }, { headers: noStore });
     }
     if (body?.action !== "connect") return NextResponse.json({ error: "Acción inválida." }, { status: 400 });
+    const provider = body.provider || "instagram";
+    if (provider !== "instagram" && provider !== "facebook") return NextResponse.json({ error: "Conexión inválida." }, { status: 400 });
+    const config = instagramConfig(provider);
+    if (!config) return NextResponse.json({ error: "Falta configurar la aplicación de Meta en el servidor." }, { status: 503 });
     const state = randomBytes(32).toString("hex");
     const stateHash = createHash("sha256").update(state).digest("hex");
     await auth.db.from("instagram_oauth_states").delete().lt("expires_at", new Date().toISOString());
-    const { error } = await auth.db.from("instagram_oauth_states").insert({ state_hash: stateHash, admin_id: auth.userId, expires_at: new Date(Date.now() + 600000).toISOString() });
+    const { error } = await auth.db.from("instagram_oauth_states").insert({ state_hash: stateHash, admin_id: auth.userId, provider, expires_at: new Date(Date.now() + 600000).toISOString() });
     if (error) return NextResponse.json({ error: "Falta preparar la conexión de Instagram en la base de datos." }, { status: 503 });
-    const url = new URL("https://www.instagram.com/oauth/authorize");
-    url.search = new URLSearchParams({ client_id: config.appId, redirect_uri: config.redirectUri, response_type: "code", scope: "instagram_business_basic", state, enable_fb_login: "0", force_authentication: "1" }).toString();
+    const url = new URL(provider === "facebook" ? `https://www.facebook.com/${config.version}/dialog/oauth` : "https://www.instagram.com/oauth/authorize");
+    const params = new URLSearchParams({ client_id: config.appId, redirect_uri: config.redirectUri, response_type: "code", state });
+    if (provider === "facebook") params.set("config_id", config.configId!);
+    else for (const [key, value] of Object.entries({ scope: "instagram_business_basic", enable_fb_login: "0", force_authentication: "1" })) params.set(key, value);
+    url.search = params.toString();
     const response = NextResponse.json({ url: url.href }, { headers: noStore });
     response.cookies.set("instagram_oauth_state", state, { httpOnly: true, secure: config.redirectUri.startsWith("https:"), sameSite: "lax", path: "/api/instagram/callback", maxAge: 600 });
     return response;

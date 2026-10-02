@@ -12,16 +12,22 @@ process.env.INSTAGRAM_REDIRECT_URI = "https://store.example.com/api/instagram/ca
 const adminId = "00000000-0000-4000-8000-000000000001";
 const future = () => new Date(Date.now() + 60 * 86400000).toISOString();
 const rawPost = { id: "post1", caption: "Nuevos moldes <prueba>", media_type: "IMAGE", media_url: "https://scontent.cdninstagram.com/photo.jpg", permalink: "https://www.instagram.com/p/Test123/", timestamp: "2026-10-01T12:00:00Z" };
-let role, connection, state, calls, media, graphError, storageFailure;
+let role, connection, state, calls, media, graphError, storageFailure, facebookProfileId;
 const originalFetch = globalThis.fetch;
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 globalThis.fetch = async (input, init) => {
   const url = new URL(typeof input === "string" ? input : input.url || input.toString());
-  assert.ok(["instagram-test.supabase.co", "graph.instagram.com", "api.instagram.com"].includes(url.hostname), "Unexpected test host; no real network access allowed");
+  assert.ok(["instagram-test.supabase.co", "graph.instagram.com", "api.instagram.com", "graph.facebook.com"].includes(url.hostname), "Unexpected test host; no real network access allowed");
   const method = init?.method || "GET";
   const body = init?.body instanceof FormData ? Object.fromEntries(init.body) : init?.body ? JSON.parse(init.body) : null;
   calls.push({ url, method, body, headers: new Headers(init?.headers) });
   if (url.hostname === "api.instagram.com") return reply({ access_token: "test-short-token", user_id: "123" });
+  if (url.hostname === "graph.facebook.com") {
+    if (graphError) return reply({ error: { code: graphError } }, graphError === 190 ? 401 : 503);
+    if (url.pathname.endsWith("/oauth/access_token")) return reply({ access_token: url.searchParams.has("fb_exchange_token") ? "facebook-long-token" : "facebook-short-token", expires_in: 5184000 });
+    if (url.pathname.endsWith("/media")) return reply({ data: media });
+    if (url.pathname.endsWith("/456")) return reply({ id: facebookProfileId, username: "galletisimacl" });
+  }
   if (url.hostname === "graph.instagram.com") {
     if (graphError) return reply({ error: { code: graphError } }, graphError === 190 ? 401 : 503);
     if (url.pathname === "/access_token" || url.pathname === "/refresh_access_token") return reply({ access_token: "test-long-token", expires_in: 5184000 });
@@ -35,7 +41,7 @@ globalThis.fetch = async (input, init) => {
       if (url.searchParams.has("state_hash")) state = null;
       return reply(null);
     }
-    return reply(state && url.searchParams.get("state_hash") === `eq.${state.state_hash}` && Date.parse(state.expires_at) > Date.now() ? { admin_id: state.admin_id } : null);
+    return reply(state && url.searchParams.get("state_hash") === `eq.${state.state_hash}` && Date.parse(state.expires_at) > Date.now() ? { admin_id: state.admin_id, provider: state.provider } : null);
   }
   if (url.pathname === "/rest/v1/instagram_connection") {
     if (storageFailure) return reply({ message: "test storage unavailable" }, 500);
@@ -48,8 +54,8 @@ globalThis.fetch = async (input, init) => {
   }
   if (url.pathname === "/rest/v1/rpc/finish_instagram_connection") {
     if (!state || state.state_hash !== body.p_state_hash) return reply({ message: "Invalid state" }, 400);
+    connection = { id: true, connection_id: "new-connection", provider: state.provider || "instagram", account_id: body.p_account_id, username: body.p_username, access_token: body.p_access_token, expires_at: body.p_expires_at, posts: [], synced_at: null, checked_at: null, sync_lock_until: new Date(0).toISOString(), last_error: null };
     state = null;
-    connection = { id: true, connection_id: "new-connection", account_id: body.p_account_id, username: body.p_username, access_token: body.p_access_token, expires_at: body.p_expires_at, posts: [], synced_at: null, checked_at: null, sync_lock_until: new Date(0).toISOString(), last_error: null };
     return reply(null);
   }
   if (url.pathname === "/rest/v1/rpc/disconnect_instagram") { state = null; connection = null; return reply(null); }
@@ -58,6 +64,11 @@ globalThis.fetch = async (input, init) => {
 beforeEach(() => {
   role = "admin"; connection = null; state = null; calls = []; media = [structuredClone(rawPost)]; graphError = null; storageFailure = false;
   process.env.INSTAGRAM_APP_ID = "test-app";
+  process.env.INSTAGRAM_FACEBOOK_APP_ID = "facebook-app";
+  process.env.INSTAGRAM_FACEBOOK_APP_SECRET = "facebook-secret";
+  process.env.INSTAGRAM_FACEBOOK_CONFIG_ID = "789";
+  process.env.INSTAGRAM_FACEBOOK_ACCOUNT_ID = "456";
+  facebookProfileId = "456";
 });
 after(() => { globalThis.fetch = originalFetch; });
 const { POST: adminPost, GET: adminGet } = await import("../app/api/admin/instagram/route.ts");
@@ -66,6 +77,60 @@ const { GET: feedGet } = await import("../app/api/instagram/feed/route.ts");
 const { normalizeInstagramPosts, loadInstagramFeed } = await import("../lib/instagram.ts");
 const adminRequest = (action, authorized = true) => new Request("https://store.example.com/api/admin/instagram", { method: action ? "POST" : "GET", headers: { ...(authorized ? { Authorization: "Bearer test-token" } : {}), "Content-Type": "application/json" }, ...(action ? { body: JSON.stringify({ action }) } : {}) });
 const seedConnection = () => connection = { id: true, connection_id: "test-connection", account_id: "123", username: "galletisimacl", access_token: "private-test-token", expires_at: future(), posts: [], synced_at: null, checked_at: null, sync_lock_until: new Date(0).toISOString(), last_error: null };
+const facebookRequest = () => new Request("https://store.example.com/api/admin/instagram", { method: "POST", headers: { Authorization: "Bearer test-token", "Content-Type": "application/json" }, body: JSON.stringify({ action: "connect", provider: "facebook" }) });
+async function facebookCallback(extra = "") {
+  const { url } = await (await adminPost(facebookRequest())).json();
+  const nonce = new URL(url).searchParams.get("state");
+  return callback(new NextRequest(`https://store.example.com/api/instagram/callback?code=test&state=${nonce}${extra}`, { headers: { Cookie: `instagram_oauth_state=${nonce}` } }));
+}
+
+test("Facebook login binds the selected provider to private authorization state", async () => {
+  const response = await adminPost(facebookRequest());
+  const login = new URL((await response.json()).url);
+  assert.equal(login.hostname, "www.facebook.com");
+  assert.equal(login.searchParams.get("config_id"), "789");
+  assert.equal(login.searchParams.get("response_type"), "code");
+  assert.equal(login.searchParams.get("redirect_uri"), process.env.INSTAGRAM_REDIRECT_URI);
+  assert.equal(state.provider, "facebook");
+  assert.ok(!login.href.includes("secret"));
+});
+
+test("Facebook callback reads only the configured account and does not trust a provider query parameter", async () => {
+  const response = await facebookCallback("&provider=instagram");
+  assert.match(response.headers.get("location"), /instagram=connected/);
+  assert.equal(connection.provider, "facebook");
+  assert.equal(connection.account_id, "456");
+  assert.equal(connection.posts.length, 1);
+  assert.equal(connection.access_token, "facebook-long-token");
+  assert.ok(calls.every(call => !["api.instagram.com", "graph.instagram.com"].includes(call.url.hostname)));
+  const payload = await (await feedGet()).text();
+  assert.ok(!payload.includes("facebook-long-token"));
+});
+
+test("Facebook cannot connect a different Instagram account", async () => {
+  facebookProfileId = "999";
+  assert.match((await facebookCallback()).headers.get("location"), /instagram=failed/);
+  assert.equal(connection, null);
+});
+
+test("Facebook tokens never use Instagram refresh and expired tokens hide posts", async () => {
+  seedConnection(); connection.provider = "facebook"; connection.account_id = "456";
+  connection.expires_at = new Date(Date.now() + 86400000).toISOString();
+  assert.equal((await loadInstagramFeed(true)).posts.length, 1);
+  assert.ok(calls.every(call => call.url.hostname !== "graph.instagram.com"));
+  connection.expires_at = new Date(0).toISOString();
+  calls = [];
+  assert.equal((await loadInstagramFeed(true)).posts.length, 0);
+  assert.ok(calls.every(call => call.url.hostname !== "graph.facebook.com"));
+  assert.equal((await (await adminGet(adminRequest())).json()).needsReconnect, true);
+});
+
+test("Facebook works independently from Instagram app credentials and requires its own configuration", async () => {
+  delete process.env.INSTAGRAM_APP_ID;
+  assert.match((await facebookCallback()).headers.get("location"), /instagram=connected/);
+  delete process.env.INSTAGRAM_FACEBOOK_CONFIG_ID;
+  assert.equal((await adminPost(facebookRequest())).status, 503);
+});
 
 test("only admins can connect, synchronize or disconnect", async () => {
   assert.equal((await adminPost(adminRequest("connect", false))).status, 401);
