@@ -79,8 +79,9 @@ abre la publicación original. Sin conexión se conserva el enlace al perfil.
 
 Para activar la integración:
 
-1. Aplicar las migraciones `20261002010000_instagram_connection.sql` y
-   `20261002020000_instagram_facebook_login.sql`.
+1. Aplicar las migraciones `20261002010000_instagram_connection.sql`,
+   `20261002020000_instagram_facebook_login.sql` y
+   `20261002030000_instagram_permanent_access.sql`.
 2. Configurar una aplicación de Meta con **Instagram API with Instagram Login**
    para una cuenta profesional (empresa o creador), con el permiso de lectura
    `instagram_business_basic`. Preparar el acceso de la cuenta en el panel de
@@ -105,8 +106,10 @@ Registrar la misma URI de callback en Facebook Login y configurar en el servidor
 `INSTAGRAM_FACEBOOK_APP_ID`, `INSTAGRAM_FACEBOOK_APP_SECRET`,
 `INSTAGRAM_FACEBOOK_CONFIG_ID` e `INSTAGRAM_FACEBOOK_ACCOUNT_ID` (ID de la cuenta
 profesional de Instagram). El panel habilita **Conectar con Facebook**. El servidor
-comprueba esa cuenta fija y utiliza tokens de usuario de larga duración; no
-necesita permisos para mensajes, anuncios ni publicar contenido.
+comprueba esa cuenta fija y valida el token con Meta. Los tokens de usuario se
+intercambian por tokens de larga duración; los tokens de página o de usuario del
+sistema conservan la duración que confirma Meta. No se necesitan permisos para
+mensajes, anuncios ni publicar contenido.
 
 Las credenciales y los estados de autorización se guardan en tablas privadas,
 accesibles solo por `service_role`, nunca en `site_settings` ni en la respuesta
@@ -115,11 +118,15 @@ los permisos concedidos a la aplicación también se pueden retirar en Instagram
 
 La galería se actualiza al recibir visitas, como máximo una vez cada 15 minutos.
 Con Instagram Login se renueva el acceso cuando le quedan menos de 30 días.
-Facebook Login requiere volver a autorizar antes de que caduque su token de
-larga duración (habitualmente 60 días); el panel muestra la fecha de vencimiento.
+Facebook Login comprueba tanto el vencimiento del token como el del acceso a
+datos mediante `debug_token`. Si ambos son cero, la conexión se guarda sin fecha
+de vencimiento y el panel indica **Conexión sin vencimiento programado**. Si Meta
+establece algún límite, se conserva la fecha más próxima y se muestra en el panel.
+No se puede volver indefinido un token cambiando solo la fecha en la base de datos.
+Las conexiones sin vencimiento siguen siendo revocables desde Meta.
 No se intenta renovar un token de Facebook en el endpoint de Instagram.
-No hay una tarea programada: si no se visita la tienda antes del vencimiento,
-será necesario reconectar. Los fallos temporales conservan la última galería
+No hay una tarea programada: con Instagram Login, si no se visita la tienda antes
+del vencimiento, será necesario reconectar. Los fallos temporales conservan la última galería
 durante un máximo de 24 horas; un permiso revocado o vencido oculta la galería.
 Las imágenes se leen desde la CDN de Meta y no se copian al almacenamiento de
 la tienda. Si una imagen deja de estar disponible, se mantiene el enlace a su

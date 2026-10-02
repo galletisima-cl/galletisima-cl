@@ -12,7 +12,7 @@ process.env.INSTAGRAM_REDIRECT_URI = "https://store.example.com/api/instagram/ca
 const adminId = "00000000-0000-4000-8000-000000000001";
 const future = () => new Date(Date.now() + 60 * 86400000).toISOString();
 const rawPost = { id: "post1", caption: "Nuevos moldes <prueba>", media_type: "IMAGE", media_url: "https://scontent.cdninstagram.com/photo.jpg", permalink: "https://www.instagram.com/p/Test123/", timestamp: "2026-10-01T12:00:00Z" };
-let role, connection, state, calls, media, graphError, storageFailure, facebookProfileId;
+let role, connection, state, calls, media, graphError, storageFailure, facebookProfileId, facebookTokenInfo;
 const originalFetch = globalThis.fetch;
 const reply = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
 globalThis.fetch = async (input, init) => {
@@ -24,6 +24,7 @@ globalThis.fetch = async (input, init) => {
   if (url.hostname === "api.instagram.com") return reply({ access_token: "test-short-token", user_id: "123" });
   if (url.hostname === "graph.facebook.com") {
     if (graphError) return reply({ error: { code: graphError } }, graphError === 190 ? 401 : 503);
+    if (url.pathname.endsWith("/debug_token")) return reply({ data: facebookTokenInfo });
     if (url.pathname.endsWith("/oauth/access_token")) return reply({ access_token: url.searchParams.has("fb_exchange_token") ? "facebook-long-token" : "facebook-short-token", expires_in: 5184000 });
     if (url.pathname.endsWith("/media")) return reply({ data: media });
     if (url.pathname.endsWith("/456")) return reply({ id: facebookProfileId, username: "galletisimacl" });
@@ -69,6 +70,7 @@ beforeEach(() => {
   process.env.INSTAGRAM_FACEBOOK_CONFIG_ID = "789";
   process.env.INSTAGRAM_FACEBOOK_ACCOUNT_ID = "456";
   facebookProfileId = "456";
+  facebookTokenInfo = { is_valid: true, type: "USER", app_id: "facebook-app", expires_at: Math.floor(Date.now() / 1000) + 60 * 86400, data_access_expires_at: Math.floor(Date.now() / 1000) + 90 * 86400 };
 });
 after(() => { globalThis.fetch = originalFetch; });
 const { POST: adminPost, GET: adminGet } = await import("../app/api/admin/instagram/route.ts");
@@ -111,6 +113,44 @@ test("Facebook cannot connect a different Instagram account", async () => {
   facebookProfileId = "999";
   assert.match((await facebookCallback()).headers.get("location"), /instagram=failed/);
   assert.equal(connection, null);
+});
+
+test("system user tokens with no scheduled expiry skip the user-token exchange and keep synchronizing", async () => {
+  Object.assign(facebookTokenInfo, { type: "SYSTEM_USER", expires_at: 0, data_access_expires_at: 0 });
+  assert.match((await facebookCallback()).headers.get("location"), /instagram=connected/);
+  assert.equal(connection.expires_at, null);
+  assert.ok(calls.every(call => !call.url.searchParams.has("fb_exchange_token")));
+  assert.equal((await loadInstagramFeed(true)).posts.length, 1);
+  const status = await (await adminGet(adminRequest())).json();
+  assert.equal(status.needsReconnect, false);
+  assert.equal(status.connection.expires_at, null);
+  graphError = 190;
+  assert.equal((await loadInstagramFeed(true)).posts.length, 0);
+  assert.equal((await (await adminGet(adminRequest())).json()).needsReconnect, true);
+});
+
+test("zero token expiry does not hide a finite data-access deadline", async () => {
+  facebookTokenInfo.expires_at = 0;
+  const deadline = new Date(facebookTokenInfo.data_access_expires_at * 1000).toISOString();
+  assert.match((await facebookCallback()).headers.get("location"), /instagram=connected/);
+  assert.equal(connection.expires_at, deadline);
+});
+
+test("unverified, expired, foreign or incomplete Meta token metadata cannot establish a connection", async () => {
+  for (const patch of [{ is_valid: false }, { app_id: "another-app" }, { expires_at: 1 }, { data_access_expires_at: undefined }, { expires_at: "0" }]) {
+    const original = { ...facebookTokenInfo };
+    Object.assign(facebookTokenInfo, patch);
+    assert.match((await facebookCallback()).headers.get("location"), /instagram=failed/);
+    assert.equal(connection, null);
+    facebookTokenInfo = original;
+  }
+});
+
+test("an Instagram Login connection cannot omit its required expiry", async () => {
+  seedConnection(); connection.provider = "instagram"; connection.expires_at = null;
+  assert.equal((await loadInstagramFeed(true)).posts.length, 0);
+  assert.equal((await (await adminGet(adminRequest())).json()).needsReconnect, true);
+  assert.ok(calls.every(call => call.url.hostname !== "graph.instagram.com"));
 });
 
 test("Facebook tokens never use Instagram refresh and expired tokens hide posts", async () => {

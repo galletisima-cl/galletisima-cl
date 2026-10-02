@@ -10,6 +10,12 @@ export function instagramDatabase() {
 
 export type InstagramProvider = "instagram" | "facebook";
 
+export function instagramAccessExpired(expiresAt: string | null, provider: InstagramProvider = "instagram") {
+  if (expiresAt === null) return provider !== "facebook";
+  const expiry = Date.parse(expiresAt);
+  return !Number.isFinite(expiry) || expiry <= Date.now();
+}
+
 export function instagramConfig(provider: InstagramProvider = "instagram") {
   const appId = provider === "facebook" ? process.env.INSTAGRAM_FACEBOOK_APP_ID : process.env.INSTAGRAM_APP_ID;
   const secret = provider === "facebook" ? process.env.INSTAGRAM_FACEBOOK_APP_SECRET : process.env.INSTAGRAM_APP_SECRET;
@@ -47,6 +53,22 @@ async function instagramJson(url: string | URL, init?: RequestInit) {
   return data;
 }
 
+// Check both token expiry and data-access expiry. Zero explicitly means no scheduled expiry.
+export async function facebookTokenDetails(accessToken: string) {
+  const config = instagramConfig("facebook");
+  if (!config) throw new Error("Falta configurar la aplicación de Facebook.");
+  const url = new URL(`https://graph.facebook.com/${config.version}/debug_token`);
+  url.searchParams.set("input_token", accessToken);
+  const { data } = await instagramJson(url, { headers: { Authorization: `Bearer ${config.appId}|${config.secret}` } });
+  if (!data?.is_valid || String(data.app_id) !== config.appId || !["USER", "PAGE", "SYSTEM_USER"].includes(data.type)) throw new InstagramError("reconnect");
+  const expiries = [data.expires_at, data.data_access_expires_at];
+  if (expiries.some(value => !Number.isSafeInteger(value) || value < 0)) throw new InstagramError("reconnect");
+  const deadlines = expiries.filter(value => value > 0);
+  const expiresAt = deadlines.length ? new Date(Math.min(...deadlines) * 1000).toISOString() : null;
+  if (instagramAccessExpired(expiresAt, "facebook")) throw new InstagramError("reconnect");
+  return { type: data.type as "USER" | "PAGE" | "SYSTEM_USER", expires_at: expiresAt };
+}
+
 export async function exchangeInstagramCode(code: string, provider: InstagramProvider = "instagram") {
   const config = instagramConfig(provider);
   if (!config) throw new Error("Falta configurar la aplicación de Instagram.");
@@ -56,14 +78,20 @@ export async function exchangeInstagramCode(code: string, provider: InstagramPro
     exchange.search = new URLSearchParams({ client_id: config.appId, client_secret: config.secret, redirect_uri: config.redirectUri, code }).toString();
     const short = await instagramJson(exchange);
     if (typeof short.access_token !== "string") throw new InstagramError("reconnect");
-    const long = new URL(endpoint);
-    long.search = new URLSearchParams({ client_id: config.appId, client_secret: config.secret, grant_type: "fb_exchange_token", fb_exchange_token: short.access_token }).toString();
-    const token = await instagramJson(long);
-    if (typeof token.access_token !== "string" || !Number.isFinite(token.expires_in) || token.expires_in <= 0) throw new InstagramError("reconnect");
+    let accessToken = short.access_token as string;
+    let details = await facebookTokenDetails(accessToken);
+    if (details.type === "USER") {
+      const long = new URL(endpoint);
+      long.search = new URLSearchParams({ client_id: config.appId, client_secret: config.secret, grant_type: "fb_exchange_token", fb_exchange_token: accessToken }).toString();
+      const token = await instagramJson(long);
+      if (typeof token.access_token !== "string") throw new InstagramError("reconnect");
+      accessToken = token.access_token;
+      details = await facebookTokenDetails(accessToken);
+    }
     // This store reads only its configured Instagram account, even if the user manages other pages.
-    const profile = await instagramJson(`https://graph.facebook.com/${config.version}/${config.accountId}?fields=id,username`, { headers: { Authorization: `Bearer ${token.access_token}` } });
+    const profile = await instagramJson(`https://graph.facebook.com/${config.version}/${config.accountId}?fields=id,username`, { headers: { Authorization: `Bearer ${accessToken}` } });
     if (String(profile.id) !== config.accountId || typeof profile.username !== "string" || !instagramProfileUrl(profile.username)) throw new InstagramError("reconnect");
-    return { account_id: String(profile.id), username: profile.username as string, access_token: token.access_token as string, expires_at: new Date(Date.now() + token.expires_in * 1000).toISOString() };
+    return { account_id: String(profile.id), username: profile.username as string, access_token: accessToken, expires_at: details.expires_at };
   }
   const form = new FormData();
   for (const [key, value] of Object.entries({ client_id: config.appId, client_secret: config.secret, grant_type: "authorization_code", redirect_uri: config.redirectUri, code })) form.set(key, value);
@@ -103,7 +131,7 @@ export function normalizeInstagramPosts(value: unknown): InstagramPost[] {
 }
 
 type Connection = {
-  id: boolean; connection_id: string; account_id: string; username: string; access_token: string; expires_at: string;
+  id: boolean; connection_id: string; account_id: string; username: string; access_token: string; expires_at: string | null;
   provider: InstagramProvider;
   posts: InstagramPost[]; synced_at: string | null; checked_at: string | null; sync_lock_until: string; last_error: string | null;
 };
@@ -112,7 +140,7 @@ const maxStale = 24 * 60 * 60 * 1000;
 const emptyFeed: InstagramFeed = { username: null, posts: [] };
 
 function publicFeed(connection: Connection): InstagramFeed {
-  if (connection.last_error === "reconnect" || Date.parse(connection.expires_at) <= Date.now()) return emptyFeed;
+  if (connection.last_error === "reconnect" || instagramAccessExpired(connection.expires_at, connection.provider)) return emptyFeed;
   return { username: connection.username, posts: connection.synced_at && Date.now() - Date.parse(connection.synced_at) < maxStale ? connection.posts : [] };
 }
 
@@ -124,7 +152,7 @@ export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
   let connection = data as Connection;
   const config = instagramConfig(connection.provider || "instagram");
   if (!config) return emptyFeed;
-  if (connection.last_error === "reconnect" || Date.parse(connection.expires_at) <= Date.now()) return emptyFeed;
+  if (connection.last_error === "reconnect" || instagramAccessExpired(connection.expires_at, connection.provider)) return emptyFeed;
   if (!force && connection.checked_at && Date.now() - Date.parse(connection.checked_at) < freshness) return publicFeed(connection);
   const { data: locked, error: lockError } = await db.from("instagram_connection")
     .update({ sync_lock_until: new Date(Date.now() + 45000).toISOString(), checked_at: new Date().toISOString() })
@@ -133,7 +161,7 @@ export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
   if (!locked) return publicFeed(connection);
   try {
     // Refresh on visits, well before expiration; no background scheduler is required.
-    if (config.provider === "instagram" && Date.parse(connection.expires_at) - Date.now() < 30 * 24 * 60 * 60 * 1000) {
+    if (config.provider === "instagram" && connection.expires_at && Date.parse(connection.expires_at) - Date.now() < 30 * 24 * 60 * 60 * 1000) {
       const refresh = new URL("https://graph.instagram.com/refresh_access_token");
       refresh.search = new URLSearchParams({ grant_type: "ig_refresh_token", access_token: connection.access_token }).toString();
       const renewed = await instagramJson(refresh);

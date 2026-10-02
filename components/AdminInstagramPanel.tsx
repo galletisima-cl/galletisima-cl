@@ -6,7 +6,7 @@ import { createClient } from "../lib/supabase/client";
 type ConnectionStatus = {
   configured: boolean; storageReady: boolean; needsReconnect: boolean;
   providers: { instagram: boolean; facebook: boolean };
-  connection: { username: string; expires_at: string; synced_at: string | null; last_error: string | null; provider: "instagram" | "facebook" } | null;
+  connection: { username: string; expires_at: string | null; synced_at: string | null; last_error: string | null; provider: "instagram" | "facebook" } | null;
 };
 
 export default function AdminInstagramPanel() {
@@ -53,7 +53,9 @@ export default function AdminInstagramPanel() {
     {!status && !error && <p role="status">Consultando conexión…</p>}
     {status && (!status.configured || !status.storageReady) && <p className="instagram-admin-warning">La galería está preparada. Falta completar la configuración de Meta y de la conexión en el servidor para habilitar este botón.</p>}
     {connection && <div className="instagram-connection-summary"><strong>@{connection.username}</strong><span>{reconnect ? "Necesita volver a conectarse" : "Cuenta conectada"}</span><small>{connection.synced_at ? `Última actualización: ${new Date(connection.synced_at).toLocaleString("es-CL")}` : "Publicaciones pendientes de actualizar"}</small></div>}
-    {connection?.provider === "facebook" && !reconnect && <p className="instagram-admin-warning">Conectada mediante Facebook hasta el {new Date(connection.expires_at).toLocaleDateString("es-CL")}. Vuelve a conectar antes de esa fecha para mantener la galería actualizada.</p>}
+    {connection?.provider === "facebook" && !reconnect && (connection.expires_at
+      ? <p className="instagram-admin-warning">Conectada mediante Facebook hasta el {new Date(connection.expires_at).toLocaleDateString("es-CL")}. Vuelve a conectar antes de esa fecha para mantener la galería actualizada.</p>
+      : <p className="instagram-admin-success">Conexión sin vencimiento programado. Las publicaciones se actualizan automáticamente mientras se mantengan los permisos en Meta.</p>)}
     {connection?.last_error === "unavailable" && <p className="instagram-admin-warning">No pudimos actualizar las publicaciones. Puedes reintentarlo; conservamos la última galería disponible temporalmente.</p>}
     {reconnect && <p className="instagram-admin-warning">Instagram necesita una nueva autorización. Vuelve a conectar la cuenta para recuperar la galería.</p>}
     <div className="instagram-admin-actions">

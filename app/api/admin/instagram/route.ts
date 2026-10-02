@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
-import { instagramAdmin, instagramConfig, loadInstagramFeed } from "../../../../lib/instagram";
+import { instagramAccessExpired, instagramAdmin, instagramConfig, loadInstagramFeed } from "../../../../lib/instagram";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     if (!auth) return NextResponse.json({ error: "Inicia sesión como administrador." }, { status: 401, headers: noStore });
     const providers = { instagram: !!instagramConfig(), facebook: !!instagramConfig("facebook") };
     const { data, error } = await auth.db.from("instagram_connection").select("username,expires_at,synced_at,last_error,provider").eq("id", true).maybeSingle();
-    return NextResponse.json({ configured: providers.instagram || providers.facebook, providers, storageReady: !error, connection: error ? null : data, needsReconnect: !!data && (data.last_error === "reconnect" || Date.parse(data.expires_at) <= Date.now()) }, { headers: noStore });
+    return NextResponse.json({ configured: providers.instagram || providers.facebook, providers, storageReady: !error, connection: error ? null : data, needsReconnect: !!data && (data.last_error === "reconnect" || instagramAccessExpired(data.expires_at, data.provider)) }, { headers: noStore });
   } catch { return NextResponse.json({ error: "No se pudo consultar la conexión." }, { status: 500, headers: noStore }); }
 }
 
