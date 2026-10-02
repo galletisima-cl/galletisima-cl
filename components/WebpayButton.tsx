@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CartItem } from "../lib/cart";
 import type { CheckoutQuote } from "./useCheckoutQuote";
+import CheckoutCoupon from "./CheckoutCoupon";
 
 export default function WebpayButton({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
@@ -24,7 +25,7 @@ export function CheckoutForm({ items, checkout, isIntegration = false }: { items
       const response = await fetch("/api/webpay/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ buyer: { ...buyer, communeId }, expectedTotal: pricing.total, items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })) }),
+        body: JSON.stringify({ buyer: { ...buyer, communeId }, couponCode: checkout.couponCode, expectedTotal: pricing.total, items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })) }),
       });
       const data = await response.json();
       if (response.status === 409 && data.pricing) checkout.updatePricing(data.pricing);
@@ -60,6 +61,7 @@ export function CheckoutForm({ items, checkout, isIntegration = false }: { items
     </div>}
     <label>Dirección<input required minLength={5} autoComplete="street-address" placeholder="Calle, número" value={buyer.address} onChange={(event) => setBuyer({ ...buyer, address: event.target.value })} /></label>
     <label>Depto., casa o referencia <small>(opcional)</small><input autoComplete="address-line2" value={buyer.addressExtra} onChange={(event) => setBuyer({ ...buyer, addressExtra: event.target.value })} /></label>
+    <CheckoutCoupon checkout={checkout} disabled={loading} />
     {selectedShipping && <div className="webpay-total" aria-live="polite" aria-busy={isQuoting}>
       {pricing ? <>
         <span>Productos <strong>{currency(pricing.subtotal)}</strong></span>

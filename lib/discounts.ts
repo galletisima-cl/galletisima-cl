@@ -11,6 +11,7 @@ export type DiscountRule = {
   value: number;
   minSubtotal: number;
   productId: string | null;
+  code: string | null;
 };
 export type AppliedDiscount = {
   id: string;
@@ -18,6 +19,7 @@ export type AppliedDiscount = {
   kind: DiscountKind;
   amount: number;
   productId: string | null;
+  code?: string;
 };
 export type CheckoutPricing = {
   subtotal: number;
@@ -26,8 +28,17 @@ export type CheckoutPricing = {
   discountAmount: number;
   total: number;
   appliedDiscounts: AppliedDiscount[];
+  coupon?: { code: string; applied: boolean };
 };
 type PricedLine = { productId: string; unitPrice: number; quantity: number };
+
+export function normalizeCouponCode(input: unknown): string {
+  if (input === undefined || input === null || input === "") return "";
+  if (typeof input !== "string") throw new Error("El código de descuento no es válido.");
+  const code = input.trim().toUpperCase();
+  if (code && !/^[A-Z0-9_-]{3,40}$/.test(code)) throw new Error("Usa un código de 3 a 40 letras, números, guiones o guiones bajos.");
+  return code;
+}
 
 export function validateDiscountRule(input: unknown): DiscountRule {
   if (!input || typeof input !== "object") throw new Error("El descuento no es válido.");
@@ -48,6 +59,7 @@ export function validateDiscountRule(input: unknown): DiscountRule {
     minSubtotal: Number(rule.minSubtotal), productId: rule.kind === "product" ? rule.productId! : null,
     valueType: rule.kind === "free_shipping" ? "fixed" : rule.valueType!,
     value: rule.kind === "free_shipping" ? 0 : Number(rule.value),
+    code: normalizeCouponCode(rule.code) || null,
   };
 }
 
@@ -58,6 +70,8 @@ export function parseDiscountRules(value: string | null | undefined): DiscountRu
   if (!Array.isArray(parsed) || parsed.length > MAX_DISCOUNT_RULES) throw new Error("La configuración de descuentos no es válida.");
   const rules = parsed.map(validateDiscountRule);
   if (new Set(rules.map((rule) => rule.id)).size !== rules.length) throw new Error("Hay identificadores de descuentos duplicados.");
+  const codes = rules.flatMap((rule) => rule.code ? [rule.code] : []);
+  if (new Set(codes).size !== codes.length) throw new Error("Ya existe un descuento con ese código. Usa un código diferente.");
   return rules;
 }
 
@@ -67,11 +81,16 @@ function amountOff(base: number, rule: DiscountRule) {
 
 // Choose the best merchandise offer; free shipping can be combined with it.
 // Product discounts are rounded per unit so splitting cart rows cannot increase savings.
-export function applyDiscounts(lines: PricedLine[], shippingPrice: number, rules: DiscountRule[]): CheckoutPricing {
+export function applyDiscounts(lines: PricedLine[], shippingPrice: number, rules: DiscountRule[], couponInput?: unknown): CheckoutPricing {
   if (!Number.isSafeInteger(shippingPrice) || shippingPrice < 0 || lines.some((line) => !Number.isSafeInteger(line.unitPrice) || line.unitPrice <= 0 || !Number.isSafeInteger(line.quantity) || line.quantity <= 0)) throw new Error("Los montos de la compra no son válidos.");
   const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   if (!Number.isSafeInteger(subtotal) || !Number.isSafeInteger(subtotal + shippingPrice)) throw new Error("El monto de la compra no es válido.");
-  const eligible = rules.filter((rule) => rule.active && subtotal >= rule.minSubtotal);
+  const code = normalizeCouponCode(couponInput);
+  const couponRule = code ? rules.find((rule) => rule.active && rule.code === code) : undefined;
+  if (code && !couponRule) throw new Error("El cupón no existe o ya no está activo. Revisa el código.");
+  if (couponRule && subtotal < couponRule.minSubtotal) throw new Error(`Este cupón requiere al menos ${new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(couponRule.minSubtotal)} en productos.`);
+  if (couponRule?.kind === "product" && !lines.some((line) => line.productId === couponRule.productId)) throw new Error("Este cupón no corresponde a los productos de tu carrito.");
+  const eligible = rules.filter((rule) => rule.active && subtotal >= rule.minSubtotal && (!rule.code || rule.code === code));
   const productDiscounts = new Map<string, AppliedDiscount>();
   for (const line of lines) {
     let best: DiscountRule | undefined;
@@ -81,7 +100,7 @@ export function applyDiscounts(lines: PricedLine[], shippingPrice: number, rules
       const candidate = amountOff(line.unitPrice, rule) * line.quantity;
       if (candidate > amount) { best = rule; amount = candidate; }
     }
-    if (best) productDiscounts.set(best.id, { id: best.id, name: best.name, kind: best.kind, productId: best.productId, amount: amount + (productDiscounts.get(best.id)?.amount || 0) });
+    if (best) productDiscounts.set(best.id, { id: best.id, name: best.name, kind: best.kind, productId: best.productId, amount: amount + (productDiscounts.get(best.id)?.amount || 0), ...(best.code ? { code: best.code } : {}) });
   }
   let appliedDiscounts = [...productDiscounts.values()];
   let discountAmount = appliedDiscounts.reduce((sum, discount) => sum + discount.amount, 0);
@@ -90,12 +109,12 @@ export function applyDiscounts(lines: PricedLine[], shippingPrice: number, rules
     const amount = amountOff(subtotal, rule);
     if (amount > discountAmount) {
       discountAmount = amount;
-      appliedDiscounts = [{ id: rule.id, name: rule.name, kind: rule.kind, productId: null, amount }];
+      appliedDiscounts = [{ id: rule.id, name: rule.name, kind: rule.kind, productId: null, amount, ...(rule.code ? { code: rule.code } : {}) }];
     }
   }
   const freeShipping = eligible.find((rule) => rule.kind === "free_shipping");
   const shippingDiscount = freeShipping ? shippingPrice : 0;
-  if (freeShipping && shippingDiscount > 0) appliedDiscounts.push({ id: freeShipping.id, name: freeShipping.name, kind: freeShipping.kind, productId: null, amount: shippingDiscount });
+  if (freeShipping && shippingDiscount > 0) appliedDiscounts.push({ id: freeShipping.id, name: freeShipping.name, kind: freeShipping.kind, productId: null, amount: shippingDiscount, ...(freeShipping.code ? { code: freeShipping.code } : {}) });
   const shipping = shippingPrice - shippingDiscount;
-  return { subtotal, shipping, shippingDiscount, discountAmount, total: subtotal - discountAmount + shipping, appliedDiscounts };
+  return { subtotal, shipping, shippingDiscount, discountAmount, total: subtotal - discountAmount + shipping, appliedDiscounts, ...(code ? { coupon: { code, applied: appliedDiscounts.some((discount) => discount.id === couponRule?.id) } } : {}) };
 }

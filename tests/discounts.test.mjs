@@ -10,6 +10,48 @@ const rule = (patch = {}) => validateDiscountRule({ id: "offer", name: "Oferta",
 test("an unconfigured store keeps its original totals", () => {
   assert.deepEqual(applyDiscounts([line()], 3990, parseDiscountRules(null)), { subtotal: 20000, discountAmount: 0, shipping: 3990, shippingDiscount: 0, total: 23990, appliedDiscounts: [] });
 });
+
+test("coupons require an explicit code, ignoring case and surrounding whitespace", () => {
+  const rules = [rule({ code: "HaLLoWeeN25", value: 25 }), rule({ id: "shipping", kind: "free_shipping", minSubtotal: 20000 })];
+  const automatic = applyDiscounts([line()], 3990, rules);
+  assert.equal(automatic.discountAmount, 0);
+  assert.equal(automatic.shipping, 0);
+  const applied = applyDiscounts([line()], 3990, rules, " halloween25 ");
+  assert.equal(applied.total, 15000);
+  assert.deepEqual(applied.coupon, { code: "HALLOWEEN25", applied: true });
+  assert.equal(applied.appliedDiscounts[0].code, "HALLOWEEN25");
+  assert.equal(applyDiscounts([line()], 3990, rules, "").total, 20000);
+});
+
+test("invalid and inactive coupons fail rather than silently applying another code", () => {
+  const rules = [rule({ code: "SAVE10" }), rule({ id: "inactive", code: "OLD25", active: false })];
+  for (const code of ["UNKNOWN", "OLD25", {}, 123, "x".repeat(41)]) assert.throws(() => applyDiscounts([line()], 3990, rules, code));
+});
+
+test("coupon minimum and product restrictions are enforced", () => {
+  assert.throws(() => applyDiscounts([line()], 3990, [rule({ code: "MIN30", minSubtotal: 30000 })], "MIN30"), /al menos/);
+  assert.throws(() => applyDiscounts([line()], 3990, [rule({ code: "PRODUCT", kind: "product", productId: productB })], "PRODUCT"), /no corresponde/);
+  assert.equal(applyDiscounts([line()], 3990, [rule({ code: "PRODUCT", kind: "product", productId: productA })], "PRODUCT").discountAmount, 2000);
+});
+
+test("best automatic offer is kept when it beats a coupon; coupons do not stack", () => {
+  const rules = [rule({ id: "automatic", value: 30 }), rule({ code: "HALLOWEEN25", value: 25 }), rule({ id: "other", code: "SECRET50", value: 50 })];
+  const pricing = applyDiscounts([line()], 0, rules, "HALLOWEEN25");
+  assert.equal(pricing.discountAmount, 6000);
+  assert.deepEqual(pricing.coupon, { code: "HALLOWEEN25", applied: false });
+  assert.deepEqual(pricing.appliedDiscounts.map(discount => discount.id), ["automatic"]);
+});
+
+test("shipping coupons also require their code", () => {
+  const rules = [rule({ kind: "free_shipping", code: "SHIPFREE" })];
+  assert.equal(applyDiscounts([line()], 3990, rules).shipping, 3990);
+  assert.equal(applyDiscounts([line()], 3990, rules, "SHIPFREE").shipping, 0);
+});
+
+test("legacy rules stay automatic and duplicate coupon codes are rejected", () => {
+  assert.equal(rule().code, null);
+  assert.throws(() => parseDiscountRules(JSON.stringify([rule({ code: "coupon" }), rule({ id: "other", code: "COUPON" })])), /código/);
+});
 test("free shipping applies at the minimum before discounts, not below it", () => {
   const rules = [rule(), rule({ id: "shipping", kind: "free_shipping", minSubtotal: 20000 })];
   assert.equal(applyDiscounts([line()], 3990, rules).total, 18000);

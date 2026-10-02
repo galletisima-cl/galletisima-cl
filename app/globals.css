@@ -4873,6 +4873,67 @@ form button {
 .checkout-discount {
   color: #34734b;
 }
+.checkout-coupon {
+  padding: 16px;
+  border: 1px solid #efdee4;
+  border-radius: 11px;
+  background: #fffafb;
+}
+.checkout-coupon-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+.checkout-coupon-controls input {
+  flex: 1;
+  min-width: 0;
+  text-transform: uppercase;
+}
+.checkout-coupon-controls input::placeholder {
+  text-transform: none;
+}
+.checkout-coupon-controls button {
+  flex-shrink: 0;
+  padding: 10px 16px;
+  border: 1px solid #a32957;
+  border-radius: 10px;
+  background: #a32957;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.checkout-coupon-controls button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+.checkout-coupon-selection {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.checkout-coupon-selection button {
+  flex-shrink: 0;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: #a32957;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+#checkout-coupon-status {
+  display: block;
+}
+#checkout-coupon-status p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
 .checkout-quote-retry {
   justify-self: start;
   border: 0;

@@ -59,6 +59,48 @@ test("quotes automatic offers using server prices and ignores client discount am
   assert.equal(payments.length, 0);
   assert.equal(writes.length, 0);
 });
+
+test("quote and payment apply a manual coupon only when explicitly supplied", async () => {
+  rules = [offer({ code: "HALLOWEEN25", value: 25 }), offer({ id: "shipping", kind: "free_shipping", minSubtotal: 20000 })];
+  const automatic = await (await quote(request({ communeId: "13101", items }))).json();
+  assert.equal(automatic.pricing.discountAmount, 0);
+  assert.equal(automatic.pricing.shipping, 0);
+  assert.equal(automatic.pricing.total, 20000);
+  const applied = await (await quote(request({ communeId: "13101", items, couponCode: " halloween25 " }))).json();
+  assert.equal(applied.pricing.total, 15000);
+  assert.deepEqual(applied.pricing.coupon, { code: "HALLOWEEN25", applied: true });
+  const missingCode = await pay(request({ buyer, items, expectedTotal: 15000, discountAmount: 5000 }));
+  assert.equal(missingCode.status, 409);
+  assert.equal(payments.length, 0);
+  const paid = await pay(request({ buyer, items, expectedTotal: 15000, couponCode: "halloween25" }));
+  assert.equal(paid.status, 200);
+  assert.equal(payments[0].amount, 15000);
+  const order = writes.find(write => write.table === "orders").body;
+  assert.equal(order.applied_discounts[0].code, "HALLOWEEN25");
+  assert.equal(order.discount_amount, 5000);
+});
+
+test("invalid, ineligible and newly deactivated coupons cannot reach Webpay", async () => {
+  for (const configured of [offer({ code: "HALLOWEEN25", active: false }), offer({ code: "HALLOWEEN25", minSubtotal: 30000 }), offer({ code: "OTHER" })]) {
+    rules = [configured];
+    assert.equal((await quote(request({ communeId: "13101", items, couponCode: "HALLOWEEN25" }))).status, 400);
+    assert.equal((await pay(request({ buyer, items, couponCode: "HALLOWEEN25", expectedTotal: 15000 }))).status, 400);
+  }
+  assert.equal(payments.length, 0);
+  assert.equal(writes.length, 0);
+});
+
+test("coupon value changes return a new total before any payment", async () => {
+  rules = [offer({ code: "SAVE", value: 25 })];
+  const initial = await (await quote(request({ communeId: "13101", items, couponCode: "SAVE" }))).json();
+  rules = [offer({ code: "SAVE", value: 10 })];
+  const response = await pay(request({ buyer, items, couponCode: "SAVE", expectedTotal: initial.pricing.total }));
+  assert.equal(response.status, 409);
+  const {pricing} = await response.json();
+  assert.equal(pricing.total, 21990);
+  assert.deepEqual(pricing.coupon, { code: "SAVE", applied: true });
+  assert.equal(payments.length, 0);
+});
 test("quotes product discounts against the selected size's server price", async () => {
   rules = [offer({ kind: "product", productId, value: 25 })];
   const response = await quote(request({ communeId: "13101", items: [{ productId, size: "8 cm", quantity: 2 }] }));

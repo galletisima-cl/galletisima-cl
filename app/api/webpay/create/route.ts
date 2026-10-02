@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const buyer = validateBuyer(body?.buyer);
-    const checkout = await calculateCheckoutTotal(body?.items, buyer.communeId);
+    const checkout = await calculateCheckoutTotal(body?.items, buyer.communeId, body?.couponCode);
     const { subtotal, shipping, shippingOption, total, lines, discountAmount, shippingDiscount, appliedDiscounts } = checkout;
     if (!Number.isSafeInteger(body?.expectedTotal) || body.expectedTotal !== total) {
       return NextResponse.json({ error: "El total de tu compra cambió. Revisa el nuevo importe y vuelve a continuar.", pricing: checkoutPricing(checkout) }, { status: 409 });

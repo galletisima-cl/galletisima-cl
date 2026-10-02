@@ -10,9 +10,10 @@ export function useCheckoutQuote(items: CartItem[], enabled: boolean) {
   const [shippingError, setShippingError] = useState("");
   const [regionId, setRegionId] = useState("");
   const [communeId, setCommuneId] = useState("");
+  const [couponCode, setCouponCode] = useState("");
   const [quoteState, setQuoteState] = useState<{ key: string; pricing?: CheckoutPricing; error?: string } | null>(null);
   const [quoteAttempt, setQuoteAttempt] = useState(0);
-  const quoteKey = JSON.stringify({ items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })), communeId });
+  const quoteKey = JSON.stringify({ items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })), communeId, couponCode });
   const currentQuote = quoteState?.key === quoteKey ? quoteState : null;
   const selectedShipping = shippingOptions.find((option) => option.communeId === communeId);
   const regions = useMemo(() => [...new Map(shippingOptions.map((option) => [option.regionId, option.region])).entries()], [shippingOptions]);
@@ -47,11 +48,13 @@ export function useCheckoutQuote(items: CartItem[], enabled: boolean) {
   }, [enabled, communeId, quoteKey, quoteAttempt]);
 
   return {
-    regionId, communeId, regions, communeOptions, selectedShipping, shippingError,
+    regionId, communeId, regions, communeOptions, selectedShipping, shippingError, couponCode,
     pricing: currentQuote?.pricing, quoteError: currentQuote?.error,
     isQuoting: Boolean(communeId) && !currentQuote,
     selectRegion: (id: string) => { setRegionId(id); setCommuneId(""); },
     selectCommune: setCommuneId,
+    applyCoupon: (code: string) => { setCouponCode(code.trim().toUpperCase()); setQuoteState(null); setQuoteAttempt((value) => value + 1); },
+    removeCoupon: () => setCouponCode(""),
     updatePricing: (pricing: CheckoutPricing) => setQuoteState({ key: quoteKey, pricing }),
     retry: () => { setQuoteState(null); setQuoteAttempt((value) => value + 1); },
   };
