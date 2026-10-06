@@ -289,7 +289,7 @@ function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mob
   </section>;
 }
 
-function FeaturedCategoryBanner({ banner, category, products }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[] }) {
+function FeaturedCategoryBanner({ banner, category, products, onSelect }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[]; onSelect: (slug: string) => void }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   useContinuousCarousel(carouselRef, products.length);
   const move = useCallback((direction: -1 | 1) => {
@@ -308,7 +308,7 @@ function FeaturedCategoryBanner({ banner, category, products }: { banner: Catego
       <span className="category-feature-copy">
         <small>Categoría destacada</small>
         <strong>{displayCategory(category.name)}</strong>
-        <Link href={categoryHref(category.slug)}>Ver colección →</Link>
+        <Link href={categoryHref(category.slug)} onNavigate={(event) => { event.preventDefault(); onSelect(category.slug); }}>Ver colección →</Link>
       </span>
       {products.length > 0 && <div className="featured-products-wrap">
         <div className="featured-products-controls">
@@ -411,6 +411,20 @@ export default function Home() {
   const returnToTop = () => {
     window.history.replaceState(null, "", window.location.pathname);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const showFeaturedCollection = (slug: string) => {
+    setCategoryFilter(slug);
+    setProductSearch("");
+    setCatalogPage(1);
+    window.history.replaceState(null, "", categoryHref(slug));
+    window.requestAnimationFrame(() => {
+      const catalog = document.getElementById("catalogo");
+      if (!catalog) return;
+      const headerHeight = document.querySelector<HTMLElement>(".header.shell")?.offsetHeight || 0;
+      const top = catalog.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
+      window.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+    });
   };
 
   useEffect(() => {
@@ -656,7 +670,7 @@ export default function Home() {
             const category = catalogCategories.find((item) => item.id === banner.categoryId);
             if (!category || !banner.imageUrl) return null;
             const products = allProducts.filter((product) => product.image_url && product.product_categories?.some((link) => link.category_id === category.id));
-            return <FeaturedCategoryBanner banner={banner} category={category} products={products} key={`${banner.categoryId}-${index}`} />;
+            return <FeaturedCategoryBanner banner={banner} category={category} products={products} onSelect={showFeaturedCollection} key={`${banner.categoryId}-${index}`} />;
           })}
         </section>
       )}
