@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CART_UPDATED_EVENT, CartItem, readCartItems } from "../lib/cart";
+import { trackMetaEvent } from "../lib/meta-pixel";
 import { CheckoutForm } from "./WebpayButton";
 import { useCheckoutQuote, type CheckoutQuote } from "./useCheckoutQuote";
 
@@ -12,6 +13,7 @@ const currency = new Intl.NumberFormat("es-CL", { style: "currency", currency: "
 export default function CheckoutPage({ isIntegration }: { isIntegration: boolean }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [ready, setReady] = useState(false);
+  const initiateCheckoutTracked = useRef(false);
   const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
   const checkout = useCheckoutQuote(items, ready && items.length > 0);
 
@@ -22,6 +24,19 @@ export default function CheckoutPage({ isIntegration }: { isIntegration: boolean
     window.addEventListener("storage", sync);
     return () => { window.removeEventListener(CART_UPDATED_EVENT, sync); window.removeEventListener("storage", sync); };
   }, []);
+
+  useEffect(() => {
+    if (!ready || !items.length || initiateCheckoutTracked.current) return;
+    trackMetaEvent("InitiateCheckout", {
+      content_ids: items.map((item) => item.productId),
+      contents: items.map((item) => ({ id: item.productId, quantity: item.quantity, item_price: item.price })),
+      content_type: "product",
+      currency: "CLP",
+      num_items: items.reduce((count, item) => count + item.quantity, 0),
+      value: subtotal,
+    });
+    initiateCheckoutTracked.current = true;
+  }, [items, ready, subtotal]);
 
   return <main className="checkout-page">
     <header className="checkout-header"><Link href="/" aria-label="Volver a Galletísima"><Image src="/galletisima-logo.png" alt="Galletísima" width={230} height={90} priority /></Link><div><span>Compra protegida</span><small>Pago seguro mediante Webpay</small></div></header>

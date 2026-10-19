@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ClearPaidCart from "../../../components/ClearPaidCart";
+import MetaPurchase from "../../../components/MetaPurchase";
 import { getWebpayEnvironment, getWebpayTransaction } from "../../../lib/webpay";
 import { sendOrderEmails } from "../../../lib/email";
 import { findOrderByToken, getOrderLines, markOrderEmailSent, updateOrderPayment, type StoredOrder } from "../../../lib/orders";
@@ -19,6 +20,7 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
   const wasCancelled = Boolean(valueOf(params.TBK_TOKEN) || valueOf(params.TBK_ORDEN_COMPRA));
   let result: Record<string, unknown> | null = null;
   let order: StoredOrder | null = null;
+  let purchaseItems: { id: string; quantity: number; item_price: number }[] = [];
   let error = "";
 
   if (token) {
@@ -32,13 +34,25 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
         const authorized = result.status === "AUTHORIZED" && result.response_code === 0 && Number(result.amount) === Number(order.total) && result.buy_order === order.buy_order;
         order = await updateOrderPayment(order.id, result, authorized ? "authorized" : "rejected");
       }
-      if (order.payment_status === "authorized" && !order.email_sent_at) {
+      if (order.payment_status === "authorized") {
+        let lines: Awaited<ReturnType<typeof getOrderLines>> | null = null;
         try {
-          const lines = await getOrderLines(order.id);
-          await sendOrderEmails(order, lines);
-          await markOrderEmailSent(order.id);
-        } catch (emailError) {
-          console.error("Pago confirmado, pero no se pudieron enviar los correos", emailError);
+          lines = await getOrderLines(order.id);
+          purchaseItems = lines.map((line) => ({
+            id: String(line.product_id),
+            quantity: Number(line.quantity),
+            item_price: Number(line.unit_price),
+          }));
+        } catch (linesError) {
+          console.error("Pago confirmado, pero no se pudo consultar el detalle del pedido", linesError);
+        }
+        if (!order.email_sent_at && lines) {
+          try {
+            await sendOrderEmails(order, lines);
+            await markOrderEmailSent(order.id);
+          } catch (emailError) {
+            console.error("Pago confirmado, pero no se pudieron enviar los correos", emailError);
+          }
         }
       }
     } catch (caught) {
@@ -47,13 +61,13 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
     }
   }
 
-  const approved = result?.status === "AUTHORIZED" && result?.response_code === 0;
+  const approved = result?.status === "AUTHORIZED" && result?.response_code === 0 && order?.payment_status === "authorized";
   const amount = Number(result?.amount || 0);
   const currency = new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 });
 
   return <main className="payment-page">
     <section className={`payment-card ${approved ? "approved" : "rejected"}`}>
-      {approved && <ClearPaidCart />}
+      {approved && order && <><ClearPaidCart /><MetaPurchase orderId={order.buy_order} value={Number(result?.amount || 0)} items={purchaseItems} /></>}
       <span className="payment-icon" aria-hidden="true">{approved ? "✓" : "!"}</span>
       <p className="eyebrow">Webpay Plus · {getWebpayEnvironment() === "integration" ? "Modo de prueba" : "Pago en línea"}</p>
       <h1>{approved ? getWebpayEnvironment() === "integration" ? "Pago de prueba aprobado" : "Pago aprobado" : wasCancelled ? "Pago cancelado" : "Pago no completado"}</h1>

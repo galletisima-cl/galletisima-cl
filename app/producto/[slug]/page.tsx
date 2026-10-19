@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import PublicHeader from "../../../components/PublicHeader";
 import { addCartItem } from "../../../lib/cart";
+import { trackMetaEvent } from "../../../lib/meta-pixel";
 import { createClient } from "../../../lib/supabase/client";
 
 type Product = {
@@ -85,7 +86,7 @@ export default function ProductPage() {
       setNotice("Selecciona una medida antes de agregar al carrito.");
       return;
     }
-    addCartItem({
+    const item = {
       productId: product.id,
       slug: product.slug,
       name: product.name,
@@ -93,6 +94,15 @@ export default function ProductPage() {
       price: sizePrices[selectedSize] ?? product.price,
       imageUrl: product.image_url,
       quantity,
+    };
+    addCartItem(item);
+    trackMetaEvent("AddToCart", {
+      content_ids: [item.productId],
+      contents: [{ id: item.productId, quantity: item.quantity, item_price: item.price }],
+      content_type: "product",
+      currency: "CLP",
+      num_items: item.quantity,
+      value: item.price * item.quantity,
     });
     setNotice(`${quantity} × ${product.name}${selectedSize ? ` · ${selectedSize}` : ""} agregado al carrito`);
   };

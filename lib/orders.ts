@@ -107,7 +107,7 @@ export async function findOrderByToken(token: string) {
 }
 
 export async function getOrderLines(orderId: string) {
-  const { data, error } = await adminSupabase().from("order_items").select("name,size,quantity,unit_price,line_total").eq("order_id", orderId);
+  const { data, error } = await adminSupabase().from("order_items").select("product_id,name,size,quantity,unit_price,line_total").eq("order_id", orderId);
   if (error) throw new Error("No pudimos consultar el detalle del pedido.");
   return data || [];
 }

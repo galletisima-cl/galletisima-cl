@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { CART_UPDATED_EVENT, CartItem, clearCart, readCartItems, removeCartItem, updateCartQuantity } from "../lib/cart";
+import { trackMetaEvent } from "../lib/meta-pixel";
 import { createClient } from "../lib/supabase/client";
 import { createWhatsappUrl } from "../lib/whatsapp";
 import WebpayButton from "./WebpayButton";
@@ -12,6 +13,7 @@ const currency = new Intl.NumberFormat("es-CL", { style: "currency", currency: "
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [items, setItems] = useState<CartItem[]>([]);
   const [whatsapp, setWhatsapp] = useState("56975265959");
+  const viewCartTracked = useRef(false);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
 
   useEffect(() => {
@@ -32,6 +34,23 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
     window.addEventListener("keydown", escape);
     return () => { window.clearTimeout(openSync); document.body.style.overflow = previous; window.removeEventListener("keydown", escape); };
   }, [open, onClose]);
+
+  useEffect(() => {
+    if (!open) {
+      viewCartTracked.current = false;
+      return;
+    }
+    if (viewCartTracked.current || !items.length) return;
+    trackMetaEvent("ViewCart", {
+      content_ids: items.map((item) => item.productId),
+      contents: items.map((item) => ({ id: item.productId, quantity: item.quantity, item_price: item.price })),
+      content_type: "product",
+      currency: "CLP",
+      num_items: items.reduce((count, item) => count + item.quantity, 0),
+      value: total,
+    });
+    viewCartTracked.current = true;
+  }, [items, open, total]);
 
   if (!open) return null;
   const message = ["Hola Galletísima, quiero realizar este pedido:", "", ...items.map((item) => `• ${item.quantity} × ${item.name}${item.size ? ` (${item.size})` : ""} — ${currency.format(item.price * item.quantity)}`), "", `Subtotal de productos: ${currency.format(total)}`, "Descuentos y despacho por confirmar."].join("\n");
