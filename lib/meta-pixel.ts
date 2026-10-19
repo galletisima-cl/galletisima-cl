@@ -33,6 +33,8 @@ export type MetaCartEventData = {
   value: number;
 };
 
+export type MetaBrowserEventName = "ViewCart" | "AddToCart" | "InitiateCheckout";
+
 // Only the live storefront reports visits. Payment and tracking URLs can carry
 // private order tokens, and administrative activity is not customer traffic.
 export function shouldTrackMetaPixel(hostname: string, pathname: string) {
@@ -82,11 +84,27 @@ export function trackMetaPageView() {
   window.fbq?.("trackSingle", META_PIXEL_ID, "PageView");
 }
 
-export function trackMetaEvent(eventName: "ViewCart" | "AddToCart" | "InitiateCheckout", data: MetaCartEventData) {
+export function trackMetaEvent(eventName: MetaBrowserEventName, data: MetaCartEventData) {
   if (!shouldTrackMetaPixel(window.location.hostname, window.location.pathname)) return;
   if (!initializeMetaPixel()) return;
-  if (eventName === "ViewCart") window.fbq?.("trackSingleCustom", META_PIXEL_ID, eventName, data);
-  else window.fbq?.("trackSingle", META_PIXEL_ID, eventName, data);
+  const eventId = crypto.randomUUID();
+  if (eventName === "ViewCart") window.fbq?.("trackSingleCustom", META_PIXEL_ID, eventName, data, { eventID: eventId });
+  else window.fbq?.("trackSingle", META_PIXEL_ID, eventName, data, { eventID: eventId });
+  void fetch("/api/meta/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      event_name: eventName,
+      event_id: eventId,
+      event_source_url: `${window.location.origin}${window.location.pathname}`,
+      custom_data: data,
+    }),
+    keepalive: true,
+  }).then(async (response) => {
+    if (!response.ok) console.error("Meta Conversions API rechazó el evento", eventName, response.status, await response.text());
+  }).catch((error: unknown) => {
+    console.error("No se pudo enviar el evento a Meta Conversions API", eventName, error);
+  });
 }
 
 export function trackMetaPurchase(orderId: string, data: MetaCartEventData) {

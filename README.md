@@ -71,6 +71,21 @@ desde el primer intento: un administrador debe revisar en Resend la clave
 reenviar. No borrar `email_payload` ni `first_attempt_at` sin confirmar primero
 si el proveedor aceptó el mensaje, porque podría producir duplicados.
 
+## Eventos de Meta
+
+El píxel del navegador registra `PageView`, `ViewCart`, `AddToCart`,
+`InitiateCheckout` y `Purchase`. Los eventos de carrito y compra también se
+envían desde el servidor mediante Conversions API y comparten `event_id` con el
+navegador para que Meta los deduplique. Para activarlo, configura
+`META_CONVERSIONS_ACCESS_TOKEN` como secreto del servidor en el entorno de
+producción; nunca uses el prefijo `NEXT_PUBLIC_`. `META_GRAPH_API_VERSION`
+opcionalmente selecciona la versión de Graph API y por defecto usa `v25.0`.
+`META_TEST_EVENT_CODE` es opcional y debe quitarse después de validar los
+eventos en **Probar eventos**, porque Meta trata esos eventos como pruebas.
+Los datos de correo y teléfono de compras se normalizan y cifran con SHA-256
+antes de enviarse; la dirección IP, el agente de usuario y las cookies `_fbp`
+y `_fbc` se envían para mejorar la coincidencia.
+
 ## Galería de Instagram
 
 La portada muestra hasta 12 publicaciones, con seis imágenes visibles en

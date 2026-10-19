@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import ClearPaidCart from "../../../components/ClearPaidCart";
 import MetaPurchase from "../../../components/MetaPurchase";
+import { getMetaEventSourceUrl, sendMetaConversionEvent } from "../../../lib/meta-conversions";
 import { getWebpayEnvironment, getWebpayTransaction } from "../../../lib/webpay";
 import { sendOrderEmails } from "../../../lib/email";
 import { findOrderByToken, getOrderLines, markOrderEmailSent, updateOrderPayment, type StoredOrder } from "../../../lib/orders";
@@ -16,6 +18,7 @@ function valueOf(value: string | string[] | undefined) {
 
 export default async function PaymentResultPage({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
+  const requestHeaders = await headers();
   const token = valueOf(params.token_ws);
   const wasCancelled = Boolean(valueOf(params.TBK_TOKEN) || valueOf(params.TBK_ORDEN_COMPRA));
   let result: Record<string, unknown> | null = null;
@@ -45,6 +48,27 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
           }));
         } catch (linesError) {
           console.error("Pago confirmado, pero no se pudo consultar el detalle del pedido", linesError);
+        }
+        try {
+          await sendMetaConversionEvent({
+            eventName: "Purchase",
+            eventId: order.buy_order,
+            eventSourceUrl: getMetaEventSourceUrl(requestHeaders, "/pago/resultado"),
+            customData: {
+              content_ids: purchaseItems.map((item) => item.id),
+              contents: purchaseItems,
+              content_type: "product",
+              currency: "CLP",
+              num_items: purchaseItems.reduce((count, item) => count + item.quantity, 0),
+              value: order.total,
+              order_id: order.buy_order,
+            },
+            headers: requestHeaders,
+            email: order.buyer_email,
+            phone: order.buyer_phone,
+          });
+        } catch (metaError) {
+          console.error("Pago confirmado, pero no se pudo enviar Purchase a Meta Conversions API", metaError);
         }
         if (!order.email_sent_at && lines) {
           try {
