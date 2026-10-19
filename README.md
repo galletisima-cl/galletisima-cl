@@ -74,9 +74,11 @@ si el proveedor aceptó el mensaje, porque podría producir duplicados.
 ## Eventos de Meta
 
 El píxel del navegador registra `PageView`, `ViewCart`, `AddToCart`,
-`InitiateCheckout` y `Purchase`. Los eventos de carrito y compra también se
-envían desde el servidor mediante Conversions API y comparten `event_id` con el
-navegador para que Meta los deduplique. Para activarlo, configura
+`InitiateCheckout` y `Purchase`. Los eventos de carrito se envían desde el
+navegador y el servidor mediante Conversions API, y comparten `event_id` para
+que Meta los deduplique. `Purchase` se envía solo desde el servidor después de
+confirmar el pago, evitando compartir con Meta el token privado de retorno de
+Webpay que puede estar en la URL del navegador. Para activar Conversions API, configura
 `META_CONVERSIONS_ACCESS_TOKEN` como secreto del servidor en el entorno de
 producción; nunca uses el prefijo `NEXT_PUBLIC_`. `META_GRAPH_API_VERSION`
 opcionalmente selecciona la versión de Graph API y por defecto usa `v25.0`.

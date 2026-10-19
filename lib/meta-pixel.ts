@@ -43,7 +43,6 @@ export function shouldTrackMetaPixel(hostname: string, pathname: string) {
       || ["/checkout", "/contacto", "/terminos-y-condiciones", "/politica-de-reembolso", "/politica-de-privacidad"].includes(pathname));
 }
 let initialized = false;
-const trackedPurchases = new Set<string>();
 
 function initializeMetaPixel() {
   if (!["galletisima.cl", "www.galletisima.cl"].includes(window.location.hostname)) return false;
@@ -105,22 +104,4 @@ export function trackMetaEvent(eventName: MetaBrowserEventName, data: MetaCartEv
   }).catch((error: unknown) => {
     console.error("No se pudo enviar el evento a Meta Conversions API", eventName, error);
   });
-}
-
-export function trackMetaPurchase(orderId: string, data: MetaCartEventData) {
-  if (window.location.pathname !== "/pago/resultado" || !initializeMetaPixel()) return;
-  if (trackedPurchases.has(orderId)) return;
-  const storageKey = `meta-purchase-tracked-${orderId}`;
-  try {
-    if (window.localStorage.getItem(storageKey)) return;
-  } catch (error) {
-    console.error("No se pudo verificar la deduplicación del evento Purchase de Meta", error);
-  }
-  trackedPurchases.add(orderId);
-  window.fbq?.("trackSingle", META_PIXEL_ID, "Purchase", { ...data, order_id: orderId }, { eventID: orderId });
-  try {
-    window.localStorage.setItem(storageKey, "true");
-  } catch (error) {
-    console.error("No se pudo guardar la deduplicación del evento Purchase de Meta", error);
-  }
 }
