@@ -679,7 +679,7 @@ export default function Home() {
 
       <section className="all-categories-section shell" aria-labelledby="all-categories-title">
         <p className="eyebrow">TODAS LAS COLECCIONES</p><h2 id="all-categories-title">Encuentra tu molde perfecto</h2>
-        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><span>{image ? <img src={image} alt="" loading="lazy" /> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
+        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}<img src={image} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
       </section>
 
       <InstagramFeed profileUrl={instagramUrl} />
@@ -696,9 +696,10 @@ export default function Home() {
         </div>
         <p className="catalog-count">{filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}</p>
         <div className="product-grid">
-          {pageProducts.map((product) => {
+          {pageProducts.map((product, productIndex) => {
             return <article className="product-card" key={product.id}>
-              <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`} style={{ backgroundImage: product.image_url ? `url(${product.image_url})` : undefined }}>
+              <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`}>
+                {product.image_url && <img src={product.image_url} alt="" loading={productIndex < 4 ? "eager" : "lazy"} decoding="async" />}
                 {product.featured && <span className="tag">favorito</span>}
               </Link>
               <div className="product-info">
