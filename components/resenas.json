@@ -1,0 +1,13 @@
+[
+  { "id": "resena-09", "orden": 1,  "publicar": true,  "titulo": "Listas para las galletas navideñas",        "video": "/resenas/resena-09.mp4", "poster": "/resenas/resena-09.webp" },
+  { "id": "resena-05", "orden": 2,  "publicar": true,  "titulo": "Llegaron mis moldes, con regalito incluido", "video": "/resenas/resena-05.mp4", "poster": "/resenas/resena-05.webp" },
+  { "id": "resena-08", "orden": 3,  "publicar": true,  "titulo": "Estoy demasiado feliz con los cortadores",   "video": "/resenas/resena-08.mp4", "poster": "/resenas/resena-08.webp" },
+  { "id": "resena-02", "orden": 4,  "publicar": true,  "titulo": "Los moldes soñados",                         "video": "/resenas/resena-02.mp4", "poster": "/resenas/resena-02.webp" },
+  { "id": "resena-03", "orden": 5,  "publicar": true,  "titulo": "Kit de Halloween: ¡qué maravilla!",          "video": "/resenas/resena-03.mp4", "poster": "/resenas/resena-03.webp" },
+  { "id": "resena-04", "orden": 6,  "publicar": true,  "titulo": "Súper recomendado, se vienen más cositas",   "video": "/resenas/resena-04.mp4", "poster": "/resenas/resena-04.webp" },
+  { "id": "resena-07", "orden": 7,  "publicar": true,  "titulo": "Más altos, más fáciles de levantar",         "video": "/resenas/resena-07.mp4", "poster": "/resenas/resena-07.webp" },
+  { "id": "resena-11", "orden": 8,  "publicar": true,  "titulo": "Se desmoldan muy fácil",                     "video": "/resenas/resena-11.mp4", "poster": "/resenas/resena-11.webp" },
+  { "id": "resena-10", "orden": 9,  "publicar": true,  "titulo": "Recomendadas desde Valdivia",                "video": "/resenas/resena-10.mp4", "poster": "/resenas/resena-10.webp" },
+  { "id": "resena-01", "orden": 10, "publicar": true,  "titulo": "Llegaron rapidísimo a Valdivia",             "video": "/resenas/resena-01.mp4", "poster": "/resenas/resena-01.webp" },
+  { "id": "resena-06", "orden": 11, "publicar": false, "titulo": "Mensajes que me alegran la vida",            "video": "/resenas/resena-06.mp4", "poster": "/resenas/resena-06.webp" }
+]

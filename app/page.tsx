@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import CartDrawer from "../components/CartDrawer";
 import MobileCategoryAccordions from "../components/MobileCategoryAccordions";
 import InstagramFeed from "../components/InstagramFeed";
+import ClientasFelices from "../components/ClientasFelices";
 import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
@@ -700,7 +701,7 @@ export default function Home() {
         <p className="catalog-count">{filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}</p>
         <div className="product-grid">
           {pageProducts.map((product, productIndex) => {
-            return <article className="product-card" key={product.id}>
+            return <article className="product-card" data-reveal data-reveal-delay={String((productIndex % 5) * 60)} key={product.id}>
               <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`}>
                 {product.image_url && <img src={product.image_url} alt="" loading={productIndex < 4 ? "eager" : "lazy"} decoding="async" />}
                 {product.featured && <span className="tag">favorito</span>}
@@ -723,6 +724,8 @@ export default function Home() {
           <div><span><svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 27S5 20.6 5 12.7A6.2 6.2 0 0 1 16 8.8a6.2 6.2 0 0 1 11 3.9C27 20.6 16 27 16 27Z"/><path d="M16 11.5v8M12 15.5h8"/></svg></span><p>Hechos para inspirar<br/><b>tus creaciones</b></p></div>
         </div>
       </section>
+
+      <ClientasFelices />
 
       {showBackToTop && <button className="back-to-top" type="button" onClick={returnToTop} aria-label="Volver al inicio"><span aria-hidden="true">↑</span> Subir</button>}
     </main>

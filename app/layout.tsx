@@ -3,12 +3,14 @@ import { Suspense } from "react";
 import { Fredoka, Nunito } from "next/font/google";
 import { createClient } from "@supabase/supabase-js";
 import "./globals.css";
+import "./animaciones.css";
 import "./admin/admin.css";
 import "./admin/orders.css";
 import "./admin/discounts.css";
 import "./admin/emails.css";
 import PublicFooter from "../components/PublicFooter";
 import MetaPixel from "../components/MetaPixel";
+import { ScrollReveal } from "../components/Reveal";
 
 const fredoka = Fredoka({ subsets: ["latin", "latin-ext"], weight: "variable", variable: "--font-title", display: "swap" });
 const nunito = Nunito({ subsets: ["latin", "latin-ext"], weight: "variable", variable: "--font-body", display: "swap" });
@@ -51,5 +53,5 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     "--initial-hero-desktop": heroImages.desktop ? `url(${heroImages.desktop})` : "none",
     "--initial-hero-mobile": heroImages.mobile ? `url(${heroImages.mobile})` : "none",
   } as React.CSSProperties;
-  return <html lang="es"><body className={`${nunito.variable} ${fredoka.variable}`} style={initialHeroStyles}>{children}<PublicFooter /><Suspense fallback={null}><MetaPixel /></Suspense></body></html>;
+  return <html lang="es"><body className={`${nunito.variable} ${fredoka.variable}`} style={initialHeroStyles}><ScrollReveal />{children}<PublicFooter /><Suspense fallback={null}><MetaPixel /></Suspense></body></html>;
 }
