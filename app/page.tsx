@@ -533,6 +533,7 @@ export default function Home() {
   const closeCart = useCallback(() => setCartOpen(false), []);
   const seasonalCategory = publicCategories.find((category) => category.id === seasonalCategoryId) || publicCategories.find((category) => /fiestas patrias/i.test(category.name));
   const gingerProducts = allProducts.filter((product) => /jengibre/i.test(product.name) && product.image_url);
+  useContinuousCarousel(gingerCarouselRef, gingerProducts.length);
   const seasonalProducts = seasonalCategory ? allProducts.filter((product) => product.product_categories?.some((link) => link.category_id === seasonalCategory.id) && product.image_url) : [];
   const collectionSections = [
     { id: "celebrations", title: "Celebraciones", eyebrow: "CELEBRA A TU MANERA", labelMatcher: /celebr/i },
@@ -658,8 +659,8 @@ export default function Home() {
               <button type="button" aria-label="Ver productos anteriores de jengibre" onClick={() => moveCarousel(gingerCarouselRef.current, -420)}>←</button>
               <button type="button" aria-label="Ver más productos de jengibre" onClick={() => moveCarousel(gingerCarouselRef.current, 420)}>→</button>
             </div>
-            <div className="category-carousel" ref={gingerCarouselRef} aria-label="Productos de jengibre">
-              {gingerProducts.map((product) => <Link className="category-carousel-card" key={product.id} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>)}
+            <div className="category-carousel continuous-carousel" ref={gingerCarouselRef} aria-label="Productos de jengibre">
+              {[0, 1, 2].flatMap((copy) => gingerProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
             </div>
           </div>
         </section>
