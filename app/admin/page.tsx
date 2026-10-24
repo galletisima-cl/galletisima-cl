@@ -7,6 +7,7 @@ import AdminOrdersPanel from "../../components/AdminOrdersPanel";
 import AdminShippingPanel from "../../components/AdminShippingPanel";
 import AdminDiscountsPanel from "../../components/AdminDiscountsPanel";
 import AdminInstagramPanel from "../../components/AdminInstagramPanel";
+import AdminEmailsPanel from "../../components/AdminEmailsPanel";
 import { createClient } from "../../lib/supabase/client";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS, type HeroContent } from "../../lib/hero-content";
 import type { CsvImportProduct } from "../../lib/product-csv-import";
@@ -93,6 +94,7 @@ const nav = [
   "Clientes",
   "Envíos",
   "Descuentos",
+  "Correos",
   "Configuración",
 ].map((label) => [<AdminNavIcon key={label} name={label} />, label] as const);
 function AdminNavIcon({ name }: { name: string }) {
@@ -149,6 +151,8 @@ function AdminNavIcon({ name }: { name: string }) {
     );
   if (name === "Descuentos")
     return <svg viewBox="0 0 24 24" {...p}><path d="m4 4 8-.5L21 12l-9 9-8.5-9L4 4Z"/><circle cx="8" cy="8" r="1"/><path d="m10 16 6-6"/></svg>;
+  if (name === "Correos")
+    return <svg viewBox="0 0 24 24" {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m4 7 8 6 8-6"/></svg>;
   if (name === "Envíos")
     return (
       <svg viewBox="0 0 24 24" {...p}>
@@ -867,7 +871,8 @@ export default function AdminPage() {
         )}{" "}
         {view === "Envíos" && <AdminShippingPanel notify={setNotice} fail={setError} />}{" "}
         {view === "Descuentos" && <AdminDiscountsPanel products={products} notify={setNotice} fail={setError} />}{" "}
-        {!["Resumen", "Pedidos", "Productos", "Categorías", "Banners", "Envíos", "Descuentos", "Configuración"].includes(
+        {view === "Correos" && <AdminEmailsPanel notify={setNotice} fail={setError} />}{" "}
+        {!["Resumen", "Pedidos", "Productos", "Categorías", "Banners", "Envíos", "Descuentos", "Correos", "Configuración"].includes(
           view,
         ) && (
           <section className="panel empty-state">
