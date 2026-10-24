@@ -33,56 +33,34 @@ export default function HowToOrderPage() {
 
   const whatsappUrl = createWhatsappUrl(whatsappNumber, "Hola! Quiero pedir un cortador personalizado. Te envío mi idea:");
 
-  return <main className="contact-page">
+  return <main className="howto-page">
     <PublicHeader />
 
-    <section className="contact-hero">
-      <div className="shell">
-        <p className="eyebrow">MOLDES A TU MEDIDA</p>
-        <h1>Cómo pedir tu cortador personalizado</h1>
-        <div className="title-line" />
-        <p className="contact-intro">Si tu idea no está en el catálogo, la diseñamos contigo. El modelado 3D no tiene costo adicional.</p>
-      </div>
+    <section className="howto-hero shell">
+      <p className="eyebrow">MOLDES A TU MEDIDA</p>
+      <h1>Cómo pedir tu cortador personalizado</h1>
+      <p className="howto-intro">Si tu idea no está en el catálogo, la diseñamos contigo. El modelado 3D no tiene costo adicional.</p>
+      <a className="button primary" href={whatsappUrl} target="_blank" rel="noreferrer">Enviar mi idea por WhatsApp <span>→</span></a>
     </section>
 
-    <section className="contact-grid shell" aria-label="Pasos para pedir">
-      {STEPS.map((step, index) => <article className="contact-card" key={step.title}>
-        <span className="contact-icon" aria-hidden="true">{index + 1}</span>
+    <section className="howto-steps shell" aria-label="Pasos para pedir">
+      {STEPS.map((step, index) => <article className="howto-step" key={step.title}>
+        <span className="howto-number" aria-hidden="true">{index + 1}</span>
         <h2>{step.title}</h2>
         <p>{step.text}</p>
       </article>)}
     </section>
 
-    <section className="section shell" aria-labelledby="sizes-title">
-      <p className="eyebrow catalog-eyebrow">PRECIOS BASE</p>
-      <h2 id="sizes-title">Tamaños de cortador</h2>
-      <div className="title-line" />
-      <div className="contact-grid">
-        {SIZES.map((item) => <article className="contact-card" key={item.size}>
-          <h2>{item.size}</h2>
-          <p><strong>{item.price}</strong></p>
-        </article>)}
+    <section className="howto-info shell" aria-label="Tamaños, envío y pagos">
+      <div className="howto-sizes">
+        <h2>Tamaños y precios base</h2>
+        <ul>{SIZES.map((item) => <li key={item.size}><span>{item.size}</span><strong>{item.price}</strong></li>)}</ul>
       </div>
-    </section>
-
-    <section className="section shell" aria-labelledby="shipping-title">
-      <p className="eyebrow catalog-eyebrow">ENVÍOS Y PAGOS</p>
-      <h2 id="shipping-title">Antes de pedir</h2>
-      <div className="title-line" />
-      <div className="contact-grid">
-        <article className="contact-card">
-          <h2>Envío</h2>
-          <p>Despachamos por BlueExpress a todo Chile con tarifa fija de $3.500.</p>
-        </article>
-        <article className="contact-card">
-          <h2>Formas de pago</h2>
-          <p>Webpay y Mercado Pago en la web, o transferencia bancaria coordinada por WhatsApp.</p>
-        </article>
+      <div className="howto-notes">
+        <p><b>Envío:</b> BlueExpress a todo Chile con tarifa fija de $3.500.</p>
+        <p><b>Pago:</b> Webpay y Mercado Pago en la web, o transferencia coordinada por WhatsApp.</p>
       </div>
-      <p style={{ textAlign: "center", marginTop: 32 }}>
-        <a className="button primary" href={whatsappUrl} target="_blank" rel="noreferrer">Enviar mi idea por WhatsApp <span>→</span></a>
-      </p>
-      <p style={{ textAlign: "center", marginTop: 16 }}><Link href="/?ver=todos#catalogo">O mira primero el catálogo completo →</Link></p>
+      <p className="howto-catalog"><Link href="/?ver=todos#catalogo">O mira primero el catálogo completo →</Link></p>
     </section>
   </main>;
 }
