@@ -24,7 +24,9 @@ export default function MobileCategoryAccordions({ categories, linkCategories, c
   });
   const fallbackGroup = (category: Category) => celebrations.some((term) => category.slug.includes(term)) ? "celebrations" : characters.some((term) => category.slug.includes(term)) ? "characters" : "themes";
   const navLink = (id: string) => navigation.links?.find((item) => item.id === id) || defaultLinks.find((item) => item.id === id)!;
-  const itemOrder = navigation.itemOrder || defaultNavigation.itemOrder!;
+  const baseOrder = navigation.itemOrder || defaultNavigation.itemOrder!;
+  // "Más" siempre va al final del menú.
+  const itemOrder = [...baseOrder.filter((entry) => entry !== "link:more"), ...baseOrder.filter((entry) => entry === "link:more")];
   const accordion = (key: string, title: string, items: Category[]) => {
     const expanded = open === key;
     return <section className={`drawer-group ${expanded ? "open" : ""}`} key={key}><button type="button" aria-expanded={expanded} aria-controls={`mobile-group-${key}`} onClick={() => setOpen(expanded ? null : key)}><span>{title}</span><i aria-hidden="true">⌄</i></button><div id={`mobile-group-${key}`} hidden={!expanded}>{items.map((category) => <a key={category.id} href={`/categoria/${encodeURIComponent(category.slug)}`} onClick={close}>{label(category.name)}</a>)}</div></section>;
