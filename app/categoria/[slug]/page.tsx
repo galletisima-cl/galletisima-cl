@@ -26,6 +26,10 @@ const currency = new Intl.NumberFormat("es-CL", {
   maximumFractionDigits: 0,
 });
 
+function displayCategory(name: string) {
+  return name.replace(/^todo\s+/i, "");
+}
+
 function readSlug(value: string | string[] | undefined) {
   const raw = Array.isArray(value) ? value[0] : value || "";
   try { return decodeURIComponent(raw); } catch { return raw; }
@@ -73,7 +77,7 @@ export default function CategoryPage() {
   }, [slug]);
 
   useEffect(() => {
-    if (category) document.title = `${category.name} | Galletísima`;
+    if (category) document.title = `${displayCategory(category.name)} | Galletísima`;
   }, [category]);
 
   const visibleProducts = useMemo(() => {
@@ -113,12 +117,12 @@ export default function CategoryPage() {
     <PublicHeader />
     <section className="section catalog-section shell">
       <p className="eyebrow catalog-eyebrow">COLECCIÓN</p>
-      <h1 style={{ margin: 0, textAlign: "center", fontSize: 28 }}>{category?.name || "Cargando…"}</h1>
+      <h1 style={{ margin: 0, textAlign: "center", fontSize: 28 }}>{category ? displayCategory(category.name) : "Cargando…"}</h1>
       <div className="title-line" />
       <div ref={gridTop} />
       {status === "loading" ? <div className="catalog-loader"><span>Cargando productos…</span></div> : <>
         <div className="catalog-filters">
-          <label className="catalog-search"><span>Buscar en {category?.name}</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nombre del molde…" /></label>
+          <label className="catalog-search"><span>Buscar en {category ? displayCategory(category.name) : "la categoría"}</span><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Nombre del molde…" /></label>
           <label><span>Ordenar</span><select value={sort} onChange={(event) => { setSort(event.target.value); setPage(1); }}><option value="name-asc">Nombre A–Z</option><option value="name-desc">Nombre Z–A</option><option value="price-asc">Precio menor a mayor</option><option value="price-desc">Precio mayor a menor</option></select></label>
           <Link className="button secondary" href="/?ver=todos#catalogo">Ver todo el catálogo</Link>
         </div>

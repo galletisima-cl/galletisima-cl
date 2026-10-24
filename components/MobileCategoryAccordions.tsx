@@ -12,7 +12,7 @@ const celebrations = ["navidad", "baby-shower", "halloween", "ninos", "niños", 
 const characters = ["toy", "snoopy", "stitch", "pokemon", "bluey", "gabby", "marvel", "pooh", "disney", "bob-esponja", "pawpatrol", "spiderman", "lilo", "netflix"];
 
 function label(name: string) {
-  return name;
+  return name.replace(/^todo\s+/i, "");
 }
 
 export default function MobileCategoryAccordions({ categories, close, navigation = defaultNavigation }: { categories: Category[]; close: () => void; navigation?: NavigationConfig }) {
@@ -42,7 +42,7 @@ export default function MobileCategoryAccordions({ categories, close, navigation
     if (!link) return null;
     if (id === "more") {
       const expanded = open === entry;
-      return <section className={`drawer-group ${expanded ? "open" : ""}`} key={entry}><button type="button" aria-expanded={expanded} aria-controls="mobile-group-more" onClick={() => setOpen(expanded ? null : entry)}><span>{link.label}</span><i aria-hidden="true">⌄</i></button><div id="mobile-group-more" hidden={!expanded}><Link href="/seguimiento" onClick={close}>Seguimiento de pedido</Link><Link href="/contacto" onClick={close}>Contacto</Link><Link href="/terminos-y-condiciones" onClick={close}>Términos y Condiciones</Link><Link href="/politica-de-reembolso" onClick={close}>Política de reembolso</Link><Link href="/politica-de-privacidad" onClick={close}>Política de privacidad</Link></div></section>;
+      return <section className={`drawer-group ${expanded ? "open" : ""}`} key={entry}><button type="button" aria-expanded={expanded} aria-controls="mobile-group-more" onClick={() => setOpen(expanded ? null : entry)}><span>{link.label}</span><i aria-hidden="true">⌄</i></button><div id="mobile-group-more" hidden={!expanded}><Link href="/como-pedir" onClick={close}>Cómo pedir personalizado</Link><Link href="/seguimiento" onClick={close}>Seguimiento de pedido</Link><Link href="/contacto" onClick={close}>Contacto</Link><Link href="/terminos-y-condiciones" onClick={close}>Términos y Condiciones</Link><Link href="/politica-de-reembolso" onClick={close}>Política de reembolso</Link><Link href="/politica-de-privacidad" onClick={close}>Política de privacidad</Link></div></section>;
     }
     const assigned = ordered.filter((category) => navigation.categoryMenu[category.id] === entry);
     if (id !== "home" && assigned.length) return accordion(entry, link.label, assigned);

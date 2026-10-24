@@ -34,7 +34,7 @@ const groupMatchers = {
 };
 
 function displayCategory(name: string) {
-  return name;
+  return name.replace(/^todo\s+/i, "");
 }
 
 function categoryHref(slug: string) {
@@ -565,7 +565,7 @@ export default function Home() {
               const id = entry.slice(5), link = navLink(id);
               const assignedCategories = orderedCategories.filter((category) => navigationConfig.categoryMenu[category.id] === entry);
               if (id !== "home" && assignedCategories.length) return <DesktopCategoryMenu key={entry} label={link.label} menuKey={entry} categories={assignedCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= publicNavOrder.length - 2} />;
-              if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="mega-more"><div className="mega-links"><Link href="/seguimiento" onClick={() => setOpenDesktopMenu(null)}>Seguimiento de pedido <span>→</span></Link><Link href="/contacto" onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><Link href="/terminos-y-condiciones" onClick={() => setOpenDesktopMenu(null)}>Términos y Condiciones <span>→</span></Link><Link href="/politica-de-reembolso" onClick={() => setOpenDesktopMenu(null)}>Política de reembolso <span>→</span></Link><Link href="/politica-de-privacidad" onClick={() => setOpenDesktopMenu(null)}>Política de privacidad <span>→</span></Link></div></div>}</div>;
+              if (id === "more") return <div className="mega-menu align-right" key={entry}><button className="nav-pill" type="button" aria-expanded={openDesktopMenu === "more"} aria-controls="mega-more" onClick={() => setOpenDesktopMenu(openDesktopMenu === "more" ? null : "more")}>{link.label} <span aria-hidden="true">⌄</span></button>{openDesktopMenu === "more" && <div className="mega-panel more-panel" id="mega-more"><div className="mega-links"><Link href="/como-pedir" onClick={() => setOpenDesktopMenu(null)}>Cómo pedir personalizado <span>→</span></Link><Link href="/seguimiento" onClick={() => setOpenDesktopMenu(null)}>Seguimiento de pedido <span>→</span></Link><Link href="/contacto" onClick={() => setOpenDesktopMenu(null)}>Contacto <span>→</span></Link><Link href="/terminos-y-condiciones" onClick={() => setOpenDesktopMenu(null)}>Términos y Condiciones <span>→</span></Link><Link href="/politica-de-reembolso" onClick={() => setOpenDesktopMenu(null)}>Política de reembolso <span>→</span></Link><Link href="/politica-de-privacidad" onClick={() => setOpenDesktopMenu(null)}>Política de privacidad <span>→</span></Link></div></div>}</div>;
               return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""}`} href={link.href} onClick={id === "all" ? () => { setCategoryFilter(""); setCatalogPage(1); } : undefined}>{link.label}</Link>;
             }
             const menu = navigationConfig.menus.find((item) => `menu:${item.id}` === entry);
@@ -585,7 +585,7 @@ export default function Home() {
         </a>
         <div className="header-actions">
           <form className="header-search" onSubmit={(event) => { event.preventDefault(); setCatalogPage(1); document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-            <input type="search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Busque productos aquí..." aria-label="Buscar productos" />
+            <input type="search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Buscar productos…" aria-label="Buscar productos" />
             <button type="submit" aria-label="Buscar">⌕</button>
           </form>
           <button className="icon-button cart" aria-label={`Abrir carrito con ${cart} productos`} onClick={() => setCartOpen(true)}>
