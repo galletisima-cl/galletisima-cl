@@ -27,8 +27,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ disconnected: true }, { headers: noStore });
     }
     if (body?.action === "sync") {
-      await loadInstagramFeed(true);
-      return NextResponse.json({ refreshed: true }, { headers: noStore });
+      let detail = "";
+      await loadInstagramFeed(true, (reason) => { detail = reason; });
+      return NextResponse.json({ refreshed: true, ...(detail ? { detail } : {}) }, { headers: noStore });
     }
     if (body?.action !== "connect") return NextResponse.json({ error: "Acción inválida." }, { status: 400 });
     const provider = body.provider || "instagram";
