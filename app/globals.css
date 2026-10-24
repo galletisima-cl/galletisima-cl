@@ -2532,6 +2532,18 @@ form button {
   background: #ef4a86;
   border-color: #ef4a86;
 }
+.desktop-nav a.nav-custom {
+  background: #fff;
+  border: 2px solid #ef3e83;
+  color: #ef3e83;
+}
+.desktop-nav a.nav-custom:hover {
+  background: #ef3e83;
+  color: #fff;
+}
+.desktop-nav a.nav-custom:after {
+  display: none;
+}
 .mega-menu {
   position: relative;
 }
@@ -2801,6 +2813,13 @@ form button {
   }
   .drawer-all span {
     color: #fff;
+  }
+  .drawer-custom {
+    margin-bottom: 6px;
+    padding: 0 15px;
+    border: 2px solid #ef3e83;
+    border-radius: 11px;
+    color: #ef3e83;
   }
   .mobile-category-accordions {
     margin-top: 16px;

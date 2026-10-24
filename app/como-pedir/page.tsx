@@ -18,7 +18,7 @@ const STEPS = [
   { title: "Cuéntanos tu idea", text: "Envíanos por WhatsApp una imagen de referencia: puede ser de Pinterest, una foto o un boceto hecho a mano." },
   { title: "Elige el tamaño", text: "Dinos de cuántos centímetros quieres tu cortador. Si necesitas uno más grande que 14 cm, lo evaluamos a pedido." },
   { title: "Lo modelamos en 3D, sin costo", text: "Diseñamos tu cortador a medida y no te cobramos nada extra por el modelado." },
-  { title: "Lo fabricamos y te lo enviamos", text: "Trabajamos a pedido: la fabricación toma entre 3 y 5 días hábiles, y el envío por BlueExpress suma 1 a 2 días." },
+  { title: "Lo fabricamos y te lo enviamos", text: "Trabajamos a pedido: la fabricación toma entre 3 y 5 días hábiles, y el envío por BlueExpress suma 1 a 2 días más." },
 ];
 
 export default function HowToOrderPage() {
@@ -72,7 +72,7 @@ export default function HowToOrderPage() {
       <div className="contact-grid">
         <article className="contact-card">
           <h2>Envío</h2>
-          <p>Despachamos por BlueExpress a todo Chile, con tarifa fija de $3.500.</p>
+          <p>Despachamos por BlueExpress a todo Chile. El costo se calcula en el pago según tu comuna.</p>
         </article>
         <article className="contact-card">
           <h2>Formas de pago</h2>

@@ -350,6 +350,7 @@ export default function Home() {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const seasonalCarouselRef = useRef<HTMLDivElement>(null);
+  const gingerCarouselRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredProducts = useMemo(() => {
     const selectedCategory = catalogCategories.find((category) => category.slug === categoryFilter);
@@ -531,6 +532,7 @@ export default function Home() {
   const closeMobileMenu = () => setMenuOpen(false);
   const closeCart = useCallback(() => setCartOpen(false), []);
   const seasonalCategory = publicCategories.find((category) => category.id === seasonalCategoryId) || publicCategories.find((category) => /fiestas patrias/i.test(category.name));
+  const gingerProducts = allProducts.filter((product) => /jengibre/i.test(product.name) && product.image_url);
   const seasonalProducts = seasonalCategory ? allProducts.filter((product) => product.product_categories?.some((link) => link.category_id === seasonalCategory.id) && product.image_url) : [];
   const collectionSections = [
     { id: "celebrations", title: "Celebraciones", eyebrow: "CELEBRA A TU MANERA", labelMatcher: /celebr/i },
@@ -554,7 +556,7 @@ export default function Home() {
     <main>
       <div className="benefit-bar">
         <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6.75h11.5v10H3zM14.5 10h3.25L21 13.25v3.5h-6.5z"/><path d="M7.25 19a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Zm10.5 0a2.25 2.25 0 1 0 0-4.5 2.25 2.25 0 0 0 0 4.5Z"/></svg><b>Envíos a todo Chile</b></span>
-        <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 10.5-10.5M12.75 5.75l5.5 5.5M15.5 3l.6 1.9L18 5.5l-1.9.6-.6 1.9-.6-1.9-1.9-.6 1.9-.6.6-1.9ZM7 7l.45 1.55L9 9l-1.55.45L7 11l-.45-1.55L5 9l1.55-.45L7 7Z"/></svg><b>Moldes personalizados</b></span>
+        <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 10.5-10.5M12.75 5.75l5.5 5.5M15.5 3l.6 1.9L18 5.5l-1.9.6-.6 1.9-.6-1.9-1.9-.6 1.9-.6.6-1.9ZM7 7l.45 1.55L9 9l-1.55.45L7 11l-.45-1.55L5 9l1.55-.45L7 7Z"/></svg><b>Personalizados sin costo extra</b></span>
         <span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5.4c0 4.6-3.1 7.7-8 9.6-4.9-1.9-8-5-8-9.6V6l8-3Z"/><path d="m8.5 12 2.25 2.25L15.75 9"/></svg><b>Compra 100% segura</b></span>
       </div>
 
@@ -576,6 +578,7 @@ export default function Home() {
             });
             return <DesktopCategoryMenu key={menu.id} label={menu.label} menuKey={menu.id} categories={menuCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= navigationConfig.menus.length - 1} />;
           })}
+          <Link className="nav-pill nav-custom" href="/como-pedir">Personalizados ✦</Link>
         </nav>
         <button className="category-trigger" aria-label="Abrir categorías" aria-expanded={menuOpen} aria-controls="mobile-category-drawer" onClick={() => setMenuOpen(true)}>
           <span aria-hidden="true">☰</span>
@@ -585,7 +588,7 @@ export default function Home() {
         </a>
         <div className="header-actions">
           <form className="header-search" onSubmit={(event) => { event.preventDefault(); setCatalogPage(1); document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" }); }}>
-            <input type="search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Buscar productos…" aria-label="Buscar productos" />
+            <input type="search" value={productSearch} onChange={(event) => setProductSearch(event.target.value)} placeholder="Busca stitch, navidad, halloween…" aria-label="Buscar productos" />
             <button type="submit" aria-label="Buscar">⌕</button>
           </form>
           <button className="icon-button cart" aria-label={`Abrir carrito con ${cart} productos`} onClick={() => setCartOpen(true)}>
@@ -637,6 +640,26 @@ export default function Home() {
             </div>
             <div className="category-carousel seasonal-carousel continuous-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
               {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {gingerProducts.length > 0 && (
+        <section className="category-carousel-section ginger-section" aria-labelledby="ginger-title">
+          <div className="shell category-carousel-heading">
+            <div>
+              <p className="eyebrow">Especial de Navidad</p>
+              <h2 id="ginger-title">Casitas y galletas de jengibre</h2>
+            </div>
+          </div>
+          <div className="category-carousel-frame shell">
+            <div className="category-carousel-controls side-controls">
+              <button type="button" aria-label="Ver productos anteriores de jengibre" onClick={() => moveCarousel(gingerCarouselRef.current, -420)}>←</button>
+              <button type="button" aria-label="Ver más productos de jengibre" onClick={() => moveCarousel(gingerCarouselRef.current, 420)}>→</button>
+            </div>
+            <div className="category-carousel" ref={gingerCarouselRef} aria-label="Productos de jengibre">
+              {gingerProducts.map((product) => <Link className="category-carousel-card" key={product.id} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>)}
             </div>
           </div>
         </section>

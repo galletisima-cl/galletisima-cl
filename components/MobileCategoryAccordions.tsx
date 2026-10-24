@@ -28,7 +28,7 @@ export default function MobileCategoryAccordions({ categories, close, navigation
     const expanded = open === key;
     return <section className={`drawer-group ${expanded ? "open" : ""}`} key={key}><button type="button" aria-expanded={expanded} aria-controls={`mobile-group-${key}`} onClick={() => setOpen(expanded ? null : key)}><span>{title}</span><i aria-hidden="true">⌄</i></button><div id={`mobile-group-${key}`} hidden={!expanded}>{items.map((category) => <a key={category.id} href={`/categoria/${encodeURIComponent(category.slug)}`} onClick={close}>{label(category.name)}</a>)}</div></section>;
   };
-  return <div className="mobile-category-accordions">{itemOrder.map((entry) => {
+  return <div className="mobile-category-accordions"><Link className="drawer-direct drawer-custom" href="/como-pedir" onClick={close}>Personalizados ✦ <span>→</span></Link>{itemOrder.map((entry) => {
     if (entry.startsWith("menu:")) {
       const menuId = entry.slice(5);
       const menu = navigation.menus.find((item) => item.id === menuId);
