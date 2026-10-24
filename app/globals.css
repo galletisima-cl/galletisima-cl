@@ -2532,6 +2532,18 @@ form button {
   background: #ef4a86;
   border-color: #ef4a86;
 }
+.desktop-nav a.nav-custom {
+  background: #fff;
+  border: 2px solid #ef3e83;
+  color: #ef3e83;
+}
+.desktop-nav a.nav-custom:hover {
+  background: #ef3e83;
+  color: #fff;
+}
+.desktop-nav a.nav-custom:after {
+  display: none;
+}
 .mega-menu {
   position: relative;
 }
@@ -2801,6 +2813,13 @@ form button {
   }
   .drawer-all span {
     color: #fff;
+  }
+  .drawer-custom {
+    margin-bottom: 6px;
+    padding: 0 15px;
+    border: 2px solid #ef3e83;
+    border-radius: 11px;
+    color: #ef3e83;
   }
   .mobile-category-accordions {
     margin-top: 16px;
@@ -5296,4 +5315,119 @@ form button {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+/* Página "Cómo pedir": versión compacta */
+.howto-hero {
+  padding: 34px 0 20px;
+  text-align: center;
+}
+.howto-hero .eyebrow {
+  margin: 0 0 8px;
+}
+.howto-hero h1 {
+  margin: 0;
+  font-size: clamp(26px, 3.4vw, 40px);
+  font-weight: 400;
+  letter-spacing: -1px;
+}
+.howto-intro {
+  max-width: 640px;
+  margin: 10px auto 16px;
+  color: #62575c;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.howto-steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  padding-bottom: 22px;
+}
+.howto-step {
+  padding: 16px 18px;
+  border: 1px solid #f0e4e7;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 24px #71334a0d;
+}
+.howto-number {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: #fff1f5;
+  color: var(--pink);
+  font-size: 16px;
+  font-weight: 800;
+}
+.howto-step h2 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  line-height: 1.25;
+}
+.howto-step p {
+  margin: 0;
+  color: #62575c;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.howto-info {
+  padding-bottom: 40px;
+  text-align: center;
+}
+.howto-sizes h2 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+.howto-sizes ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.howto-sizes li {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: #fff1f5;
+  font-size: 13px;
+}
+.howto-sizes li strong {
+  color: var(--pink-dark);
+}
+.howto-notes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 26px;
+  margin-top: 14px;
+  color: #62575c;
+  font-size: 13px;
+}
+.howto-notes p,
+.howto-catalog {
+  margin: 0;
+}
+.howto-catalog {
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+}
+@media (max-width: 900px) {
+  .howto-steps {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 520px) {
+  .howto-steps {
+    grid-template-columns: 1fr;
+  }
 }

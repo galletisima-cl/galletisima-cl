@@ -12,7 +12,7 @@ const celebrations = ["navidad", "baby-shower", "halloween", "ninos", "niños", 
 const characters = ["toy", "snoopy", "stitch", "pokemon", "bluey", "gabby", "marvel", "pooh", "disney", "bob-esponja", "pawpatrol", "spiderman", "lilo", "netflix"];
 
 function label(name: string) {
-  return name;
+  return name.replace(/^todo\s+/i, "");
 }
 
 export default function MobileCategoryAccordions({ categories, close, navigation = defaultNavigation }: { categories: Category[]; close: () => void; navigation?: NavigationConfig }) {
@@ -26,9 +26,9 @@ export default function MobileCategoryAccordions({ categories, close, navigation
   const itemOrder = navigation.itemOrder || defaultNavigation.itemOrder!;
   const accordion = (key: string, title: string, items: Category[]) => {
     const expanded = open === key;
-    return <section className={`drawer-group ${expanded ? "open" : ""}`} key={key}><button type="button" aria-expanded={expanded} aria-controls={`mobile-group-${key}`} onClick={() => setOpen(expanded ? null : key)}><span>{title}</span><i aria-hidden="true">⌄</i></button><div id={`mobile-group-${key}`} hidden={!expanded}>{items.map((category) => <a key={category.id} href={`/?categoria=${encodeURIComponent(category.slug)}#catalogo`} onClick={close}>{label(category.name)}</a>)}</div></section>;
+    return <section className={`drawer-group ${expanded ? "open" : ""}`} key={key}><button type="button" aria-expanded={expanded} aria-controls={`mobile-group-${key}`} onClick={() => setOpen(expanded ? null : key)}><span>{title}</span><i aria-hidden="true">⌄</i></button><div id={`mobile-group-${key}`} hidden={!expanded}>{items.map((category) => <a key={category.id} href={`/categoria/${encodeURIComponent(category.slug)}`} onClick={close}>{label(category.name)}</a>)}</div></section>;
   };
-  return <div className="mobile-category-accordions">{itemOrder.map((entry) => {
+  return <div className="mobile-category-accordions"><Link className="drawer-direct drawer-custom" href="/como-pedir" onClick={close}>Personalizados ✦ <span>→</span></Link>{itemOrder.map((entry) => {
     if (entry.startsWith("menu:")) {
       const menuId = entry.slice(5);
       const menu = navigation.menus.find((item) => item.id === menuId);
@@ -42,7 +42,7 @@ export default function MobileCategoryAccordions({ categories, close, navigation
     if (!link) return null;
     if (id === "more") {
       const expanded = open === entry;
-      return <section className={`drawer-group ${expanded ? "open" : ""}`} key={entry}><button type="button" aria-expanded={expanded} aria-controls="mobile-group-more" onClick={() => setOpen(expanded ? null : entry)}><span>{link.label}</span><i aria-hidden="true">⌄</i></button><div id="mobile-group-more" hidden={!expanded}><Link href="/seguimiento" onClick={close}>Seguimiento de pedido</Link><Link href="/contacto" onClick={close}>Contacto</Link><Link href="/terminos-y-condiciones" onClick={close}>Términos y Condiciones</Link><Link href="/politica-de-reembolso" onClick={close}>Política de reembolso</Link><Link href="/politica-de-privacidad" onClick={close}>Política de privacidad</Link></div></section>;
+      return <section className={`drawer-group ${expanded ? "open" : ""}`} key={entry}><button type="button" aria-expanded={expanded} aria-controls="mobile-group-more" onClick={() => setOpen(expanded ? null : entry)}><span>{link.label}</span><i aria-hidden="true">⌄</i></button><div id="mobile-group-more" hidden={!expanded}><Link href="/como-pedir" onClick={close}>Cómo pedir personalizado</Link><Link href="/seguimiento" onClick={close}>Seguimiento de pedido</Link><Link href="/contacto" onClick={close}>Contacto</Link><Link href="/terminos-y-condiciones" onClick={close}>Términos y Condiciones</Link><Link href="/politica-de-reembolso" onClick={close}>Política de reembolso</Link><Link href="/politica-de-privacidad" onClick={close}>Política de privacidad</Link></div></section>;
     }
     const assigned = ordered.filter((category) => navigation.categoryMenu[category.id] === entry);
     if (id !== "home" && assigned.length) return accordion(entry, link.label, assigned);
