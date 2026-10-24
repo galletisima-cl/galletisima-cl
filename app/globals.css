@@ -5317,32 +5317,211 @@ form button {
   height: 100%;
 }
 
-/* Página "Cómo pedir": versión compacta */
-.howto-hero {
-  padding: 34px 0 20px;
-  text-align: center;
+/* Página "Cómo pedir / Personalizados": ficha ordenada, sin compra */
+.howto-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-block: 26px 0;
+  color: #7a6a71;
+  font-size: 13px;
+  font-weight: 700;
 }
-.howto-hero .eyebrow {
+.howto-breadcrumb a:hover {
+  color: var(--pink-dark);
+}
+.howto-breadcrumb span {
+  font-size: 9px;
+  color: #b58c9a;
+}
+.howto-breadcrumb strong {
+  color: #2b2226;
+}
+.howto-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(32px, 5vw, 72px);
+  align-items: start;
+  max-width: 1040px;
+  padding-block: 26px 56px;
+}
+.howto-photo {
+  position: sticky;
+  top: 90px;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid #f4e4e8;
+  border-radius: 24px;
+  background: #fdecee;
+  box-shadow: 0 24px 60px #6d2c4317;
+}
+.howto-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.howto-content .eyebrow {
   margin: 0 0 8px;
 }
-.howto-hero h1 {
-  margin: 0;
-  font-size: clamp(26px, 3.4vw, 40px);
+.howto-content h1 {
+  margin: 0 0 12px;
+  font-size: clamp(30px, 3.4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -1.5px;
   font-weight: 400;
-  letter-spacing: -1px;
 }
-.howto-intro {
-  max-width: 640px;
-  margin: 10px auto 16px;
-  color: #62575c;
-  font-size: 15px;
-  line-height: 1.5;
+.howto-price {
+  display: block;
+  color: var(--pink);
+  font-size: 26px;
+}
+.howto-price-note {
+  margin: 6px 0 0;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eddfe4;
+  color: #8a7a81;
+  font-size: 13px;
+}
+.howto-copy {
+  margin: 20px 0;
+}
+.howto-copy p {
+  margin: 0 0 14px;
+  color: #66565d;
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+.howto-copy .howto-copy-note {
+  margin: 0;
+  font-weight: 700;
+  color: #4d3f45;
+}
+.howto-callout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border: 1px solid #f9d6df;
+  border-radius: 14px;
+  background: #fff3f6;
+}
+.howto-callout svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.howto-callout p {
+  margin: 0;
+  color: #4d3f45;
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+.howto-label {
+  margin: 22px 0 10px;
+  color: #7a6a71;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.howto-sizes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.howto-sizes li {
+  min-width: 82px;
+  display: grid;
+  gap: 1px;
+  justify-items: center;
+  padding: 8px 14px;
+  border: 1px solid #eadde2;
+  border-radius: 12px;
+  background: #fff;
+}
+.howto-sizes li span {
+  font-size: 14px;
+  font-weight: 800;
+}
+.howto-sizes li small {
+  color: var(--pink-dark);
+  font-size: 12px;
+  font-weight: 700;
+}
+.howto-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 22px;
+}
+.howto-assurances {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid #f0e4e7;
+  border-radius: 16px;
+  background: #fffaf7;
+  box-shadow: 0 12px 30px #71334a0d;
+}
+.howto-assurances span {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 800;
+}
+.howto-assurances span:nth-child(odd) {
+  border-right: 1px solid #f0e4e7;
+}
+.howto-assurances span:nth-child(-n + 2) {
+  border-bottom: 1px solid #f0e4e7;
+}
+.howto-assurances svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--pink);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.howto-fineprint {
+  margin: 14px 2px 0;
+  color: #7a6a71;
+  font-size: 12.5px;
+  line-height: 1.6;
 }
 .howto-steps {
+  max-width: 1040px;
+  padding-bottom: 26px;
+  text-align: center;
+}
+.howto-steps-title {
+  margin: 0 0 18px;
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+}
+.howto-steps > div {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
-  padding-bottom: 22px;
+  text-align: left;
 }
 .howto-step {
   padding: 16px 18px;
@@ -5363,7 +5542,7 @@ form button {
   font-size: 16px;
   font-weight: 800;
 }
-.howto-step h2 {
+.howto-step h3 {
   margin: 0 0 4px;
   font-size: 16px;
   line-height: 1.25;
@@ -5374,60 +5553,35 @@ form button {
   font-size: 13px;
   line-height: 1.5;
 }
-.howto-info {
-  padding-bottom: 40px;
-  text-align: center;
-}
-.howto-sizes h2 {
-  margin: 0 0 10px;
-  font-size: 15px;
-}
-.howto-sizes ul {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.howto-sizes li {
-  display: flex;
-  gap: 8px;
-  align-items: baseline;
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: #fff1f5;
-  font-size: 13px;
-}
-.howto-sizes li strong {
-  color: var(--pink-dark);
-}
-.howto-notes {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 26px;
-  margin-top: 14px;
-  color: #62575c;
-  font-size: 13px;
-}
-.howto-notes p,
 .howto-catalog {
-  margin: 0;
-}
-.howto-catalog {
-  margin-top: 10px;
+  margin: 16px 0 0;
   font-size: 13px;
   font-weight: 700;
 }
 @media (max-width: 900px) {
-  .howto-steps {
+  .howto-detail {
+    grid-template-columns: 1fr;
+    padding-block: 18px 40px;
+  }
+  .howto-photo {
+    position: static;
+    aspect-ratio: 4 / 3;
+  }
+  .howto-steps > div {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 @media (max-width: 520px) {
-  .howto-steps {
+  .howto-steps > div {
     grid-template-columns: 1fr;
+  }
+  .howto-assurances {
+    grid-template-columns: 1fr;
+  }
+  .howto-assurances span:nth-child(odd) {
+    border-right: 0;
+  }
+  .howto-assurances span:not(:last-child) {
+    border-bottom: 1px solid #f0e4e7;
   }
 }
