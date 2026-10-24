@@ -10,6 +10,7 @@ import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
 import { createWhatsappUrl } from "../lib/whatsapp";
+import { thumbUrl } from "../lib/image-url";
 
 type Category = { id: string; name: string; slug: string };
 type CategoryFeatureBanner = { categoryId: string; imageUrl: string; mobileImageUrl?: string };
@@ -280,7 +281,7 @@ function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mob
         {[0, 1, 2].flatMap(copy => categories.map((category, index) => {
           const image = categoryImage(category);
           return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => onSelect(category.slug)}>
-            <picture>{mobileImages[category.id] && <source media="(max-width: 650px)" srcSet={mobileImages[category.id]} />}{image ? <Image src={image} alt={displayCategory(category.name)} width={260} height={220} unoptimized /> : <span className="category-image-placeholder">♡</span>}</picture>
+            <picture>{mobileImages[category.id] && <source media="(max-width: 650px)" srcSet={thumbUrl(mobileImages[category.id], 480)} />}{image ? <Image src={thumbUrl(image, 480)} alt={displayCategory(category.name)} width={260} height={220} unoptimized /> : <span className="category-image-placeholder">♡</span>}</picture>
             <strong>{displayCategory(category.name)}</strong><small>Ver colección →</small>
           </Link>;
         }))}
@@ -321,7 +322,7 @@ function FeaturedCategoryBanner({ banner, category, products, onSelect }: { bann
           aria-label={`Productos de ${displayCategory(category.name)}`}
         >
           {[0, 1, 2].flatMap((copy) => products.map((product, index) => <Link className="featured-product-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}>
-            <span><img src={product.image_url} alt={product.name} loading="lazy" /></span>
+            <span><img src={thumbUrl(product.image_url, 360)} alt={product.name} loading="lazy" decoding="async" /></span>
             <strong>{product.name}</strong>
             <small>desde {currency.format(product.price)}</small>
           </Link>))}
@@ -658,7 +659,7 @@ export default function Home() {
               <button type="button" aria-label="Ver más productos" onClick={() => moveCarousel(seasonalCarouselRef.current, 420)}>→</button>
             </div>
             <div className="category-carousel seasonal-carousel continuous-carousel" ref={seasonalCarouselRef} aria-label={`Productos de ${displayCategory(seasonalCategory.name)}`}>
-              {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={product.image_url} alt={product.name} loading="lazy" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
+              {[0, 1, 2].flatMap((copy) => seasonalProducts.map((product, index) => <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${product.id}`} href={`/producto/${product.slug}`}><picture><img src={thumbUrl(product.image_url, 480)} alt={product.name} loading="lazy" decoding="async" /></picture><strong>{product.name}</strong><small>Ver producto →</small></Link>))}
             </div>
           </div>
         </section>
@@ -679,7 +680,7 @@ export default function Home() {
 
       <section className="all-categories-section shell" aria-labelledby="all-categories-title">
         <p className="eyebrow">TODAS LAS COLECCIONES</p><h2 id="all-categories-title">Encuentra tu molde perfecto</h2>
-        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}<img src={image} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
+        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={thumbUrl(categoryMobileBannerUrls[category.id], 360)} />}<img src={thumbUrl(image, 360)} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
       </section>
 
       <InstagramFeed profileUrl={instagramUrl} />
@@ -699,7 +700,7 @@ export default function Home() {
           {pageProducts.map((product, productIndex) => {
             return <article className="product-card" key={product.id}>
               <Link className={`product-photo ${product.image_url ? "has-product-image" : ""}`} href={`/producto/${product.slug}`} aria-label={`Ver ${product.name}`}>
-                {product.image_url && <img src={product.image_url} alt="" loading={productIndex < 4 ? "eager" : "lazy"} decoding="async" />}
+                {product.image_url && <img src={thumbUrl(product.image_url, 480)} alt="" loading={productIndex < 4 ? "eager" : "lazy"} decoding="async" />}
                 {product.featured && <span className="tag">favorito</span>}
               </Link>
               <div className="product-info">
