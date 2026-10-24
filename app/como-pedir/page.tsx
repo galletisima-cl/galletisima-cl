@@ -72,7 +72,7 @@ export default function HowToOrderPage() {
       <div className="contact-grid">
         <article className="contact-card">
           <h2>Envío</h2>
-          <p>Despachamos por BlueExpress a todo Chile. El costo se calcula en el pago según tu comuna.</p>
+          <p>Despachamos por BlueExpress a todo Chile con tarifa fija de $3.500.</p>
         </article>
         <article className="contact-card">
           <h2>Formas de pago</h2>
