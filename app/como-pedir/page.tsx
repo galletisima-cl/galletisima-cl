@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import ProductBenefitsFaq from "../../components/ProductBenefitsFaq";
 import PublicHeader from "../../components/PublicHeader";
 import { createClient } from "../../lib/supabase/client";
 import { createWhatsappUrl } from "../../lib/whatsapp";
@@ -62,5 +63,7 @@ export default function HowToOrderPage() {
       </div>
       <p className="howto-catalog"><Link href="/?ver=todos#catalogo">O mira primero el catálogo completo →</Link></p>
     </section>
+
+    <ProductBenefitsFaq />
   </main>;
 }

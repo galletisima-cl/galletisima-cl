@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import ProductBenefitsFaq from "../../../components/ProductBenefitsFaq";
 import PublicHeader from "../../../components/PublicHeader";
 import { productDisplayPrice } from "../../../lib/product-price";
 import { createClient } from "../../../lib/supabase/client";
@@ -144,5 +145,6 @@ export default function CategoryPage() {
           : <div className="catalog-loader"><span>No encontramos productos con estos filtros.</span></div>}
       </>}
     </section>
+    <ProductBenefitsFaq />
   </main>;
 }
