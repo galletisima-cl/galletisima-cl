@@ -22,7 +22,7 @@ function displayCategory(name: string) {
 }
 
 function categoryHref(slug: string) {
-  return `/?categoria=${encodeURIComponent(slug)}#catalogo`;
+  return `/categoria/${encodeURIComponent(slug)}`;
 }
 
 function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu, alignRight = false }: { label: string; menuKey: string; categories: Category[]; openMenu: string | null; setOpenMenu: (key: string | null) => void; alignRight?: boolean }) {

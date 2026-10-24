@@ -9,6 +9,7 @@ import InstagramFeed from "../components/InstagramFeed";
 import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
+import { productDisplayPrice } from "../lib/product-price";
 import { createWhatsappUrl } from "../lib/whatsapp";
 
 type Category = { id: string; name: string; slug: string };
@@ -37,7 +38,7 @@ function displayCategory(name: string) {
 }
 
 function categoryHref(slug: string) {
-  return `/?categoria=${encodeURIComponent(slug)}#catalogo`;
+  return `/categoria/${encodeURIComponent(slug)}`;
 }
 
 function groupCategories(categories: Category[]) {
@@ -71,12 +72,6 @@ const currency = new Intl.NumberFormat("es-CL", {
 });
 const CAROUSEL_SPEED_PX_PER_SECOND = 32;
 const CAROUSEL_MANUAL_PAUSE_MS = 5000;
-
-function productDisplayPrice(product: PublicProduct, configuredPrices: Record<string, Record<string, number>>) {
-  const firstSize = product.size.split(/[,;\n]+/).map((size) => size.trim()).find(Boolean);
-  const configuredPrice = firstSize ? Number(configuredPrices[product.id]?.[firstSize]) : 0;
-  return configuredPrice > 0 ? configuredPrice : product.price;
-}
 
 function moveCarousel(carousel: HTMLDivElement | null, left: number) {
   if (!carousel) return;
@@ -260,10 +255,9 @@ function DesktopCategoryMenu({ label, menuKey, categories, openMenu, setOpenMenu
   return <div className={`mega-menu ${alignRight ? "align-right" : ""}`}><button className="nav-pill" aria-expanded={open} aria-controls={`mega-${menuKey}`} onClick={() => setOpenMenu(open ? null : menuKey)}>{label}<span aria-hidden="true">⌄</span></button>{open && <div className="mega-panel" id={`mega-${menuKey}`}><div className="mega-title"><small>Explorar</small><strong>{label}</strong></div><div className="mega-links">{categories.map((category) => <a key={category.id} href={categoryHref(category.slug)} onClick={() => setOpenMenu(null)}>{displayCategory(category.name)}<span>→</span></a>)}</div></div>}</div>;
 }
 
-function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mobileImages, onSelect }: {
+function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mobileImages }: {
   id: string; title: string; eyebrow: string; categories: Category[];
   categoryImage: (category: Category) => string; mobileImages: Record<string, string>;
-  onSelect: (slug: string) => void;
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   useContinuousCarousel(carouselRef, categories.length);
@@ -279,7 +273,7 @@ function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mob
       <div className="category-carousel continuous-carousel" ref={carouselRef} aria-label={`Colecciones de ${title}`}>
         {[0, 1, 2].flatMap(copy => categories.map((category, index) => {
           const image = categoryImage(category);
-          return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)} onClick={() => onSelect(category.slug)}>
+          return <Link className="category-carousel-card" data-carousel-copy={index === 0 ? copy : undefined} aria-hidden={copy !== 1} tabIndex={copy === 1 ? undefined : -1} key={`${copy}-${category.id}`} href={categoryHref(category.slug)}>
             <picture>{mobileImages[category.id] && <source media="(max-width: 650px)" srcSet={mobileImages[category.id]} />}{image ? <Image src={image} alt={displayCategory(category.name)} width={260} height={220} unoptimized /> : <span className="category-image-placeholder">♡</span>}</picture>
             <strong>{displayCategory(category.name)}</strong><small>Ver colección →</small>
           </Link>;
@@ -289,7 +283,7 @@ function CollectionCarousel({ id, title, eyebrow, categories, categoryImage, mob
   </section>;
 }
 
-function FeaturedCategoryBanner({ banner, category, products, onSelect }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[]; onSelect: (slug: string) => void }) {
+function FeaturedCategoryBanner({ banner, category, products }: { banner: CategoryFeatureBanner; category: Category; products: PublicProduct[] }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   useContinuousCarousel(carouselRef, products.length);
   const move = useCallback((direction: -1 | 1) => {
@@ -308,7 +302,7 @@ function FeaturedCategoryBanner({ banner, category, products, onSelect }: { bann
       <span className="category-feature-copy">
         <small>Categoría destacada</small>
         <strong>{displayCategory(category.name)}</strong>
-        <Link href={categoryHref(category.slug)} onNavigate={(event) => { event.preventDefault(); onSelect(category.slug); }}>Ver colección →</Link>
+        <Link href={categoryHref(category.slug)}>Ver colección →</Link>
       </span>
       {products.length > 0 && <div className="featured-products-wrap">
         <div className="featured-products-controls">
@@ -413,21 +407,11 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const showFeaturedCollection = (slug: string) => {
-    setCategoryFilter(slug);
-    setProductSearch("");
-    setCatalogPage(1);
-    window.history.replaceState(null, "", categoryHref(slug));
-    window.requestAnimationFrame(() => {
-      const catalog = document.getElementById("catalogo");
-      if (!catalog) return;
-      const headerHeight = document.querySelector<HTMLElement>(".header.shell")?.offsetHeight || 0;
-      const top = catalog.getBoundingClientRect().top + window.scrollY - headerHeight - 16;
-      window.scrollTo({ top, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
-    });
-  };
-
   useEffect(() => {
+    // Enlaces antiguos (/?categoria=slug) llevan ahora a la página de la categoría.
+    const legacyParams = new URLSearchParams(window.location.search);
+    const legacyCategory = legacyParams.get("ver") === "todos" ? null : legacyParams.get("categoria");
+    if (legacyCategory) { window.location.replace(`/categoria/${encodeURIComponent(legacyCategory)}`); return; }
     const supabase = createClient();
     Promise.all([
       supabase.from("site_settings").select("key,value").in("key", ["whatsapp_number", "hero_banner_url", "hero_mobile_banner_url", ...Object.values(HERO_SETTING_KEYS), "category_banner_urls", "category_mobile_banner_urls", "category_feature_banners", "category_navigation", "product_size_prices", "seasonal_category_id", "instagram_url"]),
@@ -474,9 +458,8 @@ export default function Home() {
       if (categoriesResult.data?.length) setCatalogCategories(categoriesResult.data);
       if (allProductsResult.data) {
         const searchParams = new URLSearchParams(window.location.search);
-        const selectedSlug = searchParams.get("ver") === "todos" ? null : searchParams.get("categoria");
         const initialSearch = searchParams.get("buscar") || "";
-        setCategoryFilter(selectedSlug || "");
+        setCategoryFilter("");
         setProductSearch(initialSearch);
         let configuredPrices: Record<string, Record<string, number>> = {};
         try { configuredPrices = JSON.parse(settings.product_size_prices || "{}"); } catch { configuredPrices = {}; }
@@ -485,11 +468,6 @@ export default function Home() {
           price: productDisplayPrice(product, configuredPrices),
         })));
         setCatalogPage(1);
-        if (selectedSlug) {
-          window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-            document.getElementById("catalogo")?.scrollIntoView({ behavior: "smooth", block: "start" });
-          }));
-        }
       }
     });
   }, []);
@@ -670,16 +648,16 @@ export default function Home() {
             const category = catalogCategories.find((item) => item.id === banner.categoryId);
             if (!category || !banner.imageUrl) return null;
             const products = allProducts.filter((product) => product.image_url && product.product_categories?.some((link) => link.category_id === category.id));
-            return <FeaturedCategoryBanner banner={banner} category={category} products={products} onSelect={showFeaturedCollection} key={`${banner.categoryId}-${index}`} />;
+            return <FeaturedCategoryBanner banner={banner} category={category} products={products} key={`${banner.categoryId}-${index}`} />;
           })}
         </section>
       )}
 
-      {collectionSections.map(section => <CollectionCarousel key={section.id} id={section.id} title={section.title} eyebrow={section.eyebrow} categories={section.categories} categoryImage={categoryImage} mobileImages={categoryMobileBannerUrls} onSelect={slug => { setCategoryFilter(slug); setCatalogPage(1); }} />)}
+      {collectionSections.map(section => <CollectionCarousel key={section.id} id={section.id} title={section.title} eyebrow={section.eyebrow} categories={section.categories} categoryImage={categoryImage} mobileImages={categoryMobileBannerUrls} />)}
 
       <section className="all-categories-section shell" aria-labelledby="all-categories-title">
         <p className="eyebrow">TODAS LAS COLECCIONES</p><h2 id="all-categories-title">Encuentra tu molde perfecto</h2>
-        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)} onClick={() => { setCategoryFilter(category.slug); setCatalogPage(1); }}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}<img src={image} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
+        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}<img src={image} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
       </section>
 
       <InstagramFeed profileUrl={instagramUrl} />
