@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { resolveNavHref } from "../lib/nav-link";
 
 type Category = { id: string; name: string; slug: string };
 type NavigationLink = { id: string; label: string; href: string };
@@ -15,7 +16,7 @@ function label(name: string) {
   return name.replace(/^todo\s+/i, "");
 }
 
-export default function MobileCategoryAccordions({ categories, close, navigation = defaultNavigation }: { categories: Category[]; close: () => void; navigation?: NavigationConfig }) {
+export default function MobileCategoryAccordions({ categories, linkCategories, close, navigation = defaultNavigation }: { categories: Category[]; linkCategories?: Category[]; close: () => void; navigation?: NavigationConfig }) {
   const [open, setOpen] = useState<string | null>(null);
   const ordered = [...categories].sort((a, b) => {
     const ai = navigation.categoryOrder.indexOf(a.id), bi = navigation.categoryOrder.indexOf(b.id);
@@ -46,6 +47,6 @@ export default function MobileCategoryAccordions({ categories, close, navigation
     }
     const assigned = ordered.filter((category) => navigation.categoryMenu[category.id] === entry);
     if (id !== "home" && assigned.length) return accordion(entry, link.label, assigned);
-    return <Link key={entry} className={`drawer-direct ${id === "all" ? "drawer-all" : ""}`} href={link.href} onClick={close}>{link.label} <span>→</span></Link>;
+    return <Link key={entry} className={`drawer-direct ${id === "all" ? "drawer-all" : ""}`} href={resolveNavHref(link, linkCategories ?? categories)} onClick={close}>{link.label} <span>→</span></Link>;
   })}</div>;
 }
