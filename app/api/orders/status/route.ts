@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import { orderStatuses, safeTrackingUrl, type StatusNotification } from "../../../../lib/order-status";
+import { loadEmailTemplates } from "../../../../lib/email-templates-server";
 import { sendStatusEmail, statusEmailPayload } from "../../../../lib/order-status-email";
 
 export const runtime = "nodejs";
@@ -14,7 +15,7 @@ async function deliver(supabase: SupabaseClient, event: StatusNotification) {
     // Persist the exact payload before calling Resend so retries reuse both key and body.
     if (!event.email_payload) {
       const { data, error } = await supabase.from("order_status_notifications")
-        .update({ email_payload: statusEmailPayload(event), first_attempt_at: new Date().toISOString() })
+        .update({ email_payload: statusEmailPayload(event, await loadEmailTemplates(supabase)), first_attempt_at: new Date().toISOString() })
         .eq("id", event.id).is("email_payload", null).select("*").maybeSingle();
       if (error) throw new Error("No se pudo registrar el intento de correo.");
       if (data) event = data as StatusNotification;

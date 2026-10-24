@@ -6,6 +6,7 @@ import "./globals.css";
 import "./admin/admin.css";
 import "./admin/orders.css";
 import "./admin/discounts.css";
+import "./admin/emails.css";
 import PublicFooter from "../components/PublicFooter";
 import MetaPixel from "../components/MetaPixel";
 
