@@ -40,6 +40,7 @@ export default function AdminInstagramPanel() {
       if (action === "connect") { window.location.assign(result.url); return; }
       const updated: ConnectionStatus = await request();
       setStatus(updated);
+      if (action === "sync" && typeof result?.detail === "string") setError(`Motivo técnico del fallo: ${result.detail}`);
       if (action === "disconnect") setMessage("Instagram desconectado de la tienda.");
       else if (!updated.connection?.last_error) setMessage("Publicaciones actualizadas.");
     } catch (caught) { setError(caught instanceof Error ? caught.message : "No se pudo completar la acción."); }

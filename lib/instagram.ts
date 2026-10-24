@@ -43,13 +43,18 @@ export async function instagramAdmin(request: Request) {
 
 class InstagramError extends Error {
   code: string;
-  constructor(code: string) { super("Instagram no está disponible."); this.code = code; }
+  detail: string;
+  constructor(code: string, detail = "") { super("Instagram no está disponible."); this.code = code; this.detail = detail; }
 }
 
 async function instagramJson(url: string | URL, init?: RequestInit) {
   const response = await fetch(url, { ...init, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000) });
   const data = await response.json();
-  if (!response.ok || data.error) throw new InstagramError(data.error?.code === 190 || response.status === 401 ? "reconnect" : "unavailable");
+  if (!response.ok || data.error) {
+    // Solo código y mensaje público de Meta (nunca tokens), para poder diagnosticar fallas.
+    const detail = `HTTP ${response.status}; Meta código ${data.error?.code ?? "?"}${data.error?.error_subcode ? `/${data.error.error_subcode}` : ""}: ${String(data.error?.message ?? "sin mensaje").slice(0, 240)}`;
+    throw new InstagramError(data.error?.code === 190 || response.status === 401 ? "reconnect" : "unavailable", detail);
+  }
   return data;
 }
 
@@ -144,7 +149,7 @@ function publicFeed(connection: Connection): InstagramFeed {
   return { username: connection.username, posts: connection.synced_at && Date.now() - Date.parse(connection.synced_at) < maxStale ? connection.posts : [] };
 }
 
-export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
+export async function loadInstagramFeed(force = false, report?: (detail: string) => void): Promise<InstagramFeed> {
   const db = instagramDatabase();
   const { data, error } = await db.from("instagram_connection").select("*").eq("id", true).maybeSingle();
   if (error) throw new Error("No se pudo leer la conexión de Instagram.");
@@ -183,6 +188,9 @@ export async function loadInstagramFeed(force = false): Promise<InstagramFeed> {
     return saved ? publicFeed({ ...connection, ...patch }) : emptyFeed;
   } catch (caught) {
     const code = caught instanceof InstagramError ? caught.code : "unavailable";
+    const detail = caught instanceof InstagramError ? caught.detail || "sin detalle" : caught instanceof Error ? `${caught.name}: ${caught.message}`.slice(0, 240) : "error desconocido";
+    console.error("Instagram: no se pudo sincronizar la galería.", code, detail);
+    report?.(detail);
     const patch = { last_error: code, sync_lock_until: new Date(0).toISOString(), ...(code === "reconnect" ? { posts: [], synced_at: null } : {}) };
     await db.from("instagram_connection").update(patch).eq("id", true).eq("connection_id", connection.connection_id);
     return publicFeed({ ...connection, ...patch });
