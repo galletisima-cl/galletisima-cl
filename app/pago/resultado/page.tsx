@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import ClearPaidCart from "../../../components/ClearPaidCart";
+import GaPurchase from "../../../components/GaPurchase";
 import { getMetaEventSourceUrl, sendMetaConversionEvent } from "../../../lib/meta-conversions";
 import { getWebpayEnvironment, getWebpayTransaction } from "../../../lib/webpay";
 import { sendOrderEmails } from "../../../lib/email";
@@ -91,6 +92,7 @@ export default async function PaymentResultPage({ searchParams }: { searchParams
   return <main className="payment-page">
     <section className={`payment-card ${approved ? "approved" : "rejected"}`}>
       {approved && <ClearPaidCart />}
+      {approved && order && <GaPurchase transactionId={order.buy_order} value={Number(order.total)} items={purchaseItems.map((item) => ({ item_id: item.id, quantity: item.quantity, price: item.item_price }))} />}
       <span className="payment-icon" aria-hidden="true">{approved ? "✓" : "!"}</span>
       <p className="eyebrow">Webpay Plus · {getWebpayEnvironment() === "integration" ? "Modo de prueba" : "Pago en línea"}</p>
       <h1>{approved ? getWebpayEnvironment() === "integration" ? "Pago de prueba aprobado" : "Pago aprobado" : wasCancelled ? "Pago cancelado" : "Pago no completado"}</h1>

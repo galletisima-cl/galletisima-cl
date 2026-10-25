@@ -1,3 +1,5 @@
+import { trackGaCartEvent } from "./analytics";
+
 export const META_PIXEL_ID = "986368890452042";
 
 type PixelCommand = unknown[];
@@ -83,7 +85,11 @@ export function trackMetaPageView() {
   window.fbq?.("trackSingle", META_PIXEL_ID, "PageView");
 }
 
+const GA_CART_EVENTS = { ViewCart: "view_cart", AddToCart: "add_to_cart", InitiateCheckout: "begin_checkout" } as const;
+
 export function trackMetaEvent(eventName: MetaBrowserEventName, data: MetaCartEventData) {
+  // Los mismos eventos de carrito también se reportan a Google Analytics.
+  trackGaCartEvent(GA_CART_EVENTS[eventName], data);
   if (!shouldTrackMetaPixel(window.location.hostname, window.location.pathname)) return;
   if (!initializeMetaPixel()) return;
   const eventId = crypto.randomUUID();

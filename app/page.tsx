@@ -11,6 +11,7 @@ import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
 import { resolveNavHref } from "../lib/nav-link";
+import { useGaSearch } from "../lib/use-ga-search";
 import { productDisplayPrice } from "../lib/product-price";
 import { createWhatsappUrl } from "../lib/whatsapp";
 
@@ -344,6 +345,7 @@ export default function Home() {
   const [seasonalCategoryId, setSeasonalCategoryId] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  useGaSearch(productSearch, "catalogo");
   const [menuSearch, setMenuSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [productSort, setProductSort] = useState("name-asc");
