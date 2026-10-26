@@ -7,6 +7,7 @@ import ProductBenefitsFaq from "../../../components/ProductBenefitsFaq";
 import PublicHeader from "../../../components/PublicHeader";
 import { productDisplayPrice } from "../../../lib/product-price";
 import { createClient } from "../../../lib/supabase/client";
+import { useGaSearch } from "../../../lib/use-ga-search";
 
 type Category = { id: string; name: string; slug: string };
 type CategoryProduct = {
@@ -43,6 +44,7 @@ export default function CategoryPage() {
   const [category, setCategory] = useState<Category | null>(null);
   const [products, setProducts] = useState<CategoryProduct[]>([]);
   const [search, setSearch] = useState("");
+  useGaSearch(search, "categoria");
   const [sort, setSort] = useState("name-asc");
   const [page, setPage] = useState(1);
   const gridTop = useRef<HTMLDivElement>(null);
