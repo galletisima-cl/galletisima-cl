@@ -7,7 +7,7 @@ type GtagArgs = unknown[];
 
 declare global {
   interface Window {
-    dataLayer?: GtagArgs[];
+    dataLayer?: unknown[];
     gtag?: (...args: GtagArgs) => void;
   }
 }
@@ -32,8 +32,11 @@ function initializeGa() {
   if (!LIVE_HOSTS.includes(window.location.hostname)) return false;
   if (!initialized) {
     window.dataLayer = window.dataLayer || [];
-    window.gtag = function gtag(...args: GtagArgs) {
-      window.dataLayer?.push(args);
+    // gtag.js solo reconoce comandos guardados como el objeto `arguments`;
+    // si se guarda una lista normal los ignora y no envía nada.
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      window.dataLayer?.push(arguments);
     };
     window.gtag("js", new Date());
     // La vista de página se envía a mano, sin parámetros en la URL.
