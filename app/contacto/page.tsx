@@ -6,7 +6,7 @@ import { createClient } from "../../lib/supabase/client";
 import { createWhatsappUrl } from "../../lib/whatsapp";
 
 export default function ContactPage() {
-  const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [whatsappNumber, setWhatsappNumber] = useState("56936658541");
 
   useEffect(() => {
     const supabase = createClient();

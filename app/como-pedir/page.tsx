@@ -23,7 +23,7 @@ const STEPS = [
 ];
 
 export default function HowToOrderPage() {
-  const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [whatsappNumber, setWhatsappNumber] = useState("56936658541");
 
   useEffect(() => {
     document.title = "Cómo pedir tu cortador personalizado | Galletísima";
