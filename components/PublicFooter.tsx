@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "../lib/supabase/client";
 import { createWhatsappUrl } from "../lib/whatsapp";
 
-const DEFAULT_WHATSAPP = "56975265959";
+const DEFAULT_WHATSAPP = "56936658541";
 const DEFAULT_FACEBOOK = "https://www.facebook.com/share/1Emwhrwy9q/?mibextid=wwXIfr";
 const MAP_URL = "https://maps.google.com/maps?q=Metro+Vicente+Valdes+La+Florida%2C+La+Florida%2C+Regi%C3%B3n+Metropolitana%2C+Chile";
 

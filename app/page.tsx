@@ -332,7 +332,7 @@ export default function Home() {
   const [cart, setCart] = useState(0);
   const [cartOpen, setCartOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [whatsappNumber, setWhatsappNumber] = useState("56936658541");
   const [heroBannerUrl, setHeroBannerUrl] = useState("");
   const [heroMobileBannerUrl, setHeroMobileBannerUrl] = useState("");
   const [heroContent, setHeroContent] = useState(DEFAULT_HERO_CONTENT);

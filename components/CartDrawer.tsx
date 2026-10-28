@@ -12,7 +12,7 @@ const currency = new Intl.NumberFormat("es-CL", { style: "currency", currency: "
 
 export default function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [whatsapp, setWhatsapp] = useState("56975265959");
+  const [whatsapp, setWhatsapp] = useState("56936658541");
   const viewCartTracked = useRef(false);
   const total = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
 

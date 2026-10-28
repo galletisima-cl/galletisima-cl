@@ -182,7 +182,7 @@ export default function AdminPage() {
     [selectedImages, setSelectedImages] = useState<File[]>([]),
     [coverImageIndex, setCoverImageIndex] = useState(0),
     [categoryName, setCategoryName] = useState("");
-  const [whatsappNumber, setWhatsappNumber] = useState("56975265959");
+  const [whatsappNumber, setWhatsappNumber] = useState("56936658541");
   const [heroBannerUrl, setHeroBannerUrl] = useState("");
   const [heroMobileBannerUrl, setHeroMobileBannerUrl] = useState("");
   const [heroContent, setHeroContent] = useState<HeroContent>(DEFAULT_HERO_CONTENT);
@@ -1419,7 +1419,7 @@ function Settings({
             onChange={(e) =>
               setWhatsappNumber(e.target.value.replace(/\D/g, ""))
             }
-            placeholder="56975265959"
+            placeholder="56936658541"
             maxLength={11}
             required
           />
