@@ -48,7 +48,7 @@ export function CheckoutForm({ items, checkout, isIntegration = false }: { items
   }
 
   return <form className="webpay-form" onSubmit={(event) => { event.preventDefault(); void pay(); }}>
-    <label>Nombre<input required minLength={2} autoComplete="name" value={buyer.name} onChange={(event) => setBuyer({ ...buyer, name: event.target.value })} /></label>
+    <label>Nombre y Apellido<input required minLength={2} autoComplete="name" value={buyer.name} onChange={(event) => setBuyer({ ...buyer, name: event.target.value })} /></label>
     <label>Correo<input required type="email" autoComplete="email" placeholder="tu@correo.cl" value={buyer.email} onChange={(event) => setBuyer({ ...buyer, email: event.target.value })} /></label>
     <label>Teléfono <small>(opcional)</small><input type="tel" autoComplete="tel" value={buyer.phone} onChange={(event) => setBuyer({ ...buyer, phone: event.target.value })} /></label>
     <div className="webpay-form-grid">
