@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="es-CL">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Juega Tu Vida — Juegos</title>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="theme-color" content="#ef3e83">
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Nunito:wght@400;700&display=swap">
+<style>
+:root{--pink:#ef3e83;--ink:#3a2030;--blush:#fff1f6;--card:#fff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:Nunito,system-ui,sans-serif;color:var(--ink);background:var(--blush);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+header{text-align:center;padding:28px 16px 8px}
+header img{height:56px;width:auto}
+h1{font-family:Fredoka,sans-serif;font-weight:700;color:var(--pink);font-size:30px;margin:10px 0 4px}
+header p{margin:0 auto;max-width:440px;color:#7a5568}
+main{max-width:720px;margin:0 auto;padding:16px;display:grid;gap:16px}
+.card{background:var(--card);border-radius:20px;box-shadow:0 6px 20px #ef3e8322;overflow:hidden;border:2px solid #ffd3e3}
+.art{display:block;width:100%;height:150px;image-rendering:pixelated}
+.body{padding:14px 16px 16px}
+.tag{display:inline-block;font:700 12px Fredoka,sans-serif;background:#ffe3ee;color:var(--pink);border-radius:99px;padding:3px 10px}
+h2{font-family:Fredoka,sans-serif;margin:8px 0 4px;font-size:22px}
+.body p{margin:0 0 12px;line-height:1.4}
+.lv{display:flex;flex-wrap:wrap;gap:8px}
+a.btn{font:700 15px Fredoka,sans-serif;text-decoration:none;color:#fff;background:var(--pink);padding:10px 16px;border-radius:99px;box-shadow:0 3px 0 #b82a60}
+a.btn:active{transform:translateY(2px);box-shadow:0 1px 0 #b82a60}
+.soon{font:700 15px Fredoka,sans-serif;color:#b08a9c;background:#f6e9ef;padding:10px 16px;border-radius:99px}
+footer{text-align:center;color:#b08a9c;font-size:13px;padding:8px 16px 28px}
+</style>
+</head>
+<body>
+<header>
+<img src="/galletisima-logo.png" alt="Galletísima" onerror="this.style.display='none'">
+<h1>Juega Tu Vida</h1>
+<p>Juegos cortos, exagerados y divertidos. Elige uno y a jugar.</p>
+</header>
+<main id="list"></main>
+<footer>Hecho con cariño en Galletísima</footer>
+<script>
+var S=function(w,h,body,bg){return 'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+w+' '+h+'" shape-rendering="crispEdges"><rect width="'+w+'" height="'+h+'" fill="'+bg+'"/>'+body+'</svg>')};
+var r=function(x,y,w,h,c){return '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+c+'"/>'};
+var ARTS={
+ hamlet:S(160,75,r(0,50,160,25,'#2b2a3a')+r(10,20,20,30,'#4a4860')+r(14,14,4,6,'#4a4860')+r(22,14,4,6,'#4a4860')+r(130,24,20,26,'#4a4860')+r(134,18,4,6,'#4a4860')+r(142,18,4,6,'#4a4860')+r(70,30,16,20,'#111')+r(72,24,12,6,'#e8e8f0')+r(74,26,2,2,'#111')+r(80,26,2,2,'#111')+r(60,8,4,4,'#fff')+r(100,14,2,2,'#fff'),'#1b1830'),
+ odisea:S(160,75,r(0,45,160,30,'#1f6fb5')+r(0,45,160,3,'#6bb8f0')+r(60,30,40,10,'#8a5a2b')+r(78,6,3,24,'#ddd')+r(81,6,16,14,'#f4f0e0')+r(120,10,12,12,'#ffd23f')+r(20,50,12,2,'#6bb8f0')+r(110,58,16,2,'#6bb8f0'),'#8fd0f5'),
+ dino:S(160,75,r(0,55,160,20,'#7fd47f')+r(60,25,40,35,'#fff7e0')+r(70,15,20,12,'#ffe9a8')+r(70,35,6,6,'#7fd47f')+r(88,42,8,6,'#7fd47f')+r(30,10,10,10,'#ffe066')+r(120,18,18,6,'#fff'),'#bfeaff')
+};
+var GAMES=[
+ {art:'dino',tag:'Para niños',title:'Dino Huevo',desc:'Ayuda al bebé dino a nacer. Toques grandes y mucha ternura.',levels:[{t:'Jugar',href:'/dino-huevo-p3x8.html'}]},
+ {art:'odisea',tag:'Aventura clásica',title:'La Odisea de Ulises',desc:'Del saqueo de Ismaro a la tierra de los lotófagos, con espada, arco y mucha astucia.',levels:[{t:'Nivel 1 · Ismaro',href:'/odisea-ulises-m4r9.html'},{t:'Nivel 2 · Lotófagos',href:'/odisea-ulises-n2-t8d5.html'},{t:'Nivel 3 · Polifemo (pronto)'}]},
+ {art:'hamlet',tag:'Drama y sigilo',title:'Hamlet en Elsinor',desc:'De las murallas al salón de la corte. Sigilo, soliloquios y venganza.',levels:[{t:'Hamlet',href:'/hamlet-elsinor-k7q2.html'},{t:'Nivel 3 (pronto)'}]}
+];
+var el=document.getElementById('list');
+GAMES.forEach(function(g){
+ var c=document.createElement('section');c.className='card';
+ c.innerHTML='<img class="art" alt="" src="'+ARTS[g.art]+'"><div class="body"><span class="tag">'+g.tag+'</span><h2>'+g.title+'</h2><p>'+g.desc+'</p><div class="lv">'+g.levels.map(function(l){return l.href?'<a class="btn" href="'+l.href+'">'+l.t+'</a>':'<span class="soon">'+l.t+'</span>'}).join('')+'</div></div>';
+ el.appendChild(c);
+});
+</script>
+</body>
+</html>
