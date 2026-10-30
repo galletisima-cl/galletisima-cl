@@ -154,6 +154,7 @@ html,body{margin:0;height:100%;overflow:hidden;font-family:"Baloo 2","Fredoka","
 @keyframes spin{to{transform:rotate(360deg) scale(1)}}
 @media (prefers-reduced-motion:reduce){.cloud{animation:none}.bounce{animation:none}}
 </style>
+<style id="sin-zoom">html,body,#app,canvas,button,a{touch-action:manipulation}html{-webkit-text-size-adjust:100%}</style>
 </head>
 <body>
 <noscript>Este juego necesita JavaScript.</noscript>
@@ -752,5 +753,6 @@ async function renderFinale() {
 renderStart();
 </script>
 <a id="volver-juegos" href="/juegos-w6n3.html" aria-label="Volver a los juegos" style="position:fixed;z-index:99999;left:50%;transform:translateX(-50%);bottom:max(4px,env(safe-area-inset-bottom));font:700 11px/1 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.45);padding:7px 9px;border-radius:99px;text-decoration:none;opacity:.55;-webkit-tap-highlight-color:transparent">← Juegos</a>
+<script id="sin-zoom-js">(function(){var l=0,o={passive:false};document.addEventListener('touchend',function(e){var t=Date.now();if(t-l<350&&e.cancelable)e.preventDefault();l=t},o);['gesturestart','gesturechange','gestureend','dblclick'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},o)})})();</script>
 </body>
 </html>
