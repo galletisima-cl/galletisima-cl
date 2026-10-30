@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -126,6 +126,7 @@ h1,h2{margin:0; font:800 clamp(28px,8vw,44px)/1.02 var(--font-title); text-wrap:
 @media (prefers-reduced-motion:reduce){ .more,#tap::after{animation:none} }
 </style>
 
+<style id="sin-zoom">html,body,#app,canvas,button,a{touch-action:manipulation}html{-webkit-text-size-adjust:100%}</style>
 </head>
 <body>
 <div id="app">
@@ -1268,5 +1269,6 @@ requestAnimationFrame(frame);
 </script>
 
 <a id="volver-juegos" href="/juegos-w6n3.html" aria-label="Volver a los juegos" style="position:fixed;z-index:99999;left:50%;transform:translateX(-50%);bottom:max(4px,env(safe-area-inset-bottom));font:700 11px/1 system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.45);padding:7px 9px;border-radius:99px;text-decoration:none;opacity:.55;-webkit-tap-highlight-color:transparent">← Juegos</a>
+<script id="sin-zoom-js">(function(){var l=0,o={passive:false};document.addEventListener('touchend',function(e){var t=Date.now();if(t-l<350&&e.cancelable)e.preventDefault();l=t},o);['gesturestart','gesturechange','gestureend','dblclick'].forEach(function(n){document.addEventListener(n,function(e){e.preventDefault()},o)})})();</script>
 </body>
 </html>
