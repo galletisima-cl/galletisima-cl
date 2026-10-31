@@ -12,6 +12,7 @@ import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
 import { resolveNavHref } from "../lib/nav-link";
 import { useGaSearch } from "../lib/use-ga-search";
+import { comparePopularity, loadPopularity, type PopularityMap } from "../lib/popularity";
 import { productDisplayPrice } from "../lib/product-price";
 import { createWhatsappUrl } from "../lib/whatsapp";
 
@@ -64,6 +65,7 @@ type PublicProduct = {
   price: number;
   image_url: string;
   featured: boolean;
+  created_at?: string | null;
   product_categories?: { category_id: string }[];
   pos?: string;
 };
@@ -348,7 +350,8 @@ export default function Home() {
   useGaSearch(productSearch, "catalogo");
   const [menuSearch, setMenuSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [productSort, setProductSort] = useState("name-asc");
+  const [productSort, setProductSort] = useState("popular");
+  const [popularity, setPopularity] = useState<PopularityMap>({});
   const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -368,9 +371,10 @@ export default function Home() {
       if (productSort === "price-asc") return a.price - b.price;
       if (productSort === "price-desc") return b.price - a.price;
       if (productSort === "name-desc") return b.name.localeCompare(a.name, "es");
-      return a.name.localeCompare(b.name, "es");
+      if (productSort === "name-asc") return a.name.localeCompare(b.name, "es");
+      return comparePopularity(a, b, popularity);
     });
-  }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort]);
+  }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort, popularity]);
   const visibleMenuCategories = catalogCategories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
 
   useEffect(() => {
@@ -413,6 +417,10 @@ export default function Home() {
   };
 
   useEffect(() => {
+    void loadPopularity().then(setPopularity);
+  }, []);
+
+  useEffect(() => {
     // Enlaces antiguos (/?categoria=slug) llevan ahora a la página de la categoría.
     const legacyParams = new URLSearchParams(window.location.search);
     const legacyCategory = legacyParams.get("ver") === "todos" ? null : legacyParams.get("categoria");
@@ -423,7 +431,7 @@ export default function Home() {
       supabase.from("categories").select("id,name,slug").eq("active", true).order("name"),
       supabase
         .from("products")
-        .select("id,slug,name,size,price,image_url,featured,product_categories(category_id)")
+        .select("id,slug,name,size,price,image_url,featured,created_at,product_categories(category_id)")
         .eq("active", true)
         .order("name"),
     ]).then(([settingsResult, categoriesResult, allProductsResult]) => {
@@ -700,7 +708,7 @@ export default function Home() {
         <div className="catalog-filters">
           <label className="catalog-search"><span>Buscar</span><input ref={searchInputRef} id="catalog-search-input" type="search" value={productSearch} onChange={(event) => { setProductSearch(event.target.value); setCatalogPage(1); }} placeholder="Nombre del molde…" /></label>
           <label><span>Categoría</span><select value={categoryFilter} onChange={(event) => { setCategoryFilter(event.target.value); setCatalogPage(1); }}><option value="">Todas las categorías</option>{publicCategories.map((category) => <option key={category.id} value={category.slug}>{displayCategory(category.name)}</option>)}</select></label>
-          <label><span>Ordenar</span><select value={productSort} onChange={(event) => { setProductSort(event.target.value); setCatalogPage(1); }}><option value="name-asc">Nombre A–Z</option><option value="name-desc">Nombre Z–A</option><option value="price-asc">Precio menor a mayor</option><option value="price-desc">Precio mayor a menor</option></select></label>
+          <label><span>Ordenar</span><select value={productSort} onChange={(event) => { setProductSort(event.target.value); setCatalogPage(1); }}><option value="popular">Más populares</option><option value="name-asc">Nombre A–Z</option><option value="name-desc">Nombre Z–A</option><option value="price-asc">Precio menor a mayor</option><option value="price-desc">Precio mayor a menor</option></select></label>
           <button type="button" onClick={() => setCatalogPage(1)}>Buscar</button>
         </div>
         <p className="catalog-count">{filteredProducts.length} {filteredProducts.length === 1 ? "producto" : "productos"}</p>
