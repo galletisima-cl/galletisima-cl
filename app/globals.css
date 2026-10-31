@@ -858,8 +858,9 @@ h1 strong {
 }
 .all-categories-grid strong {
   display: block;
-  margin-top: 11px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.25;
 }
 .all-categories-grid a:hover span {
   transform: translateY(-4px);
@@ -1415,7 +1416,7 @@ h1 strong {
     border-radius: 14px;
   }
   .all-categories-grid strong {
-    font-size: 10px;
+    font-size: 12px;
   }
   .instagram-section {
     margin-block: 0 38px;
