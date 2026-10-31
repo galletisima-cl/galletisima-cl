@@ -865,6 +865,25 @@ h1 strong {
   transform: translateY(-4px);
   box-shadow: 0 15px 34px #7b294020;
 }
+.all-categories-toggle {
+  display: block;
+  margin: 28px auto 0;
+  min-height: 46px;
+  padding: 0 26px;
+  border: 1.5px solid var(--pink);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pink-dark);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.all-categories-toggle:hover,
+.all-categories-toggle:focus-visible {
+  background: var(--pink);
+  color: #fff;
+}
 .instagram-section {
   margin-block: 15px 55px;
   padding: 38px 42px;
