@@ -45,7 +45,9 @@ export default function InstagramFeed({ profileUrl }: { profileUrl: string }) {
   const [feed, setFeed] = useState<Feed>({ username: null, posts: [] });
   const [embeds, setEmbeds] = useState<string[]>([]);
   const rail = useRef<HTMLDivElement>(null);
-  const section = useRef<HTMLElement>(null);
+  // Nodo de la sección en estado (no en ref): la sección aparece recién cuando
+  // llega el enlace del perfil, y el efecto de abajo debe volver a correr entonces.
+  const [sectionNode, setSectionNode] = useState<HTMLElement | null>(null);
   useEffect(() => {
     let active = true;
     void createClient().from("site_settings").select("value").eq("key", INSTAGRAM_EMBEDS_SETTING_KEY).maybeSingle().then(({ data }) => {
@@ -55,7 +57,7 @@ export default function InstagramFeed({ profileUrl }: { profileUrl: string }) {
   }, []);
   // El script de Instagram es pesado: se carga solo cuando la sección está por aparecer.
   useEffect(() => {
-    const node = section.current;
+    const node = sectionNode;
     if (!embeds.length || !node) return;
     if (!("IntersectionObserver" in window)) { processInstagramEmbeds(); return; }
     const observer = new IntersectionObserver(entries => {
@@ -63,7 +65,7 @@ export default function InstagramFeed({ profileUrl }: { profileUrl: string }) {
     }, { rootMargin: "600px 0px" });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [embeds]);
+  }, [embeds, sectionNode]);
   useEffect(() => {
     const controller = new AbortController();
     void fetch("/api/instagram/feed", { signal: controller.signal }).then(response => response.ok ? response.json() : null).then(data => {
@@ -80,7 +82,7 @@ export default function InstagramFeed({ profileUrl }: { profileUrl: string }) {
     rail.current.scrollBy({ left: rail.current.clientWidth * direction, behavior: reducedMotion ? "instant" : "smooth" });
   };
   const showEmbeds = embeds.length > 0;
-  return <section ref={section} className={`instagram-section shell${showEmbeds || feed.posts.length ? " has-instagram-posts" : ""}`} aria-labelledby="instagram-title">
+  return <section ref={setSectionNode} className={`instagram-section shell${showEmbeds || feed.posts.length ? " has-instagram-posts" : ""}`} aria-labelledby="instagram-title">
     <div className="instagram-feed-heading"><div><p className="eyebrow">INSPÍRATE CON NOSOTROS</p><h2 id="instagram-title">Galletísima en Instagram</h2><a className="instagram-feed-profile" href={url} target="_blank" rel="noopener noreferrer">@{username} ↗</a></div>
       <a className="button primary" href={url} target="_blank" rel="noopener noreferrer">VER INSTAGRAM <span>↗</span></a>
     </div>
