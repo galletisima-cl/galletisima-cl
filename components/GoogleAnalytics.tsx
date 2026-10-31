@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { trackGaPageView, trackGaSearch } from "../lib/analytics";
+import { trackSearch } from "../lib/popularity";
 
 export default function GoogleAnalytics() {
   const pathname = usePathname();
@@ -19,7 +20,7 @@ export default function GoogleAnalytics() {
 
   // Búsquedas del encabezado y de los accesos del menú (/?buscar=...).
   useEffect(() => {
-    if (searchFromUrl) trackGaSearch(searchFromUrl, "encabezado");
+    if (searchFromUrl) { trackGaSearch(searchFromUrl, "encabezado"); trackSearch(searchFromUrl, "encabezado"); }
   }, [searchFromUrl]);
 
   return null;

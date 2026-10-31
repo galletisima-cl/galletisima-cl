@@ -8,6 +8,7 @@ import ProductBenefitsFaq from "../../../components/ProductBenefitsFaq";
 import PublicHeader from "../../../components/PublicHeader";
 import { addCartItem } from "../../../lib/cart";
 import { trackMetaEvent } from "../../../lib/meta-pixel";
+import { trackProductView } from "../../../lib/popularity";
 import { createClient } from "../../../lib/supabase/client";
 
 type Product = {
@@ -56,6 +57,7 @@ export default function ProductPage() {
         if (error || !data) setNotFound(true);
         else {
           setProduct(data);
+          trackProductView(data.id);
           const firstImage = [...(data.product_images || [])].sort((a, b) => a.sort_order - b.sort_order)[0]?.image_url || data.image_url;
           setSelectedImageUrl(firstImage || "");
           setSelectedSize(parseSizes(data.size)[0] || "");
