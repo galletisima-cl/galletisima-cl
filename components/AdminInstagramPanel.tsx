@@ -1,7 +1,47 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { INSTAGRAM_EMBEDS_SETTING_KEY, MAX_INSTAGRAM_EMBEDS, parseInstagramEmbedInput, readInstagramEmbedSetting } from "../lib/instagram-embeds";
 import { createClient } from "../lib/supabase/client";
+
+// Publicaciones elegidas a mano: se muestran con la inserción oficial de
+// Instagram y no dependen de la conexión con Meta.
+function InstagramEmbedsEditor() {
+  const supabase = useMemo(() => createClient(), []);
+  const [text, setText] = useState("");
+  const [loaded, setLoaded] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    void supabase.from("site_settings").select("value").eq("key", INSTAGRAM_EMBEDS_SETTING_KEY).maybeSingle().then(({ data }) => {
+      if (!active) return;
+      setText(readInstagramEmbedSetting(data?.value).join("\n"));
+      setLoaded(true);
+    });
+    return () => { active = false; };
+  }, [supabase]);
+  const parsed = parseInstagramEmbedInput(text);
+  async function save() {
+    setSaving(true); setMessage(""); setError("");
+    const { error: saveError } = await supabase.from("site_settings").upsert({ key: INSTAGRAM_EMBEDS_SETTING_KEY, value: JSON.stringify(parsed.valid), updated_at: new Date().toISOString() });
+    setSaving(false);
+    if (saveError) { setError("No se pudieron guardar las publicaciones. Intenta de nuevo."); return; }
+    setText(parsed.valid.join("\n"));
+    setMessage(parsed.valid.length ? `Listo: la portada muestra ${parsed.valid.length} publicación${parsed.valid.length === 1 ? "" : "es"}.` : "Sin publicaciones elegidas: la portada vuelve a la galería automática (si está conectada).");
+  }
+  return <div className="instagram-embeds-editor">
+    <h5>Publicaciones elegidas para la portada</h5>
+    <p>Pega el enlace de cada post o reel, uno por línea (en Instagram: ··· → Copiar enlace). Se muestran en este orden, hasta {MAX_INSTAGRAM_EMBEDS}. No necesitan conexión con Meta y, si hay alguna, reemplazan a la galería automática.</p>
+    <textarea value={text} onChange={event => { setText(event.target.value); setMessage(""); }} rows={6} disabled={!loaded || saving} placeholder={"https://www.instagram.com/p/…\nhttps://www.instagram.com/reel/…"} aria-label="Enlaces de publicaciones de Instagram" />
+    {parsed.invalid.length > 0 && <p className="instagram-admin-warning">No son enlaces de publicaciones de Instagram y no se guardarán: {parsed.invalid.join(", ")}</p>}
+    {parsed.overLimit && <p className="instagram-admin-warning">Solo se guardan las primeras {MAX_INSTAGRAM_EMBEDS}.</p>}
+    <div className="instagram-admin-actions"><button type="button" disabled={!loaded || saving} onClick={() => void save()}>{saving ? "Guardando…" : `Guardar ${parsed.valid.length} publicación${parsed.valid.length === 1 ? "" : "es"}`}</button></div>
+    {message && <p className="instagram-admin-success" role="status">{message}</p>}
+    {error && <p className="instagram-admin-warning" role="alert">{error}</p>}
+  </div>;
+}
 
 type ConnectionStatus = {
   configured: boolean; storageReady: boolean; needsReconnect: boolean;
@@ -67,5 +107,6 @@ export default function AdminInstagramPanel() {
     <small>Autoriza en Instagram o usa Facebook si la cuenta está vinculada a una página que administras. La conexión sirve para leer el perfil y sus publicaciones.</small>
     {message && <p className="instagram-admin-success" role="status">{message}</p>}
     {error && <p className="instagram-admin-warning" role="alert">{error}</p>}
+    <InstagramEmbedsEditor />
   </section>;
 }

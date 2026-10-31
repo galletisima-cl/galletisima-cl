@@ -37,6 +37,12 @@ function readSlug(value: string | string[] | undefined) {
   try { return decodeURIComponent(raw); } catch { return raw; }
 }
 
+
+const MERGED_CATEGORIES: Record<string, string> = {
+  "todo-animales": "todo-animalitos",
+  "todo-bebes": "todo-baby-shower",
+};
+
 export default function CategoryPage() {
   const params = useParams<{ slug: string }>();
   const slug = readSlug(params?.slug);
@@ -53,6 +59,9 @@ export default function CategoryPage() {
     let cancelled = false;
     const supabase = createClient();
     (async () => {
+      // Categorías fusionadas: los enlaces antiguos llevan a la que quedó.
+      const mergedInto = MERGED_CATEGORIES[slug];
+      if (mergedInto) { window.location.replace(`/categoria/${mergedInto}`); return; }
       const { data: found } = await supabase.from("categories").select("id,name,slug").eq("active", true).eq("slug", slug).maybeSingle();
       if (cancelled) return;
       if (!found) { setStatus("missing"); return; }

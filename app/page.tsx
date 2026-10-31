@@ -57,6 +57,8 @@ function groupCategories(categories: Category[]) {
   return { celebrations, characters, themes };
 }
 
+const COLLECTIONS_PREVIEW = 14; // dos filas completas de 7 en escritorio
+
 type PublicProduct = {
   id: string;
   slug: string;
@@ -352,6 +354,7 @@ export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [productSort, setProductSort] = useState("popular");
   const [popularity, setPopularity] = useState<PopularityMap>({});
+  const [showAllCollections, setShowAllCollections] = useState(false);
   const [catalogCategories, setCatalogCategories] = useState<Category[]>(fallbackCategories);
   const [openDesktopMenu, setOpenDesktopMenu] = useState<string | null>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -561,6 +564,31 @@ export default function Home() {
     return { ...section, categories };
   });
   useContinuousCarousel(seasonalCarouselRef, seasonalProducts.length);
+  // "Todas las colecciones": primero la categoría de temporada y luego las que más
+  // venden (después vistas y búsquedas). Se ocultan las que no tienen productos.
+  const categoryScores = new Map<string, { sales: number; views: number; searches: number; products: number }>();
+  for (const product of allProducts) {
+    const score = popularity[product.id];
+    for (const link of product.product_categories || []) {
+      const current = categoryScores.get(link.category_id) || { sales: 0, views: 0, searches: 0, products: 0 };
+      current.products += 1;
+      current.sales += score?.sales ?? 0;
+      current.views += score?.views ?? 0;
+      current.searches += score?.searches ?? 0;
+      categoryScores.set(link.category_id, current);
+    }
+  }
+  const collectionCategories = orderedCategories
+    .map((category, index) => ({ category, index, score: categoryScores.get(category.id) }))
+    .filter(({ score }) => allProducts.length === 0 || (score?.products ?? 0) > 0)
+    .sort((a, b) =>
+      Number(b.category.id === seasonalCategory?.id) - Number(a.category.id === seasonalCategory?.id) ||
+      (b.score?.sales ?? 0) - (a.score?.sales ?? 0) ||
+      (b.score?.views ?? 0) - (a.score?.views ?? 0) ||
+      (b.score?.searches ?? 0) - (a.score?.searches ?? 0) ||
+      a.index - b.index)
+    .map(({ category }) => category);
+  const visibleCollectionCategories = showAllCollections ? collectionCategories : collectionCategories.slice(0, COLLECTIONS_PREVIEW);
   const categoryImage = (category: Category) => categoryBannerUrls[category.id] || allProducts.find((product) => product.image_url && product.product_categories?.some((link) => link.category_id === category.id))?.image_url || "";
   const pageCount = Math.max(1, Math.ceil(filteredProducts.length / 50));
   const pageProducts = filteredProducts.slice((catalogPage - 1) * 50, catalogPage * 50);
@@ -696,7 +724,8 @@ export default function Home() {
 
       <section className="all-categories-section shell" aria-labelledby="all-categories-title">
         <p className="eyebrow">TODAS LAS COLECCIONES</p><h2 id="all-categories-title">Encuentra tu molde perfecto</h2>
-        <div className="all-categories-grid">{orderedCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}<img src={image} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
+        <div className="all-categories-grid">{visibleCollectionCategories.map((category) => { const image = categoryImage(category); return <Link key={category.id} href={categoryHref(category.slug)}><span>{image ? <picture>{categoryMobileBannerUrls[category.id] && <source media="(max-width: 650px)" srcSet={categoryMobileBannerUrls[category.id]} />}<img src={image} alt="" loading="lazy" decoding="async" /></picture> : <b>♡</b>}</span><strong>{displayCategory(category.name)}</strong></Link>; })}</div>
+        {collectionCategories.length > COLLECTIONS_PREVIEW && <button type="button" className="all-categories-toggle" aria-expanded={showAllCollections} onClick={() => setShowAllCollections((value) => !value)}>{showAllCollections ? "Ver menos colecciones" : `Ver todas las colecciones (${collectionCategories.length})`}</button>}
       </section>
 
       <InstagramFeed profileUrl={instagramUrl} />
