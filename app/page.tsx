@@ -57,7 +57,7 @@ function groupCategories(categories: Category[]) {
   return { celebrations, characters, themes };
 }
 
-const COLLECTIONS_PREVIEW = 12;
+const COLLECTIONS_PREVIEW = 14; // dos filas completas de 7 en escritorio
 
 type PublicProduct = {
   id: string;

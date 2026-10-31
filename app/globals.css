@@ -825,8 +825,8 @@ h1 strong {
 }
 .all-categories-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 24px 18px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 22px 14px;
 }
 .all-categories-grid a {
   text-align: center;
@@ -836,7 +836,7 @@ h1 strong {
 .all-categories-grid span {
   display: block;
   aspect-ratio: 1;
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
   background: #fff0f4;
   box-shadow: 0 10px 28px #7b294012;
@@ -1390,6 +1390,11 @@ h1 strong {
   .catalog-count {
     margin: 0 0 18px auto;
     text-align: right;
+  }
+}
+@media (max-width: 1100px) {
+  .all-categories-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
 @media (max-width: 900px) {
