@@ -907,10 +907,13 @@ h1 strong {
 .instagram-post-overlay { position: absolute; inset: auto 0 0; padding: 12px 8px; background: #36202bd9; color: #fff; font-size: 12px; text-align: center; opacity: 0; transition: opacity .2s; }
 .instagram-post:hover .instagram-post-overlay, .instagram-post:focus-visible .instagram-post-overlay { opacity: 1; }
 .instagram-post:focus-visible { outline: 3px solid #d52b6a; outline-offset: -3px; }
-.instagram-embeds { display: flex; gap: 16px; align-items: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; padding-bottom: 12px; scrollbar-width: thin; scrollbar-color: #edbed0 transparent; }
-.instagram-embed { flex: 0 0 328px; max-width: 86vw; scroll-snap-align: start; }
-.instagram-embed .instagram-media { margin: 0 !important; min-width: 0 !important; width: 100% !important; max-width: 100% !important; border-radius: 14px !important; }
-.instagram-embed blockquote.instagram-media { display: grid; place-items: center; min-height: 420px; padding: 16px; border: 1px solid #f0d9e1; background: #fff; text-align: center; }
+.instagram-embeds { --ig-scale: .72; display: flex; gap: 14px; align-items: flex-start; overflow-x: auto; overscroll-behavior-inline: contain; scroll-snap-type: x mandatory; padding-bottom: 12px; scrollbar-width: thin; scrollbar-color: #edbed0 transparent; }
+/* Instagram no deja la tarjeta más angosta que 326 px: se dibuja a 328 px y se
+   achica entera con transform, reservando el espacio ya reducido. */
+.instagram-embed { flex: 0 0 calc(328px * var(--ig-scale)); height: calc(616px * var(--ig-scale)); overflow: hidden; border-radius: 12px; scroll-snap-align: start; }
+.instagram-embed > * { width: 328px !important; transform: scale(var(--ig-scale)); transform-origin: top left; }
+.instagram-embed .instagram-media { margin: 0 !important; min-width: 0 !important; max-width: none !important; border-radius: 14px !important; }
+.instagram-embed blockquote.instagram-media { display: grid; place-items: center; height: 616px; padding: 16px; border: 1px solid #f0d9e1; background: #fff; text-align: center; }
 .instagram-embed blockquote.instagram-media a { color: #b52b60; font-weight: 800; text-decoration: none; }
 @media (max-width: 1100px) { .instagram-posts { grid-auto-columns: calc((100% - 36px) / 4); } }
 @media (max-width: 650px) {
