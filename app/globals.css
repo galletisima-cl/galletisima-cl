@@ -825,8 +825,8 @@ h1 strong {
 }
 .all-categories-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 24px 18px;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 22px 14px;
 }
 .all-categories-grid a {
   text-align: center;
@@ -836,7 +836,7 @@ h1 strong {
 .all-categories-grid span {
   display: block;
   aspect-ratio: 1;
-  border-radius: 18px;
+  border-radius: 16px;
   overflow: hidden;
   background: #fff0f4;
   box-shadow: 0 10px 28px #7b294012;
@@ -858,12 +858,32 @@ h1 strong {
 }
 .all-categories-grid strong {
   display: block;
-  margin-top: 11px;
-  font-size: 12px;
+  margin-top: 10px;
+  font-size: 14px;
+  line-height: 1.25;
 }
 .all-categories-grid a:hover span {
   transform: translateY(-4px);
   box-shadow: 0 15px 34px #7b294020;
+}
+.all-categories-toggle {
+  display: block;
+  margin: 28px auto 0;
+  min-height: 46px;
+  padding: 0 26px;
+  border: 1.5px solid var(--pink);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--pink-dark);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .2s, color .2s;
+}
+.all-categories-toggle:hover,
+.all-categories-toggle:focus-visible {
+  background: var(--pink);
+  color: #fff;
 }
 .instagram-section {
   margin-block: 15px 55px;
@@ -1378,6 +1398,11 @@ h1 strong {
     text-align: right;
   }
 }
+@media (max-width: 1100px) {
+  .all-categories-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
 @media (max-width: 900px) {
   .all-categories-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -1396,7 +1421,7 @@ h1 strong {
     border-radius: 14px;
   }
   .all-categories-grid strong {
-    font-size: 10px;
+    font-size: 12px;
   }
   .instagram-section {
     margin-block: 0 38px;
