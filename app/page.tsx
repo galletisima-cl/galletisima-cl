@@ -12,7 +12,7 @@ import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
 import { resolveNavHref } from "../lib/nav-link";
 import { useGaSearch } from "../lib/use-ga-search";
-import { createSearchMatcher } from "../lib/search-synonyms";
+import { createSearchMatcher, searchProducts } from "../lib/search-synonyms";
 import { comparePopularity, loadPopularity, type PopularityMap } from "../lib/popularity";
 import { productDisplayPrice } from "../lib/product-price";
 import { createWhatsappUrl } from "../lib/whatsapp";
@@ -365,19 +365,17 @@ export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredProducts = useMemo(() => {
     const selectedCategory = catalogCategories.find((category) => category.slug === categoryFilter);
-    const matchesText = createSearchMatcher(productSearch);
-    const products = allProducts.filter((product) => {
-      const matchesSearch = matchesText(product.name);
-      const matchesCategory = !selectedCategory || product.product_categories?.some((link) => link.category_id === selectedCategory.id);
-      return matchesSearch && matchesCategory;
-    });
-    return products.sort((a, b) => {
+    const inSelectedCategory = allProducts.filter((product) => !selectedCategory || product.product_categories?.some((link) => link.category_id === selectedCategory.id));
+    const { byName, byCategory } = searchProducts(inSelectedCategory, catalogCategories, productSearch);
+    const sortProducts = (a: PublicProduct, b: PublicProduct) => {
       if (productSort === "price-asc") return a.price - b.price;
       if (productSort === "price-desc") return b.price - a.price;
       if (productSort === "name-desc") return b.name.localeCompare(a.name, "es");
       if (productSort === "name-asc") return a.name.localeCompare(b.name, "es");
       return comparePopularity(a, b, popularity);
-    });
+    };
+    // Primero los que tienen la palabra en el nombre; luego el resto de su categoría.
+    return [...byName.sort(sortProducts), ...byCategory.sort(sortProducts)];
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort, popularity]);
   const matchesMenuSearch = createSearchMatcher(menuSearch);
   const visibleMenuCategories = catalogCategories.filter((category) => matchesMenuSearch(category.name));

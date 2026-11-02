@@ -35,3 +35,24 @@ test("búsqueda vacía muestra todo", () => {
 test("no mezcla grupos por coincidencia parcial dentro de una palabra", () => {
   assert.ok(!expandSearchTerms("santander").includes("viejo pascuero"));
 });
+
+test("muestra primero los que calzan por nombre y luego el resto de la categoría", async () => {
+  const { searchProducts } = await import("../lib/search-synonyms.ts");
+  const categories = [{ id: "nav", name: "Todo Navidad" }, { id: "hal", name: "Halloween" }];
+  const products = [
+    { name: "Reno", product_categories: [{ category_id: "nav" }] },
+    { name: "Gorro de Navidad", product_categories: [{ category_id: "nav" }] },
+    { name: "Calabaza", product_categories: [{ category_id: "hal" }] },
+    { name: "Árbol navideño", product_categories: [] },
+  ];
+  const { byName, byCategory } = searchProducts(products, categories, "Navidad");
+  assert.deepEqual(byName.map((p) => p.name), ["Gorro de Navidad", "Árbol navideño"]);
+  assert.deepEqual(byCategory.map((p) => p.name), ["Reno"]);
+});
+
+test("los sinónimos también encuentran la categoría", async () => {
+  const { searchProducts } = await import("../lib/search-synonyms.ts");
+  const categories = [{ id: "nav", name: "Navidad" }];
+  const products = [{ name: "Reno", product_categories: [{ category_id: "nav" }] }];
+  assert.equal(searchProducts(products, categories, "christmas").byCategory.length, 1);
+});
