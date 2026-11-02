@@ -1,0 +1,36 @@
+# Sinónimos de búsqueda — Galletísima
+# Formato: una línea por grupo; los términos separados por " = " significan lo mismo.
+# Sin tildes ni mayúsculas (la búsqueda debería normalizarlas).
+# Los grupos marcados con (*) los propuse yo a partir de las búsquedas reales; revísalos.
+
+# --- Navidad ---
+viejo pascuero = viejito pascuero = pascuero = santa claus = santa
+navidad = navideño = navideña = navidenos = christmas
+casita de jengibre = casa de jengibre = casita jengibre = casa jengibre = casita = gingerbread (*)
+baston navideño = baston = bastón de caramelo = candy cane (*)
+
+# --- Personajes ---
+bob esponja = bob = spongebob (*)
+stitch = stich = estich (*)
+spiderman = hombre araña = hombre arana (*)
+
+# --- Fechas especiales ---
+san valentin = dia de los enamorados = enamorados = dia del amor (*)
+graduacion = egreso = licenciatura = titulacion (*)
+cumpleaños = cumple = feliz cumpleaños = birthday (*)
+halloween = noche de brujas = brujas (*)
+dia del padre = papa = padre = papá (*)
+dia de la madre = mama = madre = mamá (*)
+baby shower = babyshower = bebe = bebes = nacimiento (*)
+
+# --- Animales y deportes ---
+animales = animalitos (*)
+oso = osito = osio (*)
+perro = perrito = mascota (*)
+gato = gatito = michi (*)
+dinosaurio = dinosaurios = dino (*)
+futbol = soccer = balon (*)
+
+# --- Productos ---
+cortador = cortadores = molde = moldes = cutter = cookie cutter (*)
+sello = stamp = estampa (*)

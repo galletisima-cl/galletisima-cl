@@ -8,6 +8,7 @@ import MobileCategoryAccordions from "./MobileCategoryAccordions";
 import { resolveNavHref } from "../lib/nav-link";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { createClient } from "../lib/supabase/client";
+import { createSearchMatcher } from "../lib/search-synonyms";
 
 type Category = { id: string; name: string; slug: string };
 type NavigationLink = { id: string; label: string; href: string };
@@ -43,7 +44,8 @@ export default function PublicHeader() {
     const ai = navigation.categoryOrder.indexOf(a.id), bi = navigation.categoryOrder.indexOf(b.id);
     return (ai < 0 ? 9999 : ai) - (bi < 0 ? 9999 : bi) || a.name.localeCompare(b.name, "es");
   });
-  const visibleCategories = orderedCategories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
+  const matchesMenuSearch = createSearchMatcher(menuSearch);
+  const visibleCategories = orderedCategories.filter((category) => matchesMenuSearch(category.name));
   const fallbackGroup = (category: Category) => celebrationTerms.some((term) => category.slug.includes(term)) ? "celebrations" : characterTerms.some((term) => category.slug.includes(term)) ? "characters" : "themes";
   const categoriesForMenu = (menuId: string) => orderedCategories.filter((category) => {
     if (Object.prototype.hasOwnProperty.call(navigation.categoryMenu, category.id)) return navigation.categoryMenu[category.id] === menuId;

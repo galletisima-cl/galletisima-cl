@@ -12,6 +12,7 @@ import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
 import { resolveNavHref } from "../lib/nav-link";
 import { useGaSearch } from "../lib/use-ga-search";
+import { createSearchMatcher } from "../lib/search-synonyms";
 import { comparePopularity, loadPopularity, type PopularityMap } from "../lib/popularity";
 import { productDisplayPrice } from "../lib/product-price";
 import { createWhatsappUrl } from "../lib/whatsapp";
@@ -364,9 +365,9 @@ export default function Home() {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const filteredProducts = useMemo(() => {
     const selectedCategory = catalogCategories.find((category) => category.slug === categoryFilter);
-    const search = productSearch.trim().toLocaleLowerCase("es");
+    const matchesText = createSearchMatcher(productSearch);
     const products = allProducts.filter((product) => {
-      const matchesSearch = !search || product.name.toLocaleLowerCase("es").includes(search);
+      const matchesSearch = matchesText(product.name);
       const matchesCategory = !selectedCategory || product.product_categories?.some((link) => link.category_id === selectedCategory.id);
       return matchesSearch && matchesCategory;
     });
@@ -378,7 +379,8 @@ export default function Home() {
       return comparePopularity(a, b, popularity);
     });
   }, [allProducts, catalogCategories, categoryFilter, productSearch, productSort, popularity]);
-  const visibleMenuCategories = catalogCategories.filter((category) => category.name.toLocaleLowerCase("es").includes(menuSearch.trim().toLocaleLowerCase("es")));
+  const matchesMenuSearch = createSearchMatcher(menuSearch);
+  const visibleMenuCategories = catalogCategories.filter((category) => matchesMenuSearch(category.name));
 
   useEffect(() => {
     const initialSync = window.setTimeout(() => setCart(readCartCount()), 0);

@@ -8,6 +8,7 @@ import PublicHeader from "../../../components/PublicHeader";
 import { productDisplayPrice } from "../../../lib/product-price";
 import { createClient } from "../../../lib/supabase/client";
 import { useGaSearch } from "../../../lib/use-ga-search";
+import { createSearchMatcher } from "../../../lib/search-synonyms";
 
 type Category = { id: string; name: string; slug: string };
 type CategoryProduct = {
@@ -93,9 +94,9 @@ export default function CategoryPage() {
   }, [category]);
 
   const visibleProducts = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase("es");
+    const matchesText = createSearchMatcher(search);
     return products
-      .filter((product) => !term || product.name.toLocaleLowerCase("es").includes(term))
+      .filter((product) => matchesText(product.name))
       .sort((a, b) => {
         if (sort === "price-asc") return a.price - b.price;
         if (sort === "price-desc") return b.price - a.price;
