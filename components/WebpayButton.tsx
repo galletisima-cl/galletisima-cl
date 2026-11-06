@@ -25,7 +25,7 @@ export function CheckoutForm({ items, checkout, isIntegration = false }: { items
       const response = await fetch("/api/webpay/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ buyer: { ...buyer, communeId }, couponCode: checkout.couponCode, expectedTotal: pricing.total, items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })) }),
+        body: JSON.stringify({ buyer: { ...buyer, communeId }, couponCode: checkout.couponCode, expectedTotal: pricing.total, items: items.map(({ productId, size, quantity, manguito }) => ({ productId, size, quantity, manguito: Boolean(manguito) })) }),
       });
       const data = await response.json();
       if (response.status === 409 && data.pricing) checkout.updatePricing(data.pricing);

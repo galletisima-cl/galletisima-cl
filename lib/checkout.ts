@@ -1,11 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { calculateShipping } from "./shipping";
+import { MANGUITO_LABEL, MANGUITO_PRICE } from "./manguito";
 import { applyDiscounts, DISCOUNTS_SETTING_KEY, parseDiscountRules, type CheckoutPricing } from "./discounts";
 
 export type CheckoutItem = {
   productId: string;
   size: string;
   quantity: number;
+  manguito?: boolean;
 };
 
 export type CheckoutLine = CheckoutItem & { name: string; unitPrice: number; lineTotal: number };
@@ -29,7 +31,7 @@ export async function calculateCheckoutTotal(input: unknown, communeId: string, 
     if (!item.productId || typeof item.productId !== "string" || typeof item.size !== "string" || !Number.isInteger(quantity) || quantity < 1 || quantity > 99) {
       throw new Error("Uno de los productos del carrito no es válido.");
     }
-    return { productId: item.productId, size: item.size, quantity };
+    return { productId: item.productId, size: item.size, quantity, manguito: item.manguito === true };
   });
 
   const productIds = [...new Set(items.map((item) => item.productId))];
@@ -53,9 +55,11 @@ export async function calculateCheckoutTotal(input: unknown, communeId: string, 
     const allowedSizes = String(product.size || "").split(/[,;\n]+/).map((size) => size.trim()).filter(Boolean);
     if (allowedSizes.length && !allowedSizes.includes(item.size)) throw new Error("La medida seleccionada ya no está disponible.");
     const configuredPrice = Number(sizePrices[item.productId]?.[item.size]);
-    const unitPrice = configuredPrice > 0 ? configuredPrice : Number(product.price);
-    if (!Number.isSafeInteger(unitPrice) || unitPrice <= 0) throw new Error("Uno de los productos no tiene un precio válido.");
-    return { ...item, name: String(product.name), unitPrice, lineTotal: unitPrice * item.quantity };
+    const basePrice = configuredPrice > 0 ? configuredPrice : Number(product.price);
+    if (!Number.isSafeInteger(basePrice) || basePrice <= 0) throw new Error("Uno de los productos no tiene un precio válido.");
+    const unitPrice = basePrice + (item.manguito ? MANGUITO_PRICE : 0);
+    const name = item.manguito ? `${String(product.name)} + ${MANGUITO_LABEL}` : String(product.name);
+    return { ...item, name, unitPrice, lineTotal: unitPrice * item.quantity };
   });
   const shippingOption = await calculateShipping(communeId);
   const pricing = applyDiscounts(lines, shippingOption.price, discounts, couponCode);
