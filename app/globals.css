@@ -5629,3 +5629,5 @@ form button {
 .manguito-option span { display: grid; gap: 2px; font-size: 14px; font-weight: 700; color: #3a1d2b; }
 .manguito-option small { font-weight: 400; font-size: 12px; color: #7a5a68; }
 .cart-manguito { margin: 12px 20px 0; }
+.product-order-panel .manguito-option { margin-top: 9px; }
+@media (max-width: 560px) { .product-order-panel .manguito-option { margin-top: 8px; } }

@@ -151,18 +151,18 @@ test("free orders are rejected before Webpay instead of charging an invented amo
   assert.match((await response.json()).error, /mayor a \$0/);
 });
 
-test("el manguito suma $200 por unidad en el servidor y queda registrado en el pedido", async () => {
+test("el manguito suma $300 por unidad en el servidor y queda registrado en el pedido", async () => {
   const withManguito = [{ productId, size: "6 cm", quantity: 2, manguito: true }];
   const quoted = await (await quote(request({ communeId: "13101", items: withManguito }))).json();
-  assert.equal(quoted.pricing.subtotal, 20400);
-  assert.equal(quoted.pricing.total, 20400 + 3990);
+  assert.equal(quoted.pricing.subtotal, 20600);
+  assert.equal(quoted.pricing.total, 20600 + 3990);
   // un precio de manguito enviado por el cliente se ignora
   const tampered = await (await quote(request({ communeId: "13101", items: withManguito, manguitoPrice: 0 }))).json();
-  assert.equal(tampered.pricing.subtotal, 20400);
-  const response = await pay(request({ buyer, items: withManguito, expectedTotal: 20400 + 3990 }));
+  assert.equal(tampered.pricing.subtotal, 20600);
+  const response = await pay(request({ buyer, items: withManguito, expectedTotal: 20600 + 3990 }));
   assert.equal(response.status, 200);
-  assert.equal(payments[0].amount, 20400 + 3990);
+  assert.equal(payments[0].amount, 20600 + 3990);
   const line = writes.find(write => write.table === "order_items").body[0];
-  assert.equal(line.unit_price, 10200);
+  assert.equal(line.unit_price, 10300);
   assert.match(line.name, /\+ manguito$/);
 });
