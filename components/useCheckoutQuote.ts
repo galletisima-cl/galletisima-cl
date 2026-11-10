@@ -13,7 +13,7 @@ export function useCheckoutQuote(items: CartItem[], enabled: boolean) {
   const [couponCode, setCouponCode] = useState("");
   const [quoteState, setQuoteState] = useState<{ key: string; pricing?: CheckoutPricing; error?: string } | null>(null);
   const [quoteAttempt, setQuoteAttempt] = useState(0);
-  const quoteKey = JSON.stringify({ items: items.map(({ productId, size, quantity }) => ({ productId, size, quantity })), communeId, couponCode });
+  const quoteKey = JSON.stringify({ items: items.map(({ productId, size, quantity, manguito }) => ({ productId, size, quantity, manguito: Boolean(manguito) })), communeId, couponCode });
   const currentQuote = quoteState?.key === quoteKey ? quoteState : null;
   const selectedShipping = shippingOptions.find((option) => option.communeId === communeId);
   const regions = useMemo(() => [...new Map(shippingOptions.map((option) => [option.regionId, option.region])).entries()], [shippingOptions]);
