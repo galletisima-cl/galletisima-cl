@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import ProductBenefitsFaq from "../../../components/ProductBenefitsFaq";
 import PublicHeader from "../../../components/PublicHeader";
 import { addCartItem } from "../../../lib/cart";
-import { MANGUITO_PRICE } from "../../../lib/manguito";
+import { MANGUITO_PRICE, allowsManguito } from "../../../lib/manguito";
 import { trackMetaEvent } from "../../../lib/meta-pixel";
 import { trackProductView } from "../../../lib/popularity";
 import { createClient } from "../../../lib/supabase/client";
@@ -92,9 +92,9 @@ export default function ProductPage() {
       price: sizePrices[selectedSize] ?? product.price,
       imageUrl: product.image_url,
       quantity,
-      manguito,
+      manguito: manguito && allowsManguito(product.name),
     };
-    const unitPrice = item.price + (manguito ? MANGUITO_PRICE : 0);
+    const unitPrice = item.price + (item.manguito ? MANGUITO_PRICE : 0);
     addCartItem(item);
     trackMetaEvent("AddToCart", {
       content_ids: [item.productId],
@@ -104,7 +104,7 @@ export default function ProductPage() {
       num_items: item.quantity,
       value: unitPrice * item.quantity,
     });
-    setNotice(`${quantity} × ${product.name}${selectedSize ? ` · ${selectedSize}` : ""}${manguito ? " con manguito" : ""} agregado al carrito`);
+    setNotice(`${quantity} × ${product.name}${selectedSize ? ` · ${selectedSize}` : ""}${item.manguito ? " con manguito" : ""} agregado al carrito`);
   };
 
   if (loading) {
@@ -117,7 +117,7 @@ export default function ProductPage() {
 
   const sizes = parseSizes(product.size);
   const basePrice = sizePrices[selectedSize] ?? product.price;
-  const selectedPrice = basePrice ? basePrice + (manguito ? MANGUITO_PRICE : 0) : basePrice;
+  const selectedPrice = basePrice ? basePrice + (manguito && allowsManguito(product?.name) ? MANGUITO_PRICE : 0) : basePrice;
   const gallery = (product.product_images || []).length
     ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order).map((image) => image.image_url)
     : product.image_url ? [product.image_url] : [];
@@ -148,7 +148,7 @@ export default function ProductPage() {
           <p className="product-description">{product.description || "Molde Galletísima creado para dar vida a tus ideas."}</p>
           <div className="product-order-panel">
             {sizes.length ? <fieldset className="size-selector"><legend>Selecciona una medida</legend><div>{sizes.map((size) => <button type="button" key={size} className={selectedSize === size ? "selected" : ""} aria-pressed={selectedSize === size} onClick={() => setSelectedSize(size)}><span>{size}</span>{sizePrices[size] ? <small>{currency.format(sizePrices[size])}</small> : null}</button>)}</div></fieldset> : <p className="size-pending">Medida por confirmar</p>}
-            <label className="manguito-option"><input type="checkbox" checked={manguito} onChange={(event) => setManguito(event.target.checked)} /><span>Agregar manguito para el stamp<small>Agarre para sostener el sello con facilidad · +{currency.format(MANGUITO_PRICE)} por unidad</small></span></label>
+            {allowsManguito(product.name) && <label className="manguito-option"><input type="checkbox" checked={manguito} onChange={(event) => setManguito(event.target.checked)} /><span>Agregar manguito para el stamp<small>Agarre para sostener el sello con facilidad · +{currency.format(MANGUITO_PRICE)} por unidad</small></span></label>}
             <div className="purchase-row">
               <div className="quantity-picker" aria-label="Cantidad"><button type="button" aria-label="Disminuir cantidad" onClick={() => setQuantity((value) => Math.max(1, value - 1))}>−</button><strong>{quantity}</strong><button type="button" aria-label="Aumentar cantidad" onClick={() => setQuantity((value) => value + 1)}>+</button></div>
               <button className="product-add" type="button" onClick={addToCart}>Agregar al carrito</button>

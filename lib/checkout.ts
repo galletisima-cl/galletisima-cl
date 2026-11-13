@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { calculateShipping } from "./shipping";
-import { MANGUITO_LABEL, MANGUITO_PRICE } from "./manguito";
+import { MANGUITO_LABEL, MANGUITO_PRICE, allowsManguito } from "./manguito";
 import { applyDiscounts, DISCOUNTS_SETTING_KEY, parseDiscountRules, type CheckoutPricing } from "./discounts";
 
 export type CheckoutItem = {
@@ -57,9 +57,10 @@ export async function calculateCheckoutTotal(input: unknown, communeId: string, 
     const configuredPrice = Number(sizePrices[item.productId]?.[item.size]);
     const basePrice = configuredPrice > 0 ? configuredPrice : Number(product.price);
     if (!Number.isSafeInteger(basePrice) || basePrice <= 0) throw new Error("Uno de los productos no tiene un precio válido.");
-    const unitPrice = basePrice + (item.manguito ? MANGUITO_PRICE : 0);
-    const name = item.manguito ? `${String(product.name)} + ${MANGUITO_LABEL}` : String(product.name);
-    return { ...item, name, unitPrice, lineTotal: unitPrice * item.quantity };
+    const manguito = item.manguito === true && allowsManguito(String(product.name));
+    const unitPrice = basePrice + (manguito ? MANGUITO_PRICE : 0);
+    const name = manguito ? `${String(product.name)} + ${MANGUITO_LABEL}` : String(product.name);
+    return { ...item, manguito, name, unitPrice, lineTotal: unitPrice * item.quantity };
   });
   const shippingOption = await calculateShipping(communeId);
   const pricing = applyDiscounts(lines, shippingOption.price, discounts, couponCode);
