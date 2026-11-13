@@ -1,4 +1,4 @@
-import { MANGUITO_PRICE } from "./manguito";
+import { MANGUITO_PRICE, allowsManguito } from "./manguito";
 
 export const CART_STORAGE_KEY = "galletisima_cart";
 export const CART_UPDATED_EVENT = "galletisima-cart-updated";
@@ -64,7 +64,7 @@ export function removeCartItem(productId: string, size: string, manguito = false
 export function setManguitoForAll(enabled: boolean) {
   const merged: CartItem[] = [];
   for (const item of readCartItems()) {
-    const next = { ...item, manguito: enabled };
+    const next = { ...item, manguito: enabled && allowsManguito(item.name) };
     const existing = merged.find((candidate) => sameLine(candidate, next));
     if (existing) existing.quantity += next.quantity;
     else merged.push(next);
