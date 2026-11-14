@@ -82,6 +82,12 @@ export function trackGaPurchase(data: { transactionId: string; value: number; it
   });
 }
 
+// Clic en una lámina de la portada (para saber cuál atrae más).
+export function trackGaSelectPromotion(id: string, name: string) {
+  if (!initializeGa()) return;
+  window.gtag?.("event", "select_promotion", { promotion_id: id, promotion_name: name, creative_slot: "portada" });
+}
+
 // Lo que escriben las personas en los buscadores del sitio. `source` indica cuál:
 // "encabezado", "catalogo" o "categoria".
 export function trackGaSearch(term: string, source: string) {

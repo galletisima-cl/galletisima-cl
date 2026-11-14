@@ -7,6 +7,7 @@ import CartDrawer from "../components/CartDrawer";
 import MobileCategoryAccordions from "../components/MobileCategoryAccordions";
 import InstagramFeed from "../components/InstagramFeed";
 import ClientasFelices from "../components/ClientasFelices";
+import HeroReels from "../components/HeroReels";
 import { createClient } from "../lib/supabase/client";
 import { CART_UPDATED_EVENT, readCartCount } from "../lib/cart";
 import { DEFAULT_HERO_CONTENT, HERO_SETTING_KEYS } from "../lib/hero-content";
@@ -643,30 +644,32 @@ export default function Home() {
       </header>
       <CartDrawer open={cartOpen} onClose={closeCart} />
 
-      <section id="inicio" className="hero">
+      <section id="inicio" className="hero hero-with-reels">
         <div
           className="hero-image"
           style={{ "--hero-desktop": heroBannerUrl ? `url(${heroBannerUrl})` : "none", "--hero-mobile": heroMobileBannerUrl ? `url(${heroMobileBannerUrl})` : heroBannerUrl ? `url(${heroBannerUrl})` : "none" } as React.CSSProperties}
           role="img"
           aria-label="Moldes y galletas decoradas sobre el banner principal"
         />
-        <div className="hero-content shell">
-          <p className="eyebrow">{heroContent.eyebrow}</p>
-          <h1>{heroContent.title}</h1>
-          <p className="hero-copy">{heroContent.subtitle}</p>
-          <div className="hero-buttons">
-            <button className="button primary" type="button" onClick={showCatalog}>{heroContent.primaryButton} <span>→</span></button>
-            <a
-              className="button secondary"
-              href={createWhatsappUrl(whatsappNumber)}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {heroContent.secondaryButton} <span>→</span>
-            </a>
+        <div className="hero-with-reels-inner shell">
+          <div className="hero-content">
+            <p className="eyebrow">{heroContent.eyebrow}</p>
+            <h1>{heroContent.title}</h1>
+            <p className="hero-copy">{heroContent.subtitle}</p>
+            <div className="hero-buttons">
+              <button className="button primary" type="button" onClick={showCatalog}>{heroContent.primaryButton} <span>→</span></button>
+              <a
+                className="button secondary"
+                href={createWhatsappUrl(whatsappNumber)}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {heroContent.secondaryButton} <span>→</span>
+              </a>
+            </div>
           </div>
+          <HeroReels />
         </div>
-        <div className="hero-note"><span aria-hidden="true">✦</span><small>Hechos para</small><strong>crear momentos</strong><b>únicos</b></div>
       </section>
 
       {seasonalCategory && seasonalProducts.length > 0 && (
