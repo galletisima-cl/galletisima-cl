@@ -44,6 +44,7 @@ const defaultNavigationLinks: NavigationLink[] = [
   { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" },
   { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" },
   { id: "advent", label: "Calendarios de Adviento", href: "/categoria/calendarios-de-adviento", tone: "navidad" },
+  { id: "christmas", label: "Navidad", href: "/categoria/todo-navidad", tone: "verde" },
   { id: "snoopy", label: "Snoopy", href: "/categoria/todo-snoopy", tone: "snoopy" },
   { id: "more", label: "Más", href: "/contacto" },
 ];
