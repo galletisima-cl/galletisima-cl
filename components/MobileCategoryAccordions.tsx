@@ -5,9 +5,9 @@ import { useState } from "react";
 import { resolveNavHref } from "../lib/nav-link";
 
 type Category = { id: string; name: string; slug: string };
-type NavigationLink = { id: string; label: string; href: string };
+type NavigationLink = { id: string; label: string; href: string; tone?: string; hidden?: boolean };
 type NavigationConfig = { menus: { id: string; label: string }[]; links?: NavigationLink[]; itemOrder?: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
-const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "#inicio" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "more", label: "Más", href: "/contacto" }];
+const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "#inicio" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "advent", label: "Calendarios de Adviento", href: "/categoria/calendarios-de-adviento", tone: "navidad" }, { id: "christmas", label: "Navidad", href: "/categoria/todo-navidad", tone: "verde" }, { id: "snoopy", label: "Snoopy", href: "/categoria/todo-snoopy", tone: "snoopy" }, { id: "more", label: "Más", href: "/contacto" }];
 const defaultNavigation: NavigationConfig = { menus: [{ id: "celebrations", label: "Celebraciones" }, { id: "characters", label: "Personajes" }, { id: "themes", label: "Temáticas" }], links: defaultLinks, itemOrder: ["link:home", "menu:celebrations", "menu:characters", "menu:themes", "link:altars", "link:tools", "link:all", "link:more"], categoryMenu: {}, categoryOrder: [] };
 const celebrations = ["navidad", "baby-shower", "halloween", "ninos", "niños", "papa", "papá", "mama", "mamá", "celebracion", "fiestas-patrias", "bebes"];
 const characters = ["toy", "snoopy", "stitch", "pokemon", "bluey", "gabby", "marvel", "pooh", "disney", "bob-esponja", "pawpatrol", "spiderman", "lilo", "netflix"];
@@ -42,13 +42,13 @@ export default function MobileCategoryAccordions({ categories, linkCategories, c
     if (!entry.startsWith("link:")) return null;
     const id = entry.slice(5);
     const link = navLink(id);
-    if (!link) return null;
+    if (!link || link.hidden) return null;
     if (id === "more") {
       const expanded = open === entry;
       return <section className={`drawer-group ${expanded ? "open" : ""}`} key={entry}><button type="button" aria-expanded={expanded} aria-controls="mobile-group-more" onClick={() => setOpen(expanded ? null : entry)}><span>{link.label}</span><i aria-hidden="true">⌄</i></button><div id="mobile-group-more" hidden={!expanded}><Link href="/como-pedir" onClick={close}>Cómo pedir personalizado</Link><Link href="/seguimiento" onClick={close}>Seguimiento de pedido</Link><Link href="/contacto" onClick={close}>Contacto</Link><Link href="/terminos-y-condiciones" onClick={close}>Términos y Condiciones</Link><Link href="/politica-de-reembolso" onClick={close}>Política de reembolso</Link><Link href="/politica-de-privacidad" onClick={close}>Política de privacidad</Link></div></section>;
     }
     const assigned = ordered.filter((category) => navigation.categoryMenu[category.id] === entry);
     if (id !== "home" && assigned.length) return accordion(entry, link.label, assigned);
-    return <Link key={entry} className={`drawer-direct ${id === "all" ? "drawer-all" : ""}`} href={resolveNavHref(link, linkCategories ?? categories)} onClick={close}>{link.label} <span>→</span></Link>;
+    return <Link key={entry} className={`drawer-direct ${id === "all" ? "drawer-all" : ""} ${link.tone ? `drawer-tone-${link.tone}` : ""}`} href={resolveNavHref(link, linkCategories ?? categories)} onClick={close}>{link.label} <span>→</span></Link>;
   })}</div>;
 }

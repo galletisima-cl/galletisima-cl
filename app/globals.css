@@ -2565,6 +2565,37 @@ form button {
   background: #ef4a86;
   border-color: #ef4a86;
 }
+/* Botones de temporada del menú: Calendarios de Adviento (rojo), Navidad (verde) y Snoopy (amarillo). */
+.desktop-nav .nav-tone-navidad {
+  background: #d4142f;
+  border: 2px solid #d4142f;
+  color: #fff;
+}
+.desktop-nav .nav-tone-navidad:hover,
+.desktop-nav .nav-tone-navidad:focus-visible {
+  background: #a50e24;
+  border-color: #a50e24;
+}
+.desktop-nav .nav-tone-verde {
+  background: #1d7a3a;
+  border: 2px solid #1d7a3a;
+  color: #fff;
+}
+.desktop-nav .nav-tone-verde:hover,
+.desktop-nav .nav-tone-verde:focus-visible {
+  background: #145a2a;
+  border-color: #145a2a;
+}
+.desktop-nav .nav-tone-snoopy {
+  background: #ffd23f;
+  border: 2px solid #f2b705;
+  color: #2b2118;
+}
+.desktop-nav .nav-tone-snoopy:hover,
+.desktop-nav .nav-tone-snoopy:focus-visible {
+  background: #f2b705;
+  color: #2b2118;
+}
 .desktop-nav a.nav-custom {
   background: #fff;
   border: 2px solid #ef3e83;
@@ -2846,6 +2877,37 @@ form button {
   }
   .drawer-all span {
     color: #fff;
+  }
+  .drawer-tone-navidad,
+  .drawer-tone-verde,
+  .drawer-tone-snoopy {
+    margin-top: 10px;
+    padding: 0 15px;
+    border-radius: 11px;
+  }
+  .drawer-tone-navidad {
+    border: 2px solid #d4142f;
+    background: #d4142f;
+    color: #fff;
+  }
+  .drawer-tone-navidad span {
+    color: #fff;
+  }
+  .drawer-tone-verde {
+    border: 2px solid #1d7a3a;
+    background: #1d7a3a;
+    color: #fff;
+  }
+  .drawer-tone-verde span {
+    color: #fff;
+  }
+  .drawer-tone-snoopy {
+    border: 2px solid #f2b705;
+    background: #ffd23f;
+    color: #2b2118;
+  }
+  .drawer-tone-snoopy span {
+    color: #2b2118;
   }
   .drawer-custom {
     margin-bottom: 6px;
@@ -5631,3 +5693,306 @@ form button {
 .cart-manguito { margin: 12px 20px 0; }
 .product-order-panel .manguito-option { margin-top: 9px; }
 @media (max-width: 560px) { .product-order-panel .manguito-option { margin-top: 8px; } }
+
+/* ===== Portada con láminas tipo Reel (components/HeroReels.tsx) ===== */
+.hero.hero-with-reels {
+  min-height: 0;
+  display: block;
+  background: radial-gradient(circle at 78% 30%, #ffe3ea 0%, #fde9eb 45%, #fff4f6 100%);
+}
+.hero.hero-with-reels .hero-image {
+  inset: 0;
+  height: auto;
+  opacity: 0.28;
+  filter: blur(2px);
+}
+.hero.hero-with-reels .hero-image:after {
+  background: linear-gradient(90deg, rgba(255, 245, 246, 0.96) 0%, rgba(255, 245, 246, 0.7) 40%, rgba(255, 245, 246, 0.35) 100%);
+}
+.hero-with-reels-inner {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(300px, 0.85fr) minmax(0, 1.55fr);
+  align-items: center;
+  gap: clamp(24px, 4vw, 56px);
+  padding-block: clamp(32px, 5vh, 56px);
+}
+.hero.hero-with-reels .hero-content {
+  min-width: 0;
+  padding: 0;
+}
+.hero.hero-with-reels h1 {
+  font-size: clamp(40px, min(4.2vw, 7.5vh), 64px);
+}
+/* Botones uno bajo el otro para que nunca queden encima de las láminas. */
+.hero.hero-with-reels .hero-buttons {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.hero.hero-with-reels .hero-buttons .button {
+  width: min(100%, 300px);
+}
+.hero-reels {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 1.6vw, 22px);
+  align-items: center;
+}
+.hero-reel {
+  /* Brillo dorado al pasar el cursor, igual en todas las láminas. */
+  --reel-color: #ffd23f;
+  --reel-glow: #ffd23faa;
+  position: relative;
+  display: block;
+  aspect-ratio: 9 / 16;
+  max-height: min(72vh, 560px);
+  width: 100%;
+  border-radius: 22px;
+  overflow: hidden;
+  background: rgba(43, 29, 34, 0.18);
+  color: #fff;
+  text-decoration: none;
+  isolation: isolate;
+  box-shadow: 0 18px 40px #5a1f3240;
+  transform: translateZ(0);
+  transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2), box-shadow 0.35s ease;
+}
+.hero-reel:nth-child(2) {
+  transform: translateY(-14px);
+}
+.hero-reel:hover,
+.hero-reel:focus-visible {
+  z-index: 3;
+  transform: scale(1.07) translateY(-8px);
+  box-shadow:
+    0 0 0 3px var(--reel-color),
+    0 0 38px 6px var(--reel-glow),
+    0 26px 50px #5a1f3255;
+  outline: none;
+}
+/* Brillo que cruza la lámina: solo cada tanto en reposo y al pasar el cursor. */
+.hero-reel:after {
+  content: "";
+  position: absolute;
+  inset: -20% -60%;
+  z-index: 4;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
+  transform: translateX(-70%);
+  pointer-events: none;
+  animation: hero-reel-shine 7s ease-in-out infinite;
+}
+.hero-reel:nth-child(2):after { animation-delay: 2.3s; }
+.hero-reel:nth-child(3):after { animation-delay: 4.6s; }
+.hero-reel:hover:after,
+.hero-reel:focus-visible:after {
+  animation: hero-reel-shine-hover 0.9s ease-out;
+}
+@keyframes hero-reel-shine {
+  0%, 82% { transform: translateX(-70%); }
+  100% { transform: translateX(70%); }
+}
+@keyframes hero-reel-shine-hover {
+  from { transform: translateX(-70%); }
+  to { transform: translateX(70%); }
+}
+.hero-reel-media {
+  position: absolute;
+  inset: 0;
+}
+/* La foto del producto se ve completa (contain) entre la barra de arriba y el texto. */
+.hero-reel-photo {
+  position: absolute;
+  top: 44px;
+  left: 8px;
+  right: 8px;
+  bottom: 124px;
+  width: calc(100% - 16px);
+  height: calc(100% - 168px);
+  object-fit: contain;
+  border-radius: 14px;
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
+}
+.hero-reel-photo.visible {
+  opacity: 1;
+  transform: scale(1);
+  animation: hero-reel-zoom 6s ease-out both;
+}
+.hero-reel-backdrop {
+  position: absolute;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(18px) brightness(0.85) saturate(1.2);
+  opacity: 0.45;
+  animation: hero-reel-fade 0.8s ease both;
+}
+@keyframes hero-reel-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+@keyframes hero-reel-fade {
+  from { opacity: 0; }
+  to { opacity: 0.45; }
+}
+.hero-reel-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  color: #ffffff55;
+}
+/* Sombra para que el texto se lea sobre cualquier foto. */
+.hero-reel-media:after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0) 14%, rgba(0, 0, 0, 0) 66%, rgba(20, 6, 12, 0.35) 100%);
+}
+.hero-reel-progress {
+  position: absolute;
+  z-index: 3;
+  top: 10px;
+  left: 10px;
+  right: 10px;
+  display: flex;
+  gap: 4px;
+}
+.hero-reel-progress span {
+  position: relative;
+  flex: 1;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  overflow: hidden;
+}
+.hero-reel-progress span:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.hero-reel-progress span.done:before {
+  transform: scaleX(1);
+}
+.hero-reel-progress span.active:before {
+  animation: hero-reel-progress linear both;
+  animation-duration: inherit;
+}
+@keyframes hero-reel-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.hero-reel-badge {
+  position: absolute;
+  z-index: 3;
+  top: 24px;
+  left: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #3a2129;
+  font-size: 11px;
+  font-weight: 850;
+  box-shadow: 0 6px 16px #0003;
+}
+/* Contorno negro en todos los textos blancos de las láminas. */
+.hero-reel-info {
+  --reel-outline: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 -1px 0 #000, 0 1px 0 #000, -1px 0 0 #000, 1px 0 0 #000;
+  text-shadow: var(--reel-outline);
+  position: absolute;
+  z-index: 3;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hero-reel-info strong {
+  font-family: var(--font-title), sans-serif;
+  font-size: clamp(18px, 1.6vw, 24px);
+  line-height: 1.05;
+}
+.hero-reel-info small {
+  font-size: 12px;
+}
+.hero-reel-info b {
+  font-size: 15px;
+  font-weight: 900;
+}
+.hero-reel-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.hero-reel-cta i {
+  font-style: normal;
+  transition: transform 0.25s;
+}
+.hero-reel:hover .hero-reel-cta i {
+  transform: translateX(4px);
+}
+
+@media (max-width: 900px) {
+  .hero-with-reels-inner {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding-block: 26px 34px;
+  }
+  .hero.hero-with-reels .hero-content {
+    text-align: left;
+  }
+  .hero.hero-with-reels .hero-buttons {
+    margin-top: 18px;
+  }
+  /* En celular las láminas se deslizan de lado, como los Reels. */
+  .hero-reels {
+    display: flex;
+    gap: 12px;
+    margin-inline: -4vw;
+    padding: 12px 4vw 18px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  .hero-reels::-webkit-scrollbar {
+    display: none;
+  }
+  .hero-reel {
+    flex: 0 0 min(66vw, 280px);
+    max-height: none;
+    scroll-snap-align: center;
+  }
+  .hero-reel:nth-child(2) {
+    transform: none;
+  }
+  .hero-reel:hover,
+  .hero-reel:focus-visible {
+    transform: scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-reel,
+  .hero-reel:after,
+  .hero-reel-photo.visible,
+  .hero-reel-backdrop,
+  .hero-reel-progress span.active:before {
+    animation: none !important;
+    transition: none !important;
+  }
+}

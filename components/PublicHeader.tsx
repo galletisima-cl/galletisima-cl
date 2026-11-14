@@ -11,9 +11,9 @@ import { createClient } from "../lib/supabase/client";
 import { createSearchMatcher } from "../lib/search-synonyms";
 
 type Category = { id: string; name: string; slug: string };
-type NavigationLink = { id: string; label: string; href: string };
+type NavigationLink = { id: string; label: string; href: string; tone?: string; hidden?: boolean };
 type NavigationConfig = { menus: { id: string; label: string }[]; links?: NavigationLink[]; itemOrder?: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
-const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "/" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "more", label: "Más", href: "/contacto" }];
+const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "/" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "advent", label: "Calendarios de Adviento", href: "/categoria/calendarios-de-adviento", tone: "navidad" }, { id: "christmas", label: "Navidad", href: "/categoria/todo-navidad", tone: "verde" }, { id: "snoopy", label: "Snoopy", href: "/categoria/todo-snoopy", tone: "snoopy" }, { id: "more", label: "Más", href: "/contacto" }];
 const defaultNavigation: NavigationConfig = { menus: [{ id: "celebrations", label: "Celebraciones" }, { id: "characters", label: "Personajes" }, { id: "themes", label: "Temáticas" }], links: defaultLinks, itemOrder: ["link:home", "menu:celebrations", "menu:characters", "menu:themes", "link:altars", "link:tools", "link:all", "link:more"], categoryMenu: {}, categoryOrder: [] };
 
 const celebrationTerms = ["navidad", "baby-shower", "halloween", "ninos", "papa", "mama", "celebracion", "fiestas-patrias", "bebes"];
@@ -105,10 +105,11 @@ export default function PublicHeader() {
         {publicNavOrder.map((entry, index) => {
           if (entry.startsWith("link:")) {
             const id = entry.slice(5), link = navLink(id);
+            if (!link || link.hidden) return null;
             const assignedCategories = orderedCategories.filter((category) => navigation.categoryMenu[category.id] === entry);
             if (id !== "home" && assignedCategories.length) return <DesktopCategoryMenu key={entry} label={link.label} menuKey={entry} categories={assignedCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= publicNavOrder.length - 2} />;
             if (id === "more") return null;
-            return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""}`} href={resolveNavHref(link, orderedCategories)}>{link.label}</Link>;
+            return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""} ${link.tone ? `nav-tone-${link.tone}` : ""}`} href={resolveNavHref(link, orderedCategories)}>{link.label}</Link>;
           }
           const menu = navigation.menus.find((item) => `menu:${item.id}` === entry);
           return menu ? <DesktopCategoryMenu key={menu.id} label={menu.label} menuKey={menu.id} categories={categoriesForMenu(menu.id)} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index === publicNavOrder.length - 1} /> : null;

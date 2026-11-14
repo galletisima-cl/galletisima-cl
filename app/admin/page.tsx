@@ -36,13 +36,16 @@ type Product = {
   featured: boolean;
 };
 type CategoryFeatureBanner = { categoryId: string; imageUrl: string; mobileImageUrl?: string };
-type NavigationLink = { id: string; label: string; href: string };
+type NavigationLink = { id: string; label: string; href: string; tone?: string; hidden?: boolean };
 type NavigationConfig = { menus: { id: string; label: string }[]; links: NavigationLink[]; itemOrder: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
 const defaultNavigationLinks: NavigationLink[] = [
   { id: "home", label: "Inicio", href: "/" },
   { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" },
   { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" },
   { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" },
+  { id: "advent", label: "Calendarios de Adviento", href: "/categoria/calendarios-de-adviento", tone: "navidad" },
+  { id: "christmas", label: "Navidad", href: "/categoria/todo-navidad", tone: "verde" },
+  { id: "snoopy", label: "Snoopy", href: "/categoria/todo-snoopy", tone: "snoopy" },
   { id: "more", label: "Más", href: "/contacto" },
 ];
 const defaultNavigation: NavigationConfig = { menus: [{ id: "celebrations", label: "Celebraciones" }, { id: "characters", label: "Personajes" }, { id: "themes", label: "Temáticas" }], links: defaultNavigationLinks, itemOrder: ["link:home", "menu:celebrations", "menu:characters", "menu:themes", "link:altars", "link:tools", "link:all", "link:more"], categoryMenu: {}, categoryOrder: [] };
