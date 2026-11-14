@@ -2565,16 +2565,16 @@ form button {
   background: #ef4a86;
   border-color: #ef4a86;
 }
-/* Botones de temporada del menú: Calendarios de Adviento (rojo y verde) y Snoopy (amarillo). */
+/* Botones de temporada del menú: Calendarios de Adviento (rojo) y Snoopy (amarillo). */
 .desktop-nav .nav-tone-navidad {
-  background: linear-gradient(135deg, #c8102e 0 50%, #1d7a3a 50% 100%);
-  border: 2px solid #1d7a3a;
+  background: #d4142f;
+  border: 2px solid #d4142f;
   color: #fff;
 }
 .desktop-nav .nav-tone-navidad:hover,
 .desktop-nav .nav-tone-navidad:focus-visible {
-  background: linear-gradient(135deg, #1d7a3a 0 50%, #c8102e 50% 100%);
-  border-color: #c8102e;
+  background: #a50e24;
+  border-color: #a50e24;
 }
 .desktop-nav .nav-tone-snoopy {
   background: #ffd23f;
@@ -2875,8 +2875,8 @@ form button {
     border-radius: 11px;
   }
   .drawer-tone-navidad {
-    border: 2px solid #1d7a3a;
-    background: linear-gradient(135deg, #c8102e 0 50%, #1d7a3a 50% 100%);
+    border: 2px solid #d4142f;
+    background: #d4142f;
     color: #fff;
   }
   .drawer-tone-navidad span {
