@@ -20,9 +20,9 @@ import { createWhatsappUrl } from "../lib/whatsapp";
 
 type Category = { id: string; name: string; slug: string };
 type CategoryFeatureBanner = { categoryId: string; imageUrl: string; mobileImageUrl?: string };
-type NavigationLink = { id: string; label: string; href: string };
+type NavigationLink = { id: string; label: string; href: string; tone?: string; hidden?: boolean };
 type NavigationConfig = { menus: { id: string; label: string }[]; links?: NavigationLink[]; itemOrder?: string[]; categoryMenu: Record<string, string>; categoryOrder: string[] };
-const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "#inicio" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "more", label: "Más", href: "/contacto" }];
+const defaultLinks: NavigationLink[] = [{ id: "home", label: "Inicio", href: "#inicio" }, { id: "altars", label: "Altares", href: "/?buscar=altares#catalogo" }, { id: "tools", label: "Herramientas", href: "/?buscar=herramientas#catalogo" }, { id: "all", label: "Ver todo", href: "/?ver=todos#catalogo" }, { id: "advent", label: "Calendarios de Adviento", href: "/categoria/calendarios-de-adviento", tone: "navidad" }, { id: "snoopy", label: "Snoopy", href: "/categoria/todo-snoopy", tone: "snoopy" }, { id: "more", label: "Más", href: "/contacto" }];
 const defaultNavigation: NavigationConfig = { menus: [{ id: "celebrations", label: "Celebraciones" }, { id: "characters", label: "Personajes" }, { id: "themes", label: "Temáticas" }], links: defaultLinks, itemOrder: ["link:home", "menu:celebrations", "menu:characters", "menu:themes", "link:altars", "link:tools", "link:all", "link:more"], categoryMenu: {}, categoryOrder: [] };
 
 const fallbackCategories: Category[] = [
@@ -607,10 +607,11 @@ export default function Home() {
           {publicNavOrder.map((entry, index) => {
             if (entry.startsWith("link:")) {
               const id = entry.slice(5), link = navLink(id);
+              if (!link || link.hidden) return null;
               const assignedCategories = orderedCategories.filter((category) => navigationConfig.categoryMenu[category.id] === entry);
               if (id !== "home" && assignedCategories.length) return <DesktopCategoryMenu key={entry} label={link.label} menuKey={entry} categories={assignedCategories} openMenu={openDesktopMenu} setOpenMenu={setOpenDesktopMenu} alignRight={index >= publicNavOrder.length - 2} />;
               if (id === "more") return null;
-              return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""}`} href={resolveNavHref(link, orderedCategories)} onClick={id === "all" ? () => { setCategoryFilter(""); setCatalogPage(1); } : undefined}>{link.label}</Link>;
+              return <Link key={entry} className={`nav-pill ${id === "all" ? "nav-all" : ""} ${link.tone ? `nav-tone-${link.tone}` : ""}`} href={resolveNavHref(link, orderedCategories)} onClick={id === "all" ? () => { setCategoryFilter(""); setCatalogPage(1); } : undefined}>{link.label}</Link>;
             }
             const menu = navigationConfig.menus.find((item) => `menu:${item.id}` === entry);
             if (!menu) return null;

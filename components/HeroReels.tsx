@@ -38,13 +38,18 @@ function ReelCard({ reel, images, price, index, playing }: { reel: HeroReel; ima
         ))}
       </div>
       <div className="hero-reel-media" aria-hidden="true">
+        {/* Fondo difuminado de la misma foto, para que el producto se vea completo sin bordes vacíos. */}
+        {images[current] && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={`fondo-${images[current]}`} src={images[current]} alt="" className="hero-reel-backdrop" decoding="async" />
+        )}
         {images.map((image, imageIndex) => (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={image}
             src={image}
             alt=""
-            className={imageIndex === current ? "visible" : ""}
+            className={`hero-reel-photo ${imageIndex === current ? "visible" : ""}`}
             loading={imageIndex === 0 && index === 0 ? "eager" : "lazy"}
             decoding="async"
           />

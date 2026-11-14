@@ -5700,7 +5700,19 @@ form button {
   padding-block: clamp(32px, 5vh, 56px);
 }
 .hero.hero-with-reels .hero-content {
+  min-width: 0;
   padding: 0;
+}
+.hero.hero-with-reels h1 {
+  font-size: clamp(40px, min(4.2vw, 7.5vh), 64px);
+}
+/* Botones uno bajo el otro para que nunca queden encima de las láminas. */
+.hero.hero-with-reels .hero-buttons {
+  flex-direction: column;
+  align-items: flex-start;
+}
+.hero.hero-with-reels .hero-buttons .button {
+  width: min(100%, 300px);
 }
 .hero-reels {
   display: grid;
@@ -5786,26 +5798,47 @@ form button {
   from { transform: translateX(-70%); }
   to { transform: translateX(70%); }
 }
-.hero-reel-media,
-.hero-reel-media img {
+.hero-reel-media {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
 }
-.hero-reel-media img {
-  object-fit: cover;
+/* La foto del producto se ve completa (contain) entre la barra de arriba y el texto. */
+.hero-reel-photo {
+  position: absolute;
+  top: 44px;
+  left: 8px;
+  right: 8px;
+  bottom: 138px;
+  width: calc(100% - 16px);
+  height: calc(100% - 182px);
+  object-fit: contain;
+  border-radius: 14px;
   opacity: 0;
-  transform: scale(1);
-  transition: opacity 0.8s ease;
+  transform: scale(0.97);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
 }
-.hero-reel-media img.visible {
+.hero-reel-photo.visible {
   opacity: 1;
+  transform: scale(1);
   animation: hero-reel-zoom 6s ease-out both;
+}
+.hero-reel-backdrop {
+  position: absolute;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  object-fit: cover;
+  filter: blur(18px) brightness(0.62) saturate(1.2);
+  animation: hero-reel-fade 0.8s ease both;
 }
 @keyframes hero-reel-zoom {
   from { transform: scale(1); }
-  to { transform: scale(1.1); }
+  to { transform: scale(1.05); }
+}
+@keyframes hero-reel-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 .hero-reel-empty {
   position: absolute;
@@ -5820,7 +5853,7 @@ form button {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 22%, rgba(0, 0, 0, 0) 45%, rgba(20, 6, 12, 0.88) 100%);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0) 14%, rgba(0, 0, 0, 0) 62%, rgba(20, 6, 12, 0.9) 100%);
 }
 .hero-reel-progress {
   position: absolute;
@@ -5970,7 +6003,8 @@ form button {
 @media (prefers-reduced-motion: reduce) {
   .hero-reel,
   .hero-reel:after,
-  .hero-reel-media img.visible,
+  .hero-reel-photo.visible,
+  .hero-reel-backdrop,
   .hero-reel-cta,
   .hero-reel-progress span.active:before {
     animation: none !important;
