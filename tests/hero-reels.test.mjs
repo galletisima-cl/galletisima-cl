@@ -21,3 +21,11 @@ test("las láminas de la portada tienen destino y productos", () => {
     assert.ok(reel.productSlugs.length > 0);
   }
 });
+
+test("el carrusel del celular avanza y vuelve al inicio", async () => {
+  const { nextReelIndex } = await import("../lib/hero-reels.ts");
+  const offsets = [-40, 230, 500];
+  assert.equal(nextReelIndex(offsets, 0, 500), 1);
+  assert.equal(nextReelIndex(offsets, 230, 500), 2);
+  assert.equal(nextReelIndex(offsets, 500, 500), 0);
+});

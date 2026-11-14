@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../lib/supabase/client";
-import { HERO_REELS, HERO_REEL_INTERVAL_MS, reelImages, type HeroReel } from "../lib/hero-reels";
+import { HERO_REELS, HERO_REEL_INTERVAL_MS, HERO_REEL_SLIDE_MS, nextReelIndex, reelImages, type HeroReel } from "../lib/hero-reels";
 import { productDisplayPrice } from "../lib/product-price";
 import { trackGaSelectPromotion } from "../lib/analytics";
 
@@ -71,6 +71,8 @@ export default function HeroReels() {
   const [products, setProducts] = useState<Product[]>([]);
   const [sizePrices, setSizePrices] = useState<Record<string, Record<string, number>>>({});
   const [playing, setPlaying] = useState(true);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const pausedUntil = useRef(0);
 
   useEffect(() => {
     const slugs = [...new Set(HERO_REELS.flatMap((reel) => reel.productSlugs))];
@@ -96,8 +98,34 @@ export default function HeroReels() {
     return { reel, images: reelImages(reel, products), price: prices.length ? Math.min(...prices) : null };
   }).filter((item) => !products.length || item.images.length), [products, sizePrices]);
 
+  // En celular las láminas quedan en fila con deslizamiento lateral: avanzan solas
+  // de una en una (y vuelven al inicio). Si la persona las desliza, se espera un rato.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || !playing) return;
+    const pause = () => { pausedUntil.current = Date.now() + 8000; };
+    track.addEventListener("pointerdown", pause, { passive: true });
+    track.addEventListener("touchstart", pause, { passive: true });
+    track.addEventListener("wheel", pause, { passive: true });
+    const timer = window.setInterval(() => {
+      if (Date.now() < pausedUntil.current || document.hidden) return;
+      if (track.scrollWidth <= track.clientWidth + 8) return; // en escritorio caben todas: no se mueve
+      const cards = [...track.querySelectorAll<HTMLElement>(".hero-reel")];
+      if (cards.length < 2) return;
+      const offsets = cards.map((card) => card.offsetLeft - track.offsetLeft - (track.clientWidth - card.offsetWidth) / 2);
+      const next = nextReelIndex(offsets, track.scrollLeft, track.scrollWidth - track.clientWidth);
+      track.scrollTo({ left: Math.max(0, offsets[next]), behavior: "smooth" });
+    }, HERO_REEL_SLIDE_MS);
+    return () => {
+      window.clearInterval(timer);
+      track.removeEventListener("pointerdown", pause);
+      track.removeEventListener("touchstart", pause);
+      track.removeEventListener("wheel", pause);
+    };
+  }, [playing, reels.length]);
+
   return (
-    <div className="hero-reels">
+    <div className="hero-reels" ref={trackRef}>
       {reels.map(({ reel, images, price }, index) => (
         <ReelCard key={reel.id} reel={reel} images={images} price={price} index={index} playing={playing} />
       ))}
