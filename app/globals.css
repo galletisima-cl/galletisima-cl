@@ -5721,8 +5721,9 @@ form button {
   align-items: center;
 }
 .hero-reel {
-  --reel-color: #ef3e83;
-  --reel-glow: #ef3e8366;
+  /* Brillo dorado al pasar el cursor, igual en todas las láminas. */
+  --reel-color: #ffd23f;
+  --reel-glow: #ffd23faa;
   position: relative;
   display: block;
   aspect-ratio: 9 / 16;
@@ -5741,18 +5742,6 @@ form button {
 .hero-reel:nth-child(2) {
   transform: translateY(-14px);
 }
-.hero-reel-navidad {
-  --reel-color: #c8102e;
-  --reel-glow: #1d7a3a88;
-}
-.hero-reel-jengibre {
-  --reel-color: #b8652e;
-  --reel-glow: #e8a15c88;
-}
-.hero-reel-snoopy {
-  --reel-color: #ffd23f;
-  --reel-glow: #ffd23faa;
-}
 .hero-reel:hover,
 .hero-reel:focus-visible {
   z-index: 3;
@@ -5762,14 +5751,6 @@ form button {
     0 0 38px 6px var(--reel-glow),
     0 26px 50px #5a1f3255;
   outline: none;
-}
-.hero-reel-navidad:hover,
-.hero-reel-navidad:focus-visible {
-  box-shadow:
-    0 0 0 3px #c8102e,
-    0 0 0 6px #1d7a3a,
-    0 0 42px 8px var(--reel-glow),
-    0 26px 50px #5a1f3255;
 }
 /* Brillo que cruza la lámina: solo cada tanto en reposo y al pasar el cursor. */
 .hero-reel:after {
