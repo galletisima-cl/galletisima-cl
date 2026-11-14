@@ -54,6 +54,23 @@ export const HERO_REELS: HeroReel[] = [
 /** Cada cuánto cambia la foto dentro de una lámina. */
 export const HERO_REEL_INTERVAL_MS = 3200;
 
+/** En celular, cada cuánto el carrusel pasa a la siguiente lámina. */
+export const HERO_REEL_SLIDE_MS = 4000;
+
+/**
+ * Siguiente lámina del carrusel en celular: la que sigue a la más cercana a la
+ * posición actual, o la primera si ya se llegó al final.
+ */
+export function nextReelIndex(offsets: number[], scrollLeft: number, maxScroll: number) {
+  if (!offsets.length) return 0;
+  if (scrollLeft >= maxScroll - 4) return 0;
+  let current = 0;
+  offsets.forEach((offset, index) => {
+    if (Math.abs(Math.max(0, offset) - scrollLeft) < Math.abs(Math.max(0, offsets[current]) - scrollLeft)) current = index;
+  });
+  return current + 1 >= offsets.length ? 0 : current + 1;
+}
+
 type ProductWithImages = { slug: string; price: number; image_url: string | null; product_images?: { image_url: string; sort_order: number }[] | null };
 
 /**
