@@ -4945,6 +4945,33 @@ form button {
 .checkout-products article > b {
   font-size: 11px;
 }
+.checkout-products article .checkout-qty {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.checkout-qty button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #ead8de;
+  border-radius: 8px;
+  background: #fff;
+  color: #8a3454;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.checkout-qty button:hover {
+  background: #fff0f3;
+}
+.checkout-qty span {
+  min-width: 26px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 850;
+}
 .checkout-totals {
   display: grid;
   gap: 12px;
