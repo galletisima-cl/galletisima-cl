@@ -2,7 +2,8 @@
 export const MANGUITO_PRICE = 300;
 export const MANGUITO_LABEL = "manguito";
 
-// Los calendarios de adviento ya traen sus stamps: no se les ofrece manguito.
+// Calendarios de adviento y sets (incluye las casitas armables, que se llaman "Set Casita ...")
+// no llevan manguito. Los cortadores sueltos (ej. "Casita Jengibre") sí lo ofrecen.
 export function allowsManguito(productName: string | null | undefined) {
-  return !/^\s*calendario de adviento/i.test(String(productName || ""));
+  return !/^\s*(calendario de adviento|set\b)/i.test(String(productName || ""));
 }
