@@ -6,7 +6,7 @@ export const SYNONYM_GROUPS: string[][] = [
   ["baston navideño","baston","bastón de caramelo","candy cane"],
   ["bob esponja","bob","spongebob"],
   ["stitch","stich","estich"],
-  ["spiderman","hombre araña","hombre arana"],
+  ["hombre araña","spiderman","spidy","araña","espiderman","espaiderman","spaider"],
   ["san valentin","dia de los enamorados","enamorados","dia del amor"],
   ["graduacion","egreso","licenciatura","titulacion"],
   ["cumpleaños","cumple","feliz cumpleaños","birthday"],

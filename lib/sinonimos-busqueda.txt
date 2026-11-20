@@ -12,7 +12,7 @@ baston navideño = baston = bastón de caramelo = candy cane (*)
 # --- Personajes ---
 bob esponja = bob = spongebob (*)
 stitch = stich = estich (*)
-spiderman = hombre araña = hombre arana (*)
+hombre araña = spiderman = spidy = araña = espiderman = espaiderman = spaider
 
 # --- Fechas especiales ---
 san valentin = dia de los enamorados = enamorados = dia del amor (*)
