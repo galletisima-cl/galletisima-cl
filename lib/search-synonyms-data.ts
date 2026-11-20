@@ -1,6 +1,6 @@
 // Archivo generado por scripts/generate-search-synonyms.mjs desde lib/sinonimos-busqueda.txt. No editar a mano.
 export const SYNONYM_GROUPS: string[][] = [
-  ["viejo pascuero","viejito pascuero","pascuero","santa claus","santa"],
+  ["viejo pascuero","viejo","viejito pascuero","pascuero","santa claus","santa"],
   ["navidad","navideño","navideña","navidenos","christmas"],
   ["casita de jengibre","casa de jengibre","casita jengibre","casa jengibre","casita","gingerbread"],
   ["baston navideño","baston","bastón de caramelo","candy cane"],

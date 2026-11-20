@@ -4,7 +4,7 @@
 # Los grupos marcados con (*) los propuse yo a partir de las búsquedas reales; revísalos.
 
 # --- Navidad ---
-viejo pascuero = viejito pascuero = pascuero = santa claus = santa
+viejo pascuero = viejo = viejito pascuero = pascuero = santa claus = santa
 navidad = navideño = navideña = navidenos = christmas
 casita de jengibre = casa de jengibre = casita jengibre = casa jengibre = casita = gingerbread (*)
 baston navideño = baston = bastón de caramelo = candy cane (*)
