@@ -10,7 +10,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = "test-only";
 process.env.WEBPAY_ENVIRONMENT = "integration";
 
 const productId = "00000000-0000-4000-8000-000000000001";
-const buyer = { name: "Cliente de prueba", email: "preview@example.com", phone: "", communeId: "13101", address: "Calle de prueba 123", addressExtra: "" };
+const buyer = { name: "Cliente de prueba", email: "preview@example.com", phone: "912345678", communeId: "13101", address: "Calle de prueba 123", addressExtra: "" };
 const items = [{ productId, size: "6 cm", quantity: 2 }];
 const offer = (patch = {}) => ({ id: "discount", name: "Diez por ciento", kind: "order", active: true, valueType: "percentage", value: 10, minSubtotal: 0, productId: null, ...patch });
 let rules, writes, payments, settingsFailure;
@@ -165,4 +165,15 @@ test("el manguito suma $300 por unidad en el servidor y queda registrado en el p
   const line = writes.find(write => write.table === "order_items").body[0];
   assert.equal(line.unit_price, 10300);
   assert.match(line.name, /\+ manguito$/);
+});
+
+test("payment requires a phone with digits only", async () => {
+  for (const phone of ["", "+56 9 1234 5678", "9-1234-5678", "12345678", "812345678", "abc123456"]) {
+    const response = await pay(request({ buyer: { ...buyer, phone }, items, expectedTotal: 20000 }));
+    assert.equal(response.status, 400, `debería rechazar "${phone}"`);
+  }
+  assert.equal(payments.length, 0);
+  for (const phone of ["912345678", "56912345678"]) {
+    assert.equal((await pay(request({ buyer: { ...buyer, phone }, items, expectedTotal: 23990 }))).status, 200, `debería aceptar "${phone}"`);
+  }
 });
