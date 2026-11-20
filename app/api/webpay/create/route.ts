@@ -44,7 +44,8 @@ function validateBuyer(input: unknown): Buyer {
   const addressExtra = String(value.addressExtra || "").trim().slice(0, 120);
   if (name.length < 2) throw new Error("Ingresa tu nombre para continuar.");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Ingresa un correo electrónico válido.");
-  if (phone && !/^[+\d\s()-]{7,30}$/.test(phone)) throw new Error("Ingresa un teléfono válido.");
+  if (!phone) throw new Error("Ingresa tu teléfono para continuar.");
+  if (!/^(56)?9\d{8}$/.test(phone)) throw new Error("Ingresa un celular válido de 9 dígitos, solo números (ej: 912345678).");
   if (!/^\d{5}$/.test(communeId)) throw new Error("Selecciona una comuna de despacho.");
   if (address.length < 5) throw new Error("Ingresa una dirección de despacho válida.");
   return { name, email, phone, communeId, address, addressExtra };

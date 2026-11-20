@@ -50,7 +50,7 @@ export function CheckoutForm({ items, checkout, isIntegration = false }: { items
   return <form className="webpay-form" onSubmit={(event) => { event.preventDefault(); void pay(); }}>
     <label>Nombre y Apellido<input required minLength={2} autoComplete="name" value={buyer.name} onChange={(event) => setBuyer({ ...buyer, name: event.target.value })} /></label>
     <label>Correo<input required type="email" autoComplete="email" placeholder="tu@correo.cl" value={buyer.email} onChange={(event) => setBuyer({ ...buyer, email: event.target.value })} /></label>
-    <label>Teléfono <small>(opcional)</small><input type="tel" autoComplete="tel" value={buyer.phone} onChange={(event) => setBuyer({ ...buyer, phone: event.target.value })} /></label>
+    <label>Teléfono<input required type="tel" inputMode="numeric" autoComplete="tel" pattern="(56)?9[0-9]{8}" maxLength={11} placeholder="912345678" title="Ingresa tu celular de 9 dígitos, solo números (ej: 912345678)" value={buyer.phone} onChange={(event) => setBuyer({ ...buyer, phone: event.target.value.replace(/\D/g, "").slice(0, 11) })} /></label>
     <div className="webpay-form-grid">
       <label>Región<select required value={regionId} onChange={(event) => { setError(""); checkout.selectRegion(event.target.value); }}><option value="">Selecciona región</option>{regions.map(([id, name]) => <option value={id} key={id}>{name}</option>)}</select></label>
       <label>Comuna<select required disabled={!regionId} value={communeId} onChange={(event) => { setError(""); checkout.selectCommune(event.target.value); }}><option value="">Selecciona comuna</option>{communeOptions.map((option) => <option value={option.communeId} key={option.communeId}>{option.commune}</option>)}</select></label>
