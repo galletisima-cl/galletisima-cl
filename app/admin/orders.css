@@ -68,7 +68,7 @@
 }
 .order-admin-filters {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 220px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   min-width: 0;
   max-width: 100%;
@@ -553,4 +553,43 @@
     font-size: 16px;
     max-width: none;
   }
+}
+
+.admin-orders-table .column-filters th {
+  padding: 8px 10px;
+  background: #fff;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.admin-orders-table .column-filters input,
+.admin-orders-table .column-filters select {
+  width: 100%;
+  min-width: 0;
+  height: 36px;
+  padding: 0 9px;
+  border: 1px solid var(--a-line);
+  border-radius: 8px;
+  background: #fff;
+  color: #4e3c43;
+  font: inherit;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+.admin-orders-table .column-filters input:focus-visible,
+.admin-orders-table .column-filters select:focus-visible {
+  outline: 2px solid var(--a-pink);
+  outline-offset: -2px;
+}
+.clear-column-filters {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--a-line);
+  border-radius: 8px;
+  background: #fff;
+  color: #795f69;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
 }
