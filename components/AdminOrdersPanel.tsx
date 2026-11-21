@@ -52,6 +52,11 @@ export default function AdminOrdersPanel({ notify, fail }: { notify: (message: s
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const [colOrder, setColOrder] = useState("");
+  const [colClient, setColClient] = useState("");
+  const [colCommune, setColCommune] = useState("all");
+  const [colPayment, setColPayment] = useState("all");
+  const [colMinTotal, setColMinTotal] = useState("");
   const [detailOrder, setDetailOrder] = useState<AdminOrder | null>(null);
   const [editOrder, setEditOrder] = useState<AdminOrder | null>(null);
   const [editStatus, setEditStatus] = useState("review");
@@ -146,19 +151,44 @@ export default function AdminOrdersPanel({ notify, fail }: { notify: (message: s
     notify(`Pedido ${orderNumber(order)} eliminado.`);
   }
 
-  const query = search.trim().toLocaleLowerCase("es-CL");
-  const visible = orders.filter((order) => (filter === "all" || order.status === filter || (filter === "review" && order.status === "pending")) && (!query || `${order.public_order_number} ${order.buy_order} ${order.buyer_name} ${order.buyer_email} ${order.shipping_commune}`.toLocaleLowerCase("es-CL").includes(query)));
+  const norm = (value: string | null | undefined) => (value || "").toLocaleLowerCase("es-CL").trim();
+  const query = norm(search);
+  const orderQuery = norm(colOrder).replace(/^#/, "");
+  const clientQuery = norm(colClient);
+  const minTotal = Number(colMinTotal.replace(/\D/g, "")) || 0;
+  const communes = useMemo(() => [...new Set(orders.map((order) => order.shipping_commune).filter(Boolean))].sort((a, b) => a.localeCompare(b, "es-CL")), [orders]);
+  const hasColumnFilters = filter !== "all" || !!orderQuery || !!clientQuery || colCommune !== "all" || colPayment !== "all" || minTotal > 0;
+  function clearColumnFilters() { setFilter("all"); setColOrder(""); setColClient(""); setColCommune("all"); setColPayment("all"); setColMinTotal(""); }
+  const visible = orders.filter((order) => {
+    if (filter !== "all" && order.status !== filter && !(filter === "review" && order.status === "pending")) return false;
+    if (query && !norm(`${order.public_order_number} ${order.buy_order} ${order.buyer_name} ${order.buyer_email} ${order.shipping_commune}`).includes(query)) return false;
+    if (orderQuery && !norm(`${order.public_order_number} ${order.buy_order}`).includes(orderQuery)) return false;
+    if (clientQuery && !norm(`${order.buyer_name} ${order.buyer_email}`).includes(clientQuery)) return false;
+    if (colCommune !== "all" && order.shipping_commune !== colCommune) return false;
+    if (colPayment !== "all" && (order.payment_status === "authorized" ? "paid" : "unpaid") !== colPayment) return false;
+    if (minTotal && order.total < minTotal) return false;
+    return true;
+  });
   const paid = orders.filter((order) => order.payment_status === "authorized");
 
   return <section className="admin-orders">
     <div className="order-metrics"><article><small>Pedidos</small><strong>{orders.length}</strong><span>registrados</span></article><article><small>Pagados</small><strong>{paid.length}</strong><span>confirmados</span></article><article><small>Por preparar</small><strong>{orders.filter((order) => order.status === "review" || order.status === "pending").length}</strong><span>requieren atención</span></article></div>
     <section className="panel orders-management">
       <div className="panel-title"><div><h2>Pedidos</h2><p>Gestiona las compras y el estado que verá cada cliente.</p></div><button type="button" onClick={() => void load()} disabled={loading}>↻ Actualizar</button></div>
-      <div className="order-admin-filters"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar número, cliente, correo o comuna…" aria-label="Buscar pedidos" /><select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filtrar pedidos"><option value="all">Todos los estados</option>{statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></div>
+      <div className="order-admin-filters"><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Buscar número, cliente, correo o comuna…" aria-label="Buscar pedidos" /></div>
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- Allow keyboard users to scroll the overflow table. */}
       <div className="admin-orders-table-wrap" role="region" aria-label="Lista de pedidos" tabIndex={0}>
         <table className="admin-orders-table">
-          <thead><tr><th>Pedido</th><th>Cliente</th><th>Comuna</th><th>Pago</th><th>Envío</th><th>Total</th><th className="actions-heading">Acciones</th></tr></thead>
+          <thead><tr><th>Pedido</th><th>Cliente</th><th>Comuna</th><th>Pago</th><th>Envío</th><th>Total</th><th className="actions-heading">Acciones</th></tr>
+            <tr className="column-filters">
+              <th><input value={colOrder} onChange={(event) => setColOrder(event.target.value)} placeholder="N° pedido" aria-label="Filtrar por número de pedido" /></th>
+              <th><input value={colClient} onChange={(event) => setColClient(event.target.value)} placeholder="Nombre o correo" aria-label="Filtrar por cliente" /></th>
+              <th><select value={colCommune} onChange={(event) => setColCommune(event.target.value)} aria-label="Filtrar por comuna"><option value="all">Todas</option>{communes.map((commune) => <option value={commune} key={commune}>{commune}</option>)}</select></th>
+              <th><select value={colPayment} onChange={(event) => setColPayment(event.target.value)} aria-label="Filtrar por pago"><option value="all">Todos</option><option value="paid">Pagado</option><option value="unpaid">Pendiente</option></select></th>
+              <th><select value={filter} onChange={(event) => setFilter(event.target.value)} aria-label="Filtrar por estado de envío"><option value="all">Todos</option>{statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></th>
+              <th><input value={colMinTotal} inputMode="numeric" onChange={(event) => setColMinTotal(event.target.value)} placeholder="Desde $" aria-label="Filtrar por total mínimo" /></th>
+              <th className="actions-heading">{hasColumnFilters && <button type="button" className="clear-column-filters" onClick={clearColumnFilters}>Limpiar</button>}</th>
+            </tr></thead>
           <tbody>{visible.map((order) => <tr key={order.id}>
             <td><strong>#{orderNumber(order)}</strong><small>{new Date(order.created_at).toLocaleString("es-CL", { dateStyle: "short", timeStyle: "short" })}</small></td>
             <td><strong>{order.buyer_name}</strong><small>{order.buyer_email}</small>{order.order_status_notifications?.some(event => !event.sent_at) && <button className="order-email-pending" type="button" onClick={() => setDetailOrder(order)}>Correo sin confirmar</button>}</td>
